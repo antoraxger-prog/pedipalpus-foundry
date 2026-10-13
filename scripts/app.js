@@ -8,7 +8,7 @@ export class PedipalpusApp extends ApplicationV2 {
   static DEFAULT_OPTIONS = {
     classes: ['pedipalpus-app'], tag: 'section',
     window: { title: 'Pedipalpus – Proben', icon: 'fa-solid fa-dice-d20', resizable: true },
-    position: { width: 700, height: 560 }
+    position: { width: 540, height: 520 }
   };
   constructor(options = {}) {
     super(options);
@@ -17,6 +17,8 @@ export class PedipalpusApp extends ApplicationV2 {
     this.category = 'all';
     this.theme = game.settings.get(MODULE_ID, 'theme') || 'dark';
     this.busy = false;
+    this.modifier = 0;
+    this.modifierDirection = 1;
   }
   get actor() { return this.actorId ? game.actors.get(this.actorId) : null; }
   get token() {
@@ -43,7 +45,7 @@ export class PedipalpusApp extends ApplicationV2 {
       actor, character: getCharacter(actor), status: connectionStatus(),
       canImport: actors.some(actor => actor.canUserModify(game.user, 'update')) || foundry.documents.Actor.canUserCreate(game.user),
       token: this.token, canLinkToken: actor?.isOwner && !this.token && canvas.tokens?.controlled?.length === 1,
-      search: this.search, category: this.category, theme: this.theme });
+      search: this.search, category: this.category, theme: this.theme, modifier: this.modifier, modifierDirection: this.modifierDirection });
   }
   _replaceHTML(result, content) {
     content.innerHTML = result;
@@ -69,7 +71,38 @@ export class PedipalpusApp extends ApplicationV2 {
       this.filterChecks(content);
     });
     content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => this.onAction(button)));
+    const modifier = content.querySelector('[name="modifier"]');
+    modifier?.addEventListener('input', () => {
+      const value = modifier.value === '' ? 0 : Number(modifier.value);
+      if (value < 0) this.modifierDirection = -1;
+      this.modifier = Math.abs(value) * this.modifierDirection;
+      this.updateModifier(content, false);
+      if (value < 0) modifier.value = String(Math.abs(value));
+    });
+    modifier?.addEventListener('wheel', event => {
+      if (!event.deltaY || modifier.disabled) return;
+      event.preventDefault();
+      const value = this.modifier;
+      this.modifier = (Number.isSafeInteger(value) ? value : 0) + (event.deltaY < 0 ? 1 : -1);
+      this.updateModifier(content);
+    }, { passive: false });
+    content.querySelector('[name="modifierDirection"]')?.addEventListener('click', () => {
+      this.modifierDirection *= -1;
+      this.modifier = Math.abs(this.modifier) * this.modifierDirection;
+      this.updateModifier(content);
+    });
     this.filterChecks(content);
+  }
+  updateModifier(content = this.element, updateValue = true) {
+    const field = content.querySelector('[name="modifier"]');
+    if (!field) return;
+    if (this.modifier) this.modifierDirection = this.modifier < 0 ? -1 : 1;
+    if (updateValue) field.value = Number.isSafeInteger(this.modifier) ? String(Math.abs(this.modifier)) : '';
+    field.dataset.mode = this.modifier === 0 ? 'neutral' : this.modifierDirection < 0 ? 'relief' : 'difficulty';
+    const label = this.modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis';
+    field.setAttribute('aria-label', label);
+    const direction = content.querySelector('[name="modifierDirection"]');
+    if (direction) direction.textContent = label;
   }
   filterChecks(content = this.element) {
     const query = this.search.trim().toLocaleLowerCase('de');
@@ -90,14 +123,21 @@ export class PedipalpusApp extends ApplicationV2 {
     try {
       if (button.dataset.action === 'import') await this.importCharacter();
       if (button.dataset.action === 'roll') {
+        this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = true; });
         const check = getCharacter(this.actor)?.checks.find(check => check.id === button.dataset.check);
-        await executeCheck(this.actor, check, this.token);
+        await executeCheck(this.actor, check, this.token, { modifier: this.modifier, blind: button.dataset.blind === 'true' });
+        this.modifier = 0;
+        this.modifierDirection = 1;
+        this.updateModifier();
       }
       if (button.dataset.action === 'token') await this.linkSelectedToken();
     } catch (error) {
       console.error(MODULE_ID, error);
       ui.notifications.error(error.message || 'Die Aktion konnte nicht ausgeführt werden.');
-    } finally { this.busy = false; button.disabled = false; }
+    } finally {
+      this.busy = false; button.disabled = false;
+      this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = false; });
+    }
   }
   async importCharacter() {
     const actors = visibleActors().filter(actor => actor.canUserModify(game.user, 'update'));
@@ -158,4 +198,3 @@ export class PedipalpusApp extends ApplicationV2 {
     ui.notifications.info('Der Token verwendet jetzt das gemeinsame Charakterblatt.');
   }
 }
-
