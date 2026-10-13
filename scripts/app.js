@@ -82,11 +82,7 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => this.onAction(button)));
     content.querySelectorAll('[data-edit]').forEach(input => {
       input.addEventListener('input', () => {
-        this.inputDirty = true;
-        content.querySelector('[data-action="save"]')?.removeAttribute('disabled');
-        content.querySelector('[data-action="discard"]')?.removeAttribute('disabled');
-        const status = content.querySelector('.pp-save-status');
-        if (status) status.textContent = 'Ungespeicherte Eingabe.';
+        this.changeField(input, content, false);
       });
       input.addEventListener('change', () => this.changeField(input, content));
       input.addEventListener('keydown', event => {
@@ -109,20 +105,22 @@ export class PedipalpusApp extends ApplicationV2 {
     this.clearDraft();
     return super.close(options);
   }
-  changeField(input, content) {
+  changeField(input, content, reportError = true) {
     this.inputDirty = false;
     try {
       if (!this.actor?.isOwner) throw new Error('Du benötigst Besitzerrechte zum Bearbeiten.');
       const snapshot = this.draft || getCharacter(this.actor);
       if (!snapshot) throw new Error('Bitte zuerst einen Charakter importieren.');
       const value = input.type === 'checkbox' ? input.checked : input.type === 'number' ? (input.value.trim() ? Number(input.value) : NaN) : input.value;
+      if (Object.is(characterField(snapshot, input.dataset.edit), value)) { this.refreshFields(content); return; }
       const change = { path: input.dataset.edit, value };
       const next = applyCharacterChanges(snapshot, [change]);
       if (!this.changes.length) this.editRevision = characterRevision(getCharacter(this.actor));
       this.draft = next;
       this.changes.push(change);
     } catch (error) {
-      ui.notifications.error(error.message);
+      if (reportError) ui.notifications.error(error.message);
+      else this.inputDirty = true;
     }
     this.refreshFields(content);
   }
@@ -142,12 +140,13 @@ export class PedipalpusApp extends ApplicationV2 {
       if (check) element.innerHTML = renderProbe(check.attributes);
     });
     const status = content.querySelector('.pp-save-status');
-    if (status) status.textContent = this.changes.length ? 'Ungespeicherte Änderungen.' : 'Gespeichert.';
+    if (status) status.textContent = this.inputDirty ? 'Eingabe noch unvollständig.' : this.changes.length ? 'Ungespeicherte Änderungen.' : 'Gespeichert.';
     content.querySelector('[data-action="save"]')?.toggleAttribute('disabled', !this.changes.length && !this.inputDirty);
     content.querySelector('[data-action="discard"]')?.toggleAttribute('disabled', !this.changes.length && !this.inputDirty);
   }
   async saveDraft() {
     if (this.inputDirty && this.element.contains(document.activeElement)) document.activeElement.blur();
+    if (this.inputDirty) throw new Error('Bitte die unvollständige Eingabe zuerst korrigieren.');
     if (!this.changes.length) return;
     await saveChanges(this.actor, this.changes, this.editRevision);
     this.clearDraft();

@@ -1,4 +1,4 @@
-# Pedipalpus – Charaktere · 0.3.0
+# Pedipalpus – Charaktere · 0.3.1
 
 Pedipalpus-Charaktere in Foundry importieren, mit Tokens verbinden und direkt würfeln.
 
