@@ -1,4 +1,5 @@
 import { buildCommand } from './commands.js';
+import { characterFocus } from './combat.js';
 export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const e = escapeHTML;
 const number = value => Number.isSafeInteger(value) ? value.toLocaleString('de-DE') : '–';
@@ -29,10 +30,29 @@ export function rollableChecks(character) {
 }
 const probe = check => check.kind === 'combat' ? `<span class="pp-single-probe" title="${e(`Fertigkeit ${check.combat.skillValue} + Basis ${check.combat.baseValue} + Fokus ${check.combat.focusValue} + Waffenbonus ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`)}">${{attack:'AT',parry:'PA',ranged:'FK'}[check.combat.type]} · 1W20</span>` : check.kind === 'attribute' ? '<span class="pp-single-probe">3W20</span>'
   : `<span class="pp-trio">${check.attributes.map(att => `<span title="${e(att.name)}">${e(att.short || att.name)} <strong>${number(att.value)}</strong></span>`).join('')}</span>`;
+const signed = value => value > 0 ? `+${value}` : String(value);
+export function updateFocusView(content, character) {
+  const focus = characterFocus(character);
+  const off = content.querySelector('[data-focus="off"]');
+  const def = content.querySelector('[data-focus="def"]');
+  if (off) off.textContent = `OFF ${signed(focus)}`;
+  if (def) def.textContent = `DEF ${signed(-focus)}`;
+  content.querySelector('[name="focus"]')?.setAttribute('aria-valuetext', `OFF ${signed(focus)}, DEF ${signed(-focus)}`);
+  const checks = new Map(character.checks.map(check => [check.id, check]));
+  content.querySelectorAll('.pp-check-row').forEach(row => {
+    const check = checks.get(row.dataset.checkId);
+    if (check?.kind !== 'combat' || check.id.startsWith('animals:')) return;
+    row.querySelector('.pp-rating').textContent = number(check.value);
+    const rating = `${mastery(check).label} · Talentwert ${number(check.combat.skillValue)} · Probenwert ${number(check.value)}`;
+    row.querySelector('.pp-rating').title = rating;
+    row.querySelector('.pp-rating').setAttribute('aria-label', rating);
+    row.querySelector('.pp-single-probe').outerHTML = probe(check);
+  });
+}
 const rollButton = (check, disabled, reason, blind = false) => button('roll', `${blind ? '<span aria-hidden="true">?</span>' : ''}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 8v9l-10 5L2 17V8L12 2Zm0 0L7 10l5 12 5-12L12 2ZM2 8l5 2h10l5-2M2 17l5-7m15 7-5-7"/></svg>`,
   `class="pp-dice-button ${blind ? 'pp-blind-button' : ''}" data-check="${e(check.id)}" data-blind="${blind}" aria-label="${e(check.name)} ${blind ? 'verdeckt ' : ''}würfeln" title="${e(disabled ? reason : `${check.name} ${blind ? 'verdeckt würfeln – Ergebnis nur für Spielleiter' : 'würfeln'}`)}" ${disabled ? 'disabled' : ''}`);
 
-export function renderView({ actors, actor, character, status, canImport, token, canLinkToken = false, search = '', category = 'all', theme = 'fantasy', modifier = 0, modifierDirection = 1 }) {
+export function renderView({ actors, actor, character, status, canImport, token, canLinkToken = false, search = '', category = 'all', theme = 'fantasy', modifier = 0, modifierDirection = 1, busy = false }) {
   const options = actors.map(item => `<option value="${e(item.id)}" ${item.id === actor?.id ? 'selected' : ''}>${e(item.name)}${item.hasCharacter ? '' : ' · noch kein Import'}</option>`).join('');
   const toolbar = `<div class="pp-toolbar"><label class="pp-picker">Charakter<select name="actor" aria-label="Foundry-Charakter"><option value="">Charakter auswählen …</option>${options}</select></label>${button('import', 'JSON importieren', `class="pp-import-button" ${canImport ? '' : 'disabled'}`)}${button('portrait', '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="8" cy="9" r="1.5"/><path d="m4 19 6-6 4 4 3-3 4 5"/></svg>', `class="pp-portrait-button" aria-label="Charakterbild importieren" title="Charakter- und Tokenbild importieren" ${actor?.isOwner ? '' : 'disabled'}`)}<label class="pp-theme">Darstellung<select name="theme" aria-label="Darstellung"><option value="fantasy" ${theme === 'fantasy' ? 'selected' : ''}>Fantasy</option><option value="dark" ${theme === 'dark' ? 'selected' : ''}>Dunkel</option><option value="light" ${theme === 'light' ? 'selected' : ''}>Hell</option></select></label></div>`;
   if (!character) return `<div class="pp-root" data-theme="${e(theme)}">${toolbar}<div class="pp-welcome"><i class="fa-solid fa-dice-d20" aria-hidden="true"></i><h2>Pedipalpus – Proben</h2><p>Charakterdatei importieren, eine Probe auswählen und würfeln.</p><p class="pp-hint">Einen vorhandenen Foundry-Charakter auswählen oder beim Import einen neuen anlegen.</p></div></div>`;
@@ -40,11 +60,14 @@ export function renderView({ actors, actor, character, status, canImport, token,
   const available = new Set(checks.map(categoryOf));
   const disabled = !status.ready || status.directReady === false || !actor?.isOwner;
   const disabledReason = !actor?.isOwner ? 'Zum Würfeln werden Besitzerrechte benötigt.' : status.message;
+  const focus = characterFocus(character);
+  const focusControl = focus !== null && checks.some(check => check.kind === 'combat' && !check.id.startsWith('animals:') && check.combat.type !== 'ranged')
+    ? `<div class="pp-focus" title="Nahkampffokus wird im Foundry-Charakter gespeichert. Ein erneuter JSON-Import übernimmt wieder den Fokus aus Pedipalpus."><span>Fokus</span><output data-focus="def">DEF ${signed(-focus)}</output><input name="focus" aria-label="Kampffokus" aria-valuetext="OFF ${signed(focus)}, DEF ${signed(-focus)}" type="range" min="-4" max="4" step="1" value="${focus}" ${!actor?.isOwner || busy ? 'disabled' : ''}><output data-focus="off">OFF ${signed(focus)}</output></div>` : '';
   return `<div class="pp-root" data-theme="${e(theme)}">${toolbar}
     <div class="pp-filters"><label>Bereich<select name="category" aria-label="Probenbereich">${CATEGORIES.filter(([key]) => key === 'all' || available.has(key)).map(([key, label]) => `<option value="${key}" ${key === category ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label class="pp-search">Suche<input type="search" name="search" placeholder="Probe suchen …" aria-label="Fertigkeiten durchsuchen" value="${e(search)}"></label></div>
     <p class="pp-search-scope" ${search ? '' : 'hidden'}>Suche in allen Bereichen</p>
     <div class="pp-modifier"><label>Nächste Probe<input name="modifier" aria-label="${modifier < 0 || modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis'}" title="Gilt für die nächste Probe, danach wieder 0" type="number" min="0" step="1" data-mode="${modifier === 0 ? 'neutral' : modifier < 0 ? 'relief' : 'difficulty'}" value="${e(Number.isSafeInteger(modifier) ? Math.abs(modifier) : '')}"></label><button type="button" name="modifierDirection" title="Zwischen Erschwernis und Erleichterung wechseln">${modifier < 0 || modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis'}</button><span class="pp-wheel-hint"><span>↑ schwerer<br>↓ leichter</span><span>Mausrad</span></span></div>
-    <div class="pp-check-list"><table class="pp-table"><thead><tr><th scope="col">Probe</th><th scope="col">Attribute</th><th scope="col" class="pp-value">Wert</th><th scope="col"><span class="pp-sr-only">Würfeln</span></th></tr></thead><tbody>${checks.map(check => {
+    ${focusControl}<div class="pp-check-list"><table class="pp-table"><thead><tr><th scope="col">Probe</th><th scope="col">Attribute</th><th scope="col" class="pp-value">Wert</th><th scope="col"><span class="pp-sr-only">Würfeln</span></th></tr></thead><tbody>${checks.map(check => {
       const foundation = check.foundation || check.group?.split(' · ').slice(1).join(' · ');
       const rank = mastery(check);
       const combatTalent = check.kind === 'combat' && rank.scale === 'talents';
@@ -52,7 +75,7 @@ export function renderView({ actors, actor, character, status, canImport, token,
       const rating = combatTalent ? `${rank.label} · Talentwert ${number(check.combat.skillValue)} · Probenwert ${number(check.value)}` : `${rank.label} · Wert ${number(check.value)}`;
       const rowDisabled = disabled || check.kind === 'combat' && status.combatReady === false;
       const rowReason = !disabled && rowDisabled ? 'Kampfproben benötigen Ucurifunke – Proben ab 1.0.14.' : disabledReason;
-      return `<tr class="pp-check-row" data-grade="${rank.grade}" data-scale="${rank.scale}" style="--pp-mastery:${rank.progress}" data-category="${e(categoryOf(check))}" data-search="${e(`${check.name} ${check.group || ''}`.toLocaleLowerCase('de'))}"><td><span class="pp-check-name">${rank.grade === 'master' ? '<span class="pp-master-star" aria-hidden="true">✦</span> ' : ''}${e(check.name)}</span><small>${e(subtitle)}</small></td><td>${probe(check)}</td><td class="pp-value"><span class="pp-rating" title="${e(rating)}" aria-label="${e(rating)}">${number(check.value)}</span></td><td><div class="pp-roll-buttons">${rollButton(check, rowDisabled, rowReason)}${rollButton(check, rowDisabled, rowReason, true)}</div></td></tr>`;
+      return `<tr class="pp-check-row" data-check-id="${e(check.id)}" data-grade="${rank.grade}" data-scale="${rank.scale}" style="--pp-mastery:${rank.progress}" data-category="${e(categoryOf(check))}" data-search="${e(`${check.name} ${check.group || ''}`.toLocaleLowerCase('de'))}"><td><span class="pp-check-name">${rank.grade === 'master' ? '<span class="pp-master-star" aria-hidden="true">✦</span> ' : ''}${e(check.name)}</span><small>${e(subtitle)}</small></td><td>${probe(check)}</td><td class="pp-value"><span class="pp-rating" title="${e(rating)}" aria-label="${e(rating)}">${number(check.value)}</span></td><td><div class="pp-roll-buttons">${rollButton(check, rowDisabled, rowReason)}${rollButton(check, rowDisabled, rowReason, true)}</div></td></tr>`;
     }).join('')}</tbody></table><p class="pp-no-results" hidden>Keine passende Probe gefunden.</p></div>
     <footer class="pp-footer">${character.combatSchemaVersion === 1 ? '' : '<span class="pp-hint">Für Kampf- und Tierproben die Charakterdatei erneut importieren.</span>'}<span class="pp-rank-legend" data-scale="talents"><span>Talente:</span><span>0 ungeübt</span><span>1–3 Grundlagen</span><span>4–6 geübt</span><span>7–9 versiert</span><span>✦ 10+ meisterlich</span></span><span class="pp-rank-legend" data-scale="attributes"><span>Attribute:</span><span>1 sehr schwach</span><span>10 durchschnittlich</span><span>✦ 20+ meisterlich</span></span><span class="pp-status ${status.ready ? '' : 'pp-warning'}">${e(status.message)}</span><span>${actor?.isOwner ? 'Besitzerzugriff' : 'Lesezugriff'} · ${token ? `Token: ${e(token.name)}` : `Sprecher: ${e(actor?.name || character.profile.name)}`}</span>${canLinkToken ? button('token', 'Ausgewählten Token verknüpfen') : ''}<span class="pp-hint">Werte in Pedipalpus ändern und die JSON-Datei erneut importieren.</span>${character.warnings.map(warning => `<span class="pp-warning">${e(warning)}</span>`).join('')}</footer></div>`;
 }

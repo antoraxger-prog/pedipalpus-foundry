@@ -1,10 +1,18 @@
 import { MODULE_ID, FLAG, validSnapshot } from './data.js';
 import { uploadPortrait, applyPortrait } from './portraits.js';
+import { withFocus } from './combat.js';
 
 export const getCharacter = actor => {
   const value = actor?.getFlag(MODULE_ID, FLAG);
   return validSnapshot(value) ? value : null;
 };
+
+export async function saveFocus(actor, focus) {
+  if (!actor?.isOwner || !actor.canUserModify(game.user, 'update')) throw new Error('Zum Ändern des Fokus werden Besitzerrechte benötigt.');
+  const character = getCharacter(actor);
+  if (!character) throw new Error('Bitte zuerst eine Charakterdatei importieren.');
+  await actor.setFlag(MODULE_ID, FLAG, withFocus(character, focus));
+}
 
 export function visibleActors() {
   return game.actors.contents.filter(actor => actor.testUserPermission(game.user, 'OBSERVER'))

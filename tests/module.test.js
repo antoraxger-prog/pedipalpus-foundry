@@ -8,6 +8,53 @@ import { buildCommand, connectionStatus, executeCheck } from '../scripts/command
 import { saveCharacter, getCharacter, linkToken } from '../scripts/storage.js';
 import { renderView, rollableChecks, mastery } from '../scripts/view.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from '../scripts/portraits.js';
+import { characterFocus, withFocus } from '../scripts/combat.js';
+import { saveFocus } from '../scripts/storage.js';
+
+test('Focus updates attack and parry in opposite directions without changing ranged, animal or talent values', () => {
+  const data = normalizeCharacter(combatFixture());
+  assert.equal(characterFocus(data), -4);
+  const changed = withFocus(data, 3);
+  assert.equal(changed.combat.offDefOffset, 3);
+  assert.equal(changed.combat.offOffset, 3);
+  assert.equal(changed.combat.defOffset, -3);
+  for (const before of data.checks) {
+    const after = changed.checks.find(check => check.id === before.id);
+    if (before.kind !== 'combat' || before.id.startsWith('animals:') || before.combat.type === 'ranged') assert.deepEqual(after, before);
+    else {
+      assert.equal(after.value - before.value, before.combat.type === 'attack' ? 7 : -7);
+      assert.equal(after.combat.skillValue, before.combat.skillValue);
+      assert.doesNotThrow(() => buildCommand(after));
+    }
+  }
+  assert.equal(characterFocus(data), -4);
+  for (const invalid of [-5, 5, 0.5, NaN, '2']) assert.throws(() => withFocus(data, invalid), /zwischen/);
+  assert.equal(characterFocus(withFocus(data, 0)), 0);
+});
+
+test('Existing combat imports infer focus; conflicting or missing saved offsets are not guessed', () => {
+  const data = normalizeCharacter(combatFixture());
+  delete data.combat.offDefOffset;
+  assert.equal(characterFocus(data), -4);
+  data.checks.find(check => check.combat?.type === 'parry').combat.focusValue = 2;
+  assert.equal(characterFocus(data), null);
+  assert.throws(() => withFocus(data, 0), /unvollständig/);
+  assert.equal(characterFocus(normalizeCharacter(fixture())), null);
+});
+
+test('Focus persists on the current actor snapshot and respects ownership and failed writes', async () => {
+  const env = runtime('1.0.14');
+  await saveCharacter(normalizeCharacter(combatFixture()), env.document.id);
+  await saveFocus(env.document, 2);
+  assert.equal(characterFocus(getCharacter(env.document)), 2);
+  assert.equal(env.document.flags.thirdParty.value, 7);
+  env.document.isOwner = false;
+  await assert.rejects(saveFocus(env.document, 0), /Besitzerrechte/);
+  env.document.isOwner = true;
+  env.document.setFlag = async () => { throw new Error('write failed'); };
+  await assert.rejects(saveFocus(env.document, 0), /write failed/);
+  assert.equal(characterFocus(getCharacter(env.document)), 2);
+});
 
 test('Geographie uses saved totals and current attributes, ignoring default and selected copies', () => {
   const data = normalizeCharacter(fixture());

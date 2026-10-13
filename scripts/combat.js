@@ -4,6 +4,25 @@ const integer = value => Number.isSafeInteger(value) ? value : null;
 const savedInteger = value => typeof value === 'string' && /^-?\d+$/.test(value.trim()) ? integer(Number(value)) : integer(value);
 const comparable = value => text(value).replace(/[äöüÄÖÜß]/g, c => ({ä:'ae',ö:'oe',ü:'ue',Ä:'AE',Ö:'OE',Ü:'UE',ß:'ss'}[c])).toLocaleLowerCase('de');
 
+const validFocus = value => Number.isSafeInteger(value) && value >= -4 && value <= 4;
+export function characterFocus(character) {
+  if (validFocus(character?.combat?.offDefOffset)) return character.combat.offDefOffset;
+  const checks = (character?.checks ?? []).filter(check => check.kind === 'combat' && !check.id?.startsWith('animals:') && check.combat?.type !== 'ranged');
+  const values = checks.map(check => check.combat.type === 'attack' ? check.combat.focusValue : -check.combat.focusValue);
+  return values.length && values.every(value => validFocus(value) && value === values[0]) ? values[0] : null;
+}
+
+export function withFocus(character, focus) {
+  if (!validFocus(focus)) throw new Error('Der Fokus muss eine ganze Zahl zwischen −4 und 4 sein.');
+  if (characterFocus(character) === null) throw new Error('Der gespeicherte Fokus ist unvollständig. Bitte die Charakterdatei erneut importieren.');
+  return {...character, combat: {...character.combat, offDefOffset: focus, offOffset: focus, defOffset: -focus},
+    checks: character.checks.map(check => {
+      if (check.kind !== 'combat' || check.id?.startsWith('animals:') || check.combat.type === 'ranged') return check;
+      const combat = {...check.combat, focusValue: check.combat.type === 'attack' ? focus : -focus};
+      return {...check, combat, value: check.reason ? check.value : combat.skillValue + combat.baseValue + combat.focusValue + combat.weaponModifier - combat.mobilityPenalty};
+    })};
+}
+
 export function combatChecks(raw) {
   const checks = [];
   const add = (id, weaponName, skillName, type, skillValue, baseValue, focusValue, weaponModifier, mobilityPenalty, extra = {}) => {

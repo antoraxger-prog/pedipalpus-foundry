@@ -1,7 +1,8 @@
 import { MAX_FILE_SIZE, parseCharacter, MODULE_ID } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
-import { getCharacter, visibleActors, saveCharacter, linkToken } from './storage.js';
-import { renderView, renderImportOptions } from './view.js';
+import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus } from './storage.js';
+import { renderView, renderImportOptions, updateFocusView } from './view.js';
+import { withFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from './portraits.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
@@ -20,6 +21,8 @@ export class PedipalpusApp extends ApplicationV2 {
     this.busy = false;
     this.modifier = 0;
     this.modifierDirection = 1;
+    this.focusSave = Promise.resolve();
+    this.focusError = null;
   }
   get actor() { return this.actorId ? game.actors.get(this.actorId) : null; }
   get token() {
@@ -27,7 +30,7 @@ export class PedipalpusApp extends ApplicationV2 {
       .find(token => token.actorId === this.actorId && token.actorLink) ?? null;
   }
   async open(actorId = null) {
-    if (actorId && actorId !== this.actorId) { this.actorId = actorId; this.search = ''; this.category = 'all'; }
+    if (actorId && actorId !== this.actorId) { this.actorId = actorId; this.search = ''; this.category = 'all'; this.focusError = null; }
     else if (!this.actorId) {
       const controlled = canvas.tokens?.controlled?.[0]?.document;
       const actor = controlled?.actorLink && game.actors.get(controlled.actorId);
@@ -46,7 +49,7 @@ export class PedipalpusApp extends ApplicationV2 {
       actor, character: getCharacter(actor), status: connectionStatus(),
       canImport: actors.some(actor => actor.canUserModify(game.user, 'update')) || foundry.documents.Actor.canUserCreate(game.user),
       token: this.token, canLinkToken: actor?.isOwner && !this.token && canvas.tokens?.controlled?.length === 1,
-      search: this.search, category: this.category, theme: this.theme, modifier: this.modifier, modifierDirection: this.modifierDirection });
+      search: this.search, category: this.category, theme: this.theme, modifier: this.modifier, modifierDirection: this.modifierDirection, busy: this.busy });
   }
   _replaceHTML(result, content) {
     this.element.dataset.ppTheme = this.theme;
@@ -55,6 +58,7 @@ export class PedipalpusApp extends ApplicationV2 {
       this.actorId = event.target.value || null;
       this.search = '';
       this.category = 'all';
+      this.focusError = null;
       await this.render({ force: true });
     });
     content.querySelector('[name="search"]')?.addEventListener('input', event => {
@@ -74,6 +78,21 @@ export class PedipalpusApp extends ApplicationV2 {
       this.filterChecks(content);
     });
     content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => this.onAction(button)));
+    const focus = content.querySelector('[name="focus"]');
+    focus?.addEventListener('input', () => {
+      updateFocusView(content, withFocus(getCharacter(this.actor), Number(focus.value)));
+    });
+    focus?.addEventListener('change', () => {
+      const actor = this.actor;
+      const value = Number(focus.value);
+      this.focusSave = this.focusSave.then(() => saveFocus(actor, value)).then(() => {
+        if (this.actorId === actor.id) this.focusError = null;
+      }).catch(error => {
+        if (this.actorId === actor.id) this.focusError = error;
+        ui.notifications.error(error.message || 'Der Fokus konnte nicht gespeichert werden.');
+        this.render({force:true}).catch(error => console.error(MODULE_ID,error));
+      });
+    });
     const modifier = content.querySelector('[name="modifier"]');
     modifier?.addEventListener('input', () => {
       const value = modifier.value === '' ? 0 : Number(modifier.value);
@@ -119,17 +138,22 @@ export class PedipalpusApp extends ApplicationV2 {
     if (scope) scope.hidden = !query;
     const empty = content.querySelector('.pp-no-results');
     if (empty) empty.hidden = count > 0;
+    const focus = content.querySelector('.pp-focus');
+    if (focus) focus.hidden = !Array.from(content.querySelectorAll('.pp-check-row')).some(row => !row.hidden && row.dataset.category === 'combat');
     content.querySelectorAll('.pp-rank-legend').forEach(legend => { legend.hidden = !scales.has(legend.dataset.scale); });
   }
   async onAction(button) {
     if (this.busy) return;
     this.busy = true;
     button.disabled = true;
+    if (button.dataset.action === 'roll') this.element.querySelectorAll('[name="focus"]').forEach(field => { field.disabled = true; });
     try {
+      await this.focusSave;
+      if (this.focusError && button.dataset.action === 'roll') throw this.focusError;
       if (button.dataset.action === 'import') await this.importCharacter();
       if (button.dataset.action === 'portrait') await this.importPortrait();
       if (button.dataset.action === 'roll') {
-        this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = true; });
+        this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"], [name="focus"]').forEach(field => { field.disabled = true; });
         const check = getCharacter(this.actor)?.checks.find(check => check.id === button.dataset.check);
         await executeCheck(this.actor, check, this.token, { modifier: this.modifier, blind: button.dataset.blind === 'true' });
         this.modifier = 0;
@@ -143,6 +167,7 @@ export class PedipalpusApp extends ApplicationV2 {
     } finally {
       this.busy = false; button.disabled = false;
       this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = false; });
+      this.element.querySelectorAll('[name="focus"]').forEach(field => { field.disabled = !this.actor?.isOwner; });
     }
   }
   async importCharacter() {
@@ -209,6 +234,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.actorId = actor.id;
     this.search = '';
     this.category = 'all';
+    this.focusError = null;
     await this.render({ force: true });
     ui.notifications.info(`${answer.snapshot.profile.name} wurde importiert.`);
   }
