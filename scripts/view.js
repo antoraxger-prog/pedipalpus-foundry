@@ -3,13 +3,14 @@ export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => 
 const e = escapeHTML;
 const number = value => Number.isSafeInteger(value) ? value.toLocaleString('de-DE') : '–';
 export function mastery(check) {
-  const value = check.value;
+  const combatTalent = check.kind === 'combat' && !check.id?.startsWith('animals:');
+  const value = combatTalent ? check.combat?.skillValue : check.value;
   if (check.kind === 'attribute') return {
     grade: value <= 1 ? 'untrained' : value < 8 ? 'novice' : value <= 12 ? 'trained' : value < 20 ? 'adept' : 'master',
     label: value <= 1 ? 'Sehr schwach' : value < 8 ? 'Schwach' : value <= 12 ? 'Durchschnittlich' : value < 20 ? 'Stark' : 'Meisterlich',
     progress: Math.max(0, Math.min(19, value - 1)) / 19, scale: 'attributes'
   };
-  if (check.kind !== 'skill' || check.id?.startsWith('secondary:')) return { grade: 'attribute', label: check.kind === 'combat' ? 'Kampfwert' : 'Basiswert', progress: 0, scale: 'other' };
+  if (!Number.isSafeInteger(value) || !combatTalent && check.kind !== 'skill' || check.id?.startsWith('secondary:')) return { grade: 'attribute', label: check.kind === 'combat' ? 'Kampfwert' : 'Basiswert', progress: 0, scale: 'other' };
   return { grade: value <= 0 ? 'untrained' : value < 4 ? 'novice' : value < 7 ? 'trained' : value < 10 ? 'adept' : 'master',
     label: value <= 0 ? 'Ungeübt' : value < 4 ? 'Grundkenntnisse' : value < 7 ? 'Geübt' : value < 10 ? 'Versiert' : 'Meisterlich',
     progress: Math.max(0, Math.min(10, value)) / 10, scale: 'talents' };
@@ -46,9 +47,12 @@ export function renderView({ actors, actor, character, status, canImport, token,
     <div class="pp-check-list"><table class="pp-table"><thead><tr><th scope="col">Probe</th><th scope="col">Attribute</th><th scope="col" class="pp-value">Wert</th><th scope="col"><span class="pp-sr-only">Würfeln</span></th></tr></thead><tbody>${checks.map(check => {
       const foundation = check.foundation || check.group?.split(' · ').slice(1).join(' · ');
       const rank = mastery(check);
+      const combatTalent = check.kind === 'combat' && rank.scale === 'talents';
+      const subtitle = combatTalent ? `${foundation || check.group || ''} · Talent ${number(check.combat.skillValue)}` : foundation || check.group || '';
+      const rating = combatTalent ? `${rank.label} · Talentwert ${number(check.combat.skillValue)} · Probenwert ${number(check.value)}` : `${rank.label} · Wert ${number(check.value)}`;
       const rowDisabled = disabled || check.kind === 'combat' && status.combatReady === false;
       const rowReason = !disabled && rowDisabled ? 'Kampfproben benötigen Ucurifunke – Proben ab 1.0.14.' : disabledReason;
-      return `<tr class="pp-check-row" data-grade="${rank.grade}" data-scale="${rank.scale}" style="--pp-mastery:${rank.progress}" data-category="${e(categoryOf(check))}" data-search="${e(`${check.name} ${check.group || ''}`.toLocaleLowerCase('de'))}"><td><span class="pp-check-name">${rank.grade === 'master' ? '<span class="pp-master-star" aria-hidden="true">✦</span> ' : ''}${e(check.name)}</span><small>${e(foundation || check.group || '')}</small></td><td>${probe(check)}</td><td class="pp-value"><span class="pp-rating" title="${rank.label} · Wert ${number(check.value)}" aria-label="${rank.label}: Wert ${number(check.value)}">${number(check.value)}</span></td><td><div class="pp-roll-buttons">${rollButton(check, rowDisabled, rowReason)}${rollButton(check, rowDisabled, rowReason, true)}</div></td></tr>`;
+      return `<tr class="pp-check-row" data-grade="${rank.grade}" data-scale="${rank.scale}" style="--pp-mastery:${rank.progress}" data-category="${e(categoryOf(check))}" data-search="${e(`${check.name} ${check.group || ''}`.toLocaleLowerCase('de'))}"><td><span class="pp-check-name">${rank.grade === 'master' ? '<span class="pp-master-star" aria-hidden="true">✦</span> ' : ''}${e(check.name)}</span><small>${e(subtitle)}</small></td><td>${probe(check)}</td><td class="pp-value"><span class="pp-rating" title="${e(rating)}" aria-label="${e(rating)}">${number(check.value)}</span></td><td><div class="pp-roll-buttons">${rollButton(check, rowDisabled, rowReason)}${rollButton(check, rowDisabled, rowReason, true)}</div></td></tr>`;
     }).join('')}</tbody></table><p class="pp-no-results" hidden>Keine passende Probe gefunden.</p></div>
     <footer class="pp-footer">${character.combatSchemaVersion === 1 ? '' : '<span class="pp-hint">Für Kampf- und Tierproben die Charakterdatei erneut importieren.</span>'}<span class="pp-rank-legend" data-scale="talents"><span>Talente:</span><span>0 ungeübt</span><span>1–3 Grundlagen</span><span>4–6 geübt</span><span>7–9 versiert</span><span>✦ 10+ meisterlich</span></span><span class="pp-rank-legend" data-scale="attributes"><span>Attribute:</span><span>1 sehr schwach</span><span>10 durchschnittlich</span><span>✦ 20+ meisterlich</span></span><span class="pp-status ${status.ready ? '' : 'pp-warning'}">${e(status.message)}</span><span>${actor?.isOwner ? 'Besitzerzugriff' : 'Lesezugriff'} · ${token ? `Token: ${e(token.name)}` : `Sprecher: ${e(actor?.name || character.profile.name)}`}</span>${canLinkToken ? button('token', 'Ausgewählten Token verknüpfen') : ''}<span class="pp-hint">Werte in Pedipalpus ändern und die JSON-Datei erneut importieren.</span>${character.warnings.map(warning => `<span class="pp-warning">${e(warning)}</span>`).join('')}</footer></div>`;
 }

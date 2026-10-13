@@ -320,6 +320,9 @@ test('Talent and attribute mastery use independent scales without changing impor
   assert.notEqual(mastery({ ...primary, value: 19 }).grade, 'master');
   assert.equal(mastery({ ...primary, value: 20 }).grade, 'master');
   assert.equal(mastery(character.checks.find(check => check.id.startsWith('secondary:'))).grade, 'attribute');
+  assert.equal(mastery(combatCheck('attack', {skillValue:10,baseValue:0,focusValue:-4})).grade, 'master');
+  assert.equal(mastery(combatCheck('parry', {skillValue:0,baseValue:15,focusValue:5})).grade, 'untrained');
+  assert.equal(mastery({...combatCheck('attack', {skillValue:20}),id:'animals:0:0:attack'}).grade, 'attribute');
   const html = renderView({actors:[], actor:{isOwner:true}, character, status:{ready:true,message:'Verbunden'}, canImport:true});
   assert.match(html, /data-theme="fantasy"/);
   assert.match(html, /data-grade="untrained"/);
