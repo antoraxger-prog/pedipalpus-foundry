@@ -9,7 +9,7 @@ export function openPedipalpus(actorId = null) {
 Hooks.once('init', () => {
   game.settings.register(MODULE_ID, 'theme', { scope: 'client', config: false, type: String, default: 'dark' });
   game.settings.registerMenu(MODULE_ID, 'open', {
-    name: 'Pedipalpus – Charaktere', label: 'Charaktere öffnen',
+    name: 'Pedipalpus – Proben', label: 'Proben öffnen',
     hint: 'JSON-Datei importieren, einen Charakter auswählen und direkt würfeln.',
     icon: 'fa-solid fa-dice-d20', type: PedipalpusApp, restricted: false
   });
@@ -31,7 +31,7 @@ Hooks.on('renderActorDirectory', (_app, html) => {
 
 function refreshWindows(actorId = null) {
   for (const app of foundry.applications.api.ApplicationV2.instances()) {
-    if (app instanceof PedipalpusApp && app.rendered && !app.changes.length && !app.inputDirty && (!actorId || app.actorId === actorId)) {
+    if (app instanceof PedipalpusApp && app.rendered && (!actorId || app.actorId === actorId)) {
       app.render({ force: true }).catch(error => console.error(MODULE_ID, error));
     }
   }

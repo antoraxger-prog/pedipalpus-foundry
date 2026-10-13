@@ -6,9 +6,7 @@ import { fixture } from './fixture.js';
 import { parseCharacter, normalizeCharacter, MODULE_ID, FLAG, MAX_FILE_SIZE } from '../scripts/data.js';
 import { buildCommand, connectionStatus, executeCheck } from '../scripts/commands.js';
 import { saveCharacter, getCharacter, linkToken } from '../scripts/storage.js';
-import { renderView } from '../scripts/view.js';
-import { applyCharacterChanges, characterRevision } from '../scripts/editing.js';
-import { saveChanges } from '../scripts/storage.js';
+import { renderView, rollableChecks } from '../scripts/view.js';
 
 test('Geographie uses saved totals and current attributes, ignoring default and selected copies', () => {
   const data = normalizeCharacter(fixture());
@@ -39,8 +37,9 @@ test('The original diary list and condition states survive import as plain text'
   assert.equal(data.conditions.simple[0].active, true);
   assert.equal(data.conditions.complex[0].level, 2);
   const html = renderView({ actors: [], actor: { isOwner: true }, character: data, status: { ready: true, message: 'Verbunden' }, canImport: true, token: null });
-  assert.ok(html.includes('&lt;script&gt;'));
+  assert.ok(!html.includes('Ereignis'));
   assert.ok(!html.includes('<script>'));
+  assert.ok(!html.includes('data-edit='));
 });
 test('Older 0.1 imports can still be displayed after the interface update', () => {
   const data = normalizeCharacter(fixture());
@@ -72,6 +71,7 @@ test('Chat control characters cannot inject an additional command', () => {
 test('Character content is rendered as text, with no executable HTML', () => {
   const data = normalizeCharacter(fixture());
   data.profile.name = '<img src=x onerror=bad()>';
+  data.checks.find(check => check.name === 'Geographie').name = '<script>bad()</script>';
   const html = renderView({ actors: [{ id: 'a', name: '<b>Actor</b>', hasCharacter: true }], actor: { id: 'a', isOwner: true }, character: data,
     status: { ready: true, message: 'Verbunden' }, canImport: true, token: null });
   assert.ok(!html.includes('<script>'));
@@ -132,69 +132,6 @@ test('Published 1.0.14 uses the current registry and accepts skills and attribut
   assert.equal(messages.length, 2);
 });
 
-test('Editing attributes updates the primary roll and all references without changing the source', () => {
-  const raw = fixture(); raw.PrimaryAttributes[1].BaseValue = 15; raw.PrimaryAttributes[1].ModValue = 1;
-  const original = normalizeCharacter(raw);
-  const next = applyCharacterChanges(original, [{ path: 'attributes.1.base', value: 16 }]);
-  assert.equal(next.attributes[1].value, 17);
-  assert.equal(next.checks.find(check => check.id === 'primary:1').value, 17);
-  const geo = next.checks.find(check => check.name === 'Geographie');
-  assert.equal(buildCommand(geo), '/skillcheck Geographie | Klugheit 17 | Klugheit 17 | Intuition 14 | 8');
-  assert.equal(original.attributes[1].value, 16);
-});
-
-test('Foundation and specialization edits retain imported bonuses and sibling consistency', () => {
-  const raw = fixture(); raw.AcademicSkills[0].Subskills.push({ Name: 'Geschichtswissen', BaseValue: 3, TotalValue: 9 });
-  const next = applyCharacterChanges(normalizeCharacter(raw), [
-    { path: 'checks.AcademicSkills:0:0.foundationValue', value: 5 },
-    { path: 'checks.AcademicSkills:0:0.specializationValue', value: 6 }
-  ]);
-  const geo = next.checks.find(check => check.name === 'Geographie'), history = next.checks.find(check => check.name === 'Geschichtswissen');
-  assert.equal(geo.value, 11);
-  assert.equal(history.value, 10);
-  assert.equal(history.foundationValue, 5);
-});
-
-test('Editing energy maxima and derived totals stays consistent; missing old base fields are supported', () => {
-  const original = normalizeCharacter(fixture());
-  const next = applyCharacterChanges(original, [{ path: 'derived.0.modifier', value: 2 }, { path: 'resources.0.value', value: 20 }]);
-  assert.equal(next.derived[0].value, 33);
-  assert.equal(next.resources[0].max, 33);
-  assert.equal(next.resources[0].value, 20);
-  const adjusted = applyCharacterChanges(next, [{ path: 'resources.0.max', value: 35 }]);
-  assert.equal(adjusted.derived[0].value, 35);
-});
-
-test('Conditions, money, equipment and notes are editable with validated fields only', () => {
-  const raw = fixture(); raw.SimpleConditions = [{ Name: 'Krank', IsActive: false }]; raw.ComplexConditions = [{ Name: 'Angst', Level: 0 }];
-  raw.MoneySources = [{ Location: 'Beutel', Worth: { Gold: 25 } }];
-  const original = normalizeCharacter(raw);
-  const next = applyCharacterChanges(original, [
-    { path: 'conditions.simple.0.active', value: true }, { path: 'conditions.complex.0.level', value: 2 },
-    { path: 'money.0.gold', value: 24 }, { path: 'equipment.0.carried', value: false },
-    { path: 'profile.notes', value: '<script>not executable</script>' }
-  ]);
-  assert.equal(next.conditions.simple[0].active, true); assert.equal(next.conditions.complex[0].level, 2);
-  assert.equal(next.money[0].gold, 24); assert.equal(next.equipment[0].carried, false);
-  for (const change of [
-    { path: '__proto__.polluted', value: true }, { path: 'checks.AcademicSkills:0:0.value', value: 1.5 },
-    { path: 'money.0.gold', value: -1 }, { path: 'profile.name', value: '' },
-    { path: 'equipment.0.quantity', value: Infinity }, { path: 'conditions.simple.0.active', value: 'false' }
-  ]) assert.throws(() => applyCharacterChanges(original, [change]));
-  assert.equal({}.polluted, undefined);
-});
-
-test('Saving changes persists, retains other flags and rejects observers or stale drafts', async () => {
-  const { document } = runtime();
-  await saveCharacter(normalizeCharacter(fixture()), document.id);
-  const before = getCharacter(document), rev = characterRevision(before);
-  await saveChanges(document, [{ path: 'profile.apAvailable', value: 12 }], rev);
-  assert.equal(getCharacter(document).profile.apAvailable, 12);
-  assert.equal(document.flags.thirdParty.value, 7);
-  await assert.rejects(saveChanges(document, [{ path: 'profile.apAvailable', value: 10 }], rev), /inzwischen geändert/);
-  document.isOwner = false;
-  await assert.rejects(saveChanges(document, [{ path: 'profile.apAvailable', value: 10 }], characterRevision(getCharacter(document))), /Besitzerrechte/);
-});
 test('Actual published 1.0.8 handler receives our command and linked token speaker', async () => {
   const { document, messages, calls } = runtime();
   const check = normalizeCharacter(fixture()).checks.find(check => check.name === 'Geographie');
@@ -276,4 +213,28 @@ test('Token linking requires rights and explicit acceptance of an unlinked sheet
 test('The real user file reconstructs the supplied command when provided', { skip: !process.env.PEDIPALPUS_REAL_CHARACTER }, () => {
   const data = parseCharacter(fs.readFileSync(process.env.PEDIPALPUS_REAL_CHARACTER, 'utf8'));
   assert.equal(buildCommand(data.checks.find(check => check.name === 'Geographie')), '/skillcheck Geographie | Klugheit 16 | Klugheit 16 | Intuition 14 | 8');
+});
+
+
+test('Compact view contains only rollable checks and no character editor', () => {
+  const data = normalizeCharacter(fixture());
+  const before = JSON.stringify(data);
+  const html = renderView({ actors: [], actor: { isOwner: true }, character: data, status: { ready: true, message: 'Verbunden' }, canImport: true, token: null });
+  assert.ok(html.includes('Geographie'));
+  assert.ok(!html.includes('Noch undefiniert'));
+  assert.ok(!html.includes('Ohne Probe'));
+  for (const removed of ['Biografie', 'Inventar', 'Abenteuerpunkte', 'data-edit=', 'data-action="save"', 'data-action="discard"', 'name="category" type="radio"']) assert.ok(!html.includes(removed), removed);
+  assert.ok(html.includes('aria-label="Probenbereich"'));
+  assert.equal(JSON.stringify(data), before);
+  assert.equal(rollableChecks(data).length, data.checks.filter(check => !check.reason).length);
+});
+
+test('Read-only users cannot roll; unavailable command connection also disables roll buttons', () => {
+  const character = normalizeCharacter(fixture());
+  for (const [owner, ready] of [[false, true], [true, false]]) {
+    const html = renderView({ actors: [], actor: { isOwner: owner }, character, status: { ready, message: 'Status' }, canImport: false, token: null });
+    const buttons = html.match(/<button[^>]+data-action="roll"[^>]*>/g);
+    assert.ok(buttons.length > 0);
+    assert.ok(buttons.every(button => button.includes('disabled')));
+  }
 });
