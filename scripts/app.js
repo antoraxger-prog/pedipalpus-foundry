@@ -2,6 +2,7 @@ import { MAX_FILE_SIZE, parseCharacter, MODULE_ID } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
 import { getCharacter, visibleActors, saveCharacter, linkToken } from './storage.js';
 import { renderView, renderImportOptions } from './view.js';
+import { preparePortrait, uploadPortrait, applyPortrait } from './portraits.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
 export class PedipalpusApp extends ApplicationV2 {
@@ -126,6 +127,7 @@ export class PedipalpusApp extends ApplicationV2 {
     button.disabled = true;
     try {
       if (button.dataset.action === 'import') await this.importCharacter();
+      if (button.dataset.action === 'portrait') await this.importPortrait();
       if (button.dataset.action === 'roll') {
         this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = true; });
         const check = getCharacter(this.actor)?.checks.find(check => check.id === button.dataset.check);
@@ -148,6 +150,10 @@ export class PedipalpusApp extends ApplicationV2 {
     const canCreate = foundry.documents.Actor.canUserCreate(game.user);
     if (!actors.length && !canCreate) throw new Error('Für den Import benötigst du Besitzerrechte auf einem Foundry-Charakter.');
     let pending = null;
+    let portrait = null;
+    let portraitBusy = false;
+    let portraitError = false;
+    let portraitSequence = 0;
     let readSequence = 0;
     const answer = await DialogV2.wait({
       window: { title: 'Pedipalpus-Charakter importieren' }, position: { width: 550 },
@@ -155,10 +161,26 @@ export class PedipalpusApp extends ApplicationV2 {
       buttons: [{ action: 'import', label: 'Importieren', icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
           if (!pending) { ui.notifications.warn('Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }
-          return { snapshot: pending, actorId: dialog.element.querySelector('[name="destination"]').value || null };
+          if (portraitBusy || portraitError) throw new Error('Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.');
+          return { snapshot: pending, portrait, actorId: dialog.element.querySelector('[name="destination"]').value || null };
         } }, { action: 'cancel', label: 'Abbrechen', callback: () => null }],
       render: (_event, dialog) => {
         const input = dialog.element.querySelector('[name="characterFile"]');
+        const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError; };
+        const imageInput = dialog.element.querySelector('[name="portraitFile"]');
+        imageInput.addEventListener('change', async () => {
+          const sequence = ++portraitSequence;
+          portrait = null; portraitError = false; portraitBusy = true; syncButton();
+          const preview = dialog.element.querySelector('.pp-portrait-preview');
+          try {
+            const file = imageInput.files?.[0];
+            const prepared = file ? await preparePortrait(file) : null;
+            if (sequence !== portraitSequence) return;
+            portrait = prepared;
+            preview.textContent = file ? `Bild ausgewählt: ${file.name}` : 'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.';
+          } catch (error) { if (sequence === portraitSequence) { portraitError = true; preview.textContent = error.message; } }
+          finally { if (sequence === portraitSequence) { portraitBusy = false; syncButton(); } }
+        });
         input.addEventListener('change', async () => {
           const sequence = ++readSequence;
           pending = null;
@@ -173,19 +195,47 @@ export class PedipalpusApp extends ApplicationV2 {
             const parsed = parseCharacter(await file.text());
             if (sequence !== readSequence) return;
             pending = parsed;
-            if (submit) submit.disabled = false;
+            syncButton();
             preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} Proben · Dateiversion ${parsed.sourceVersion}`;
+            dialog.element.querySelector('.pp-portrait-source').textContent = parsed.profile.portraitFileName
+              ? `Pedipalpus-Bild: CharacterPortraits/${parsed.profile.portraitFileName}. Diese separate Bilddatei unten auswählen.`
+              : 'Optional ein eigenes Charakterbild auswählen.';
           } catch (error) { if (sequence === readSequence) preview.textContent = error.message; }
         });
       }
     });
     if (!answer?.snapshot) return;
-    const actor = await saveCharacter(answer.snapshot, answer.actorId);
+    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait);
     this.actorId = actor.id;
     this.search = '';
     this.category = 'all';
     await this.render({ force: true });
     ui.notifications.info(`${answer.snapshot.profile.name} wurde importiert.`);
+  }
+  async importPortrait() {
+    const actor = this.actor;
+    if (!actor?.canUserModify(game.user,'update')) throw new Error('Bitte einen eigenen Foundry-Charakter auswählen.');
+    let portrait = null;
+    let sequence = 0;
+    const answer = await DialogV2.wait({window:{title:'Charakterbild importieren'},position:{width:450},rejectClose:false,
+      content:'<label>Bilddatei<input name="portraitFile" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><p class="pp-portrait-preview">Bild bis 10 MB auswählen. Das Bild wird für Charakter, Token-Vorlage und bearbeitbare verknüpfte Tokens übernommen.</p>',
+      buttons:[{action:'image',label:'Bild übernehmen',disabled:true,callback:() => portrait},{action:'cancel',label:'Abbrechen',callback:() => null}],
+      render:(_event,dialog) => {
+        dialog.element.querySelector('[name="portraitFile"]').addEventListener('change',async event => {
+          const read = ++sequence;
+          portrait = null;
+          const submit = dialog.element.querySelector('[data-action="image"]'); submit.disabled = true;
+          try {
+            const image = await preparePortrait(event.target.files?.[0]);
+            if (read !== sequence) return;
+            portrait = image; submit.disabled = false;
+            dialog.element.querySelector('.pp-portrait-preview').textContent = `Bild ausgewählt: ${event.target.files[0].name}`;
+          } catch(error) { if (read === sequence) dialog.element.querySelector('.pp-portrait-preview').textContent = error.message; }
+        });
+      }});
+    if (!answer) return;
+    await applyPortrait(actor,await uploadPortrait(answer));
+    ui.notifications.info('Charakter- und Tokenbild übernommen.');
   }
   async linkSelectedToken() {
     const selected = canvas.tokens?.controlled ?? [];

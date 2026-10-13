@@ -1,4 +1,5 @@
 import { MODULE_ID, FLAG, validSnapshot } from './data.js';
+import { uploadPortrait, applyPortrait } from './portraits.js';
 
 export const getCharacter = actor => {
   const value = actor?.getFlag(MODULE_ID, FLAG);
@@ -10,22 +11,25 @@ export function visibleActors() {
     .sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
-export async function saveCharacter(snapshot, actorId = null) {
+export async function saveCharacter(snapshot, actorId = null, portrait = null) {
   if (!validSnapshot(snapshot)) throw new Error('Die importierten Charakterdaten sind unvollständig.');
   if (game.system.id !== 'worldbuilding') throw new Error('Diese erste Version unterstützt Simple Worldbuilding.');
   if (actorId) {
     const actor = game.actors.get(actorId);
     if (!actor?.canUserModify(game.user, 'update')) throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
+    const image = portrait ? await uploadPortrait(portrait) : null;
     // Das Flag besitzt ein festes Schema; Arrays werden vollständig ersetzt.
     // Andere Flags, Foundry-Werte, Besitzerrechte und die Actor-ID bleiben erhalten.
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
+    if (image) await applyPortrait(actor,image);
     return actor;
   }
   if (!foundry.documents.Actor.canUserCreate(game.user)) throw new Error('Du darfst keine Charaktere anlegen. Dein Meister kann einen anlegen und dir Besitzerrechte geben.');
+  const image = portrait ? await uploadPortrait(portrait) : null;
   return foundry.documents.Actor.create({
-    name: snapshot.profile.name, type: 'character', img: 'icons/svg/mystery-man.svg',
+    name: snapshot.profile.name, type: 'character', img: image || 'icons/svg/mystery-man.svg',
     ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
-    prototypeToken: { name: snapshot.profile.name, actorLink: true },
+    prototypeToken: { name: snapshot.profile.name, actorLink: true, ...(image ? {texture:{src:image}} : {}) },
     flags: { [MODULE_ID]: { [FLAG]: snapshot } }
   });
 }

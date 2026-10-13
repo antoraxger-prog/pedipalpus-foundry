@@ -1,3 +1,4 @@
+import { combatChecks } from './combat.js';
 export const MODULE_ID = 'pedipalpus-foundry';
 export const FLAG = 'character';
 export const SCHEMA_VERSION = 1;
@@ -75,6 +76,9 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
       key === 'Rituals' && entry.HasCheck === false ? 'Für dieses Ritual ist keine Probe erforderlich.' : ''));
   }
   const equipment = [];
+  const combat = combatChecks(raw);
+  checks.push(...combat);
+  if (combat.some(check => check.reason)) warnings.push('Einige Kampfproben sind unvollständig. Bitte den Charakter in Pedipalpus speichern und erneut importieren.');
   for (const [key, group] of Object.entries(EQUIPMENT_GROUPS)) list(raw[key]).forEach((entry, i) => equipment.push({
     id: `${key}:${i}`, name: text(entry.Name), group, quantity: number(entry.Quantity) ?? 1,
     weight: number(entry.Weight), carried: entry.OnPerson === true,
@@ -94,8 +98,8 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
     name: text(entry.Name), level: number(entry.Level), description: text(entry.Description), cost: number(entry.Cost) ?? number(entry.GpCost)
   })) })).filter(group => group.entries.length);
   return {
-    schemaVersion: SCHEMA_VERSION, sourceVersion: raw.Version, importedAt,
-    profile: { name: raw.Name.trim(), race: named(raw.Race), culture: named(raw.HomeCultureFamily), subCulture: text(raw.HomeSubCulture), socialClass: text(raw.SocialClass),
+    schemaVersion: SCHEMA_VERSION, combatSchemaVersion: 1, sourceVersion: raw.Version, importedAt,
+    profile: { name: raw.Name.trim(), portraitFileName: text(raw.PortraitFileName), race: named(raw.Race), culture: named(raw.HomeCultureFamily), subCulture: text(raw.HomeSubCulture), socialClass: text(raw.SocialClass),
       church: text(raw.ChurchName), apTotal: number(raw.ApTotal), apAvailable: number(raw.ApAvailable),
       weight: number(raw.CarriedWeight), capacity: number(raw.TotalCarryCapacity), notes: text(raw.Notes),
       willpower: number(raw.WillpowerAvailable), willpowerTotal: number(raw.WillpowerTotal), attributeAP: number(raw.AttributeAPAvailable), attributeAPTotal: number(raw.AttributeAPGrantedFromProgression),

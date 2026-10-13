@@ -4,6 +4,18 @@ export function buildCommand(check) {
   if (!check || check.reason) throw new Error(check?.reason || 'Die Probe wurde nicht gefunden.');
   const safeName = name => typeof name === 'string' && name.trim() && !/[|\r\n]/.test(name) && name.length <= 160;
   if (!safeName(check.name) || !Number.isSafeInteger(check.value)) throw new Error('Die Probe enthält ungültige Werte.');
+  if (check.kind === 'combat') {
+    const c = check.combat;
+    const verb = { attack: 'AT', parry: 'PA', ranged: 'FK' }[c?.type];
+    if (!verb || !safeName(c.weaponName) || !safeName(c.skillName)
+        || [c.skillValue, c.baseValue, c.focusValue, c.weaponModifier, c.mobilityPenalty].some(value => !Number.isSafeInteger(value))
+        || c.mobilityPenalty < 0 || c.type === 'ranged' && c.focusValue !== 0
+        || check.value !== c.skillValue + c.baseValue + c.focusValue + c.weaponModifier - c.mobilityPenalty) {
+      throw new Error('Die Kampfprobe enthält unvollständige oder widersprüchliche Werte.');
+    }
+    return `/${verb} ${c.weaponName}|${c.skillName}|${c.skillValue}|${c.baseValue}|`
+      + (c.type === 'ranged' ? '' : `${c.focusValue}|`) + `${c.weaponModifier}|${c.mobilityPenalty}`;
+  }
   if (check.kind === 'attribute') return `/attributecheck ${check.name} ${check.value}`;
   if (check.kind !== 'skill' || check.attributes?.length !== 3
       || check.attributes.some(x => !safeName(x.name) || !Number.isSafeInteger(x.value))) {
@@ -21,7 +33,9 @@ export function connectionStatus() {
     return { ready: false, message: 'Die Ucurifunke-Würfelbefehle sind nicht verfügbar. Bitte die Welt neu laden.' };
   }
   const directReady = !foundry.utils.isNewerVersion(module.version, '1.0.14');
-  return { ready: true, directReady, message: directReady ? `Ucurifunke – Proben ${module.version} verbunden`
+  const combatReady = !foundry.utils.isNewerVersion('1.0.14', module.version)
+    && ['at', 'pa', 'fk'].every(name => hasCommand(registry, name));
+  return { ready: true, directReady, combatReady, message: directReady ? `Ucurifunke – Proben ${module.version} verbunden`
     : 'Bitte Pedipalpus – Proben für diese neue Ucurifunke-Version aktualisieren.' };
 }
 
@@ -34,6 +48,7 @@ export async function executeCheck(actor, check, token = null, options = null) {
   if (!actor?.isOwner) throw new Error('Du benötigst Besitzerrechte für diesen Charakter, um damit zu würfeln.');
   const status = connectionStatus();
   if (!status.ready) throw new Error(status.message);
+  if (check?.kind === 'combat' && !status.combatReady) throw new Error('Für Kampfproben bitte Ucurifunke – Proben ab Version 1.0.14 aktivieren.');
   if (token && (!token.actorLink || token.actorId !== actor.id)) throw new Error('Der Token muss mit diesem Foundry-Charakter verknüpft sein.');
   const speaker = token
     ? foundry.documents.ChatMessage.getSpeaker({ actor, token, scene: token.parent })
@@ -46,14 +61,17 @@ export async function executeCheck(actor, check, token = null, options = null) {
     throw new Error('Diese Ucurifunke-Version benötigt eine aktualisierte Direktwurf-Anbindung. Bitte Pedipalpus – Proben aktualisieren.');
   }
   const registry = foundry.applications.sidebar.tabs.ChatLog.CHAT_COMMANDS;
-  const name = check.kind === 'attribute' ? 'attributecheck' : 'skillcheck';
+  const name = check.kind === 'combat' ? { attack: 'at', parry: 'pa', ranged: 'fk' }[check.combat.type]
+    : check.kind === 'attribute' ? 'attributecheck' : 'skillcheck';
   const key = [name, `${CHECKS_MODULE}.${name}`].find(key => typeof registry[key]?.fn === 'function');
   const handler = registry[key];
   const match = command.match(handler.rgx);
   if (!match) throw new Error('Der Würfelbefehl wird von Ucurifunke – Proben nicht erkannt.');
   const DialogV2 = foundry.applications.api.DialogV2;
   const original = DialogV2.input;
-  const title = `${check.kind === 'attribute' ? 'Attributsprobe' : 'Fertigkeitsprobe'}: ${check.name}`;
+  const title = check.kind === 'combat'
+    ? `${{ attack: 'Angriff', parry: 'Parade', ranged: 'Fernkampfangriff' }[check.combat.type]}: ${check.combat.weaponName}`
+    : `${check.kind === 'attribute' ? 'Attributsprobe' : 'Fertigkeitsprobe'}: ${check.name}`;
   let consumed = false;
   let pending;
   // Nur den synchron angeforderten Modifikator-Dialog dieses Befehls ersetzen.

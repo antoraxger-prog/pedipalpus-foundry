@@ -15,3 +15,15 @@ export function fixture() {
     Notes: '<script>bad()</script>', SelectedComplexSkill: { Name: 'Duplicated selected row', Subskills: [{ Name: 'Geographie', TotalValue: 100 }] }
   };
 }
+
+export function combatFixture() {
+  const raw = fixture();
+  Object.assign(raw,{Off:'5',Def:'5',Fk:'6',OffOffset:-4,DefOffset:4,Be:5,PortraitFileName:'Testcharakter.png',
+    MeleeSkills:[{Name:'Fechtwaffen',Value:5},{Name:'Schwerter',Value:6}],RangedSkills:[{Name:'Armbrüste',Value:5}],
+    MeleeWeapons:[{Name:'Rapier',UsedSkills:['Fechtwaffen','Schwerter'],AttackBonus:0,ParryBonus:1,MobilityTolerance:1}],
+    ParryWeapons:[{Name:'Schild',UsedSkill:'Schwerter',AttackBonus:-2,DefenseBonus:3,MobilityTolerance:2}],
+    RangedWeapons:[{Name:'Armbrust',UsedSkills:['Armbrueste'],AttackBonus:0}],
+    Animals:[{Name:'Wolf',Attacks:[{Name:'Biss',AttackValue:14,ParryValue:7}]}]});
+  return raw;
+}
+

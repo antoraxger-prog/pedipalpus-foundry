@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.6.0
+# Pedipalpus – Proben · 0.7.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -6,7 +6,7 @@ Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
 - Foundry VTT 14
 - Simple Worldbuilding
-- Ucurifunke – Proben ab 1.0.8; Anbindung auch mit 1.0.14 geprüft
+- Ucurifunke – Proben 1.0.14 für Kampf- und Tierproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
 
 ## Installation und Updates
 
@@ -32,7 +32,7 @@ Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benöti
 
 Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy ist die Standarddarstellung mit Holzrahmen und Pergament. Dunkel und Hell bleiben auswählbar; eine bereits gespeicherte Auswahl wird beibehalten.
 
-Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampfproben sind noch nicht angebunden.
+Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben stehen als eigene Bereiche zur Verfügung.
 
 ## Talentstärken erkennen
 
@@ -58,11 +58,27 @@ Ist genau ein anderer oder nicht verknüpfter Token ausgewählt, erscheint **Aus
 
 Ohne passenden Token verwendet der Wurf den gewählten Foundry-Charakter als Sprecher.
 
+## Kampf und Tierproben
+
+Unter **Kampf** stehen Angriff und Parade für Nahkampfwaffen, Schilde und Parierwaffen sowie Fernkampfangriffe. Die beste erlaubte Waffentechnik wird wie in Pedipalpus ausgewählt; bei Gleichstand bleibt die Reihenfolge der Waffe erhalten. Der Wert enthält Fertigkeit, Basis, Fokus, Waffenbonus und wirksame Behinderung. Nahkampf verwendet `max(0, BE − Waffentoleranz)`, Fernkampf `max(0, BE − 2)`. Der Hinweis über **AT / PA / FK** zeigt die Bestandteile. Situative Modifikatoren werden über **Nächste Probe** eingestellt.
+
+Unter **Tierproben** stehen die gespeicherten Angriffe und Paraden der Tiere. Ihre AT-/PA-Werte sind bereits fertig berechnet; Charakterbasis, Fokus und Behinderung werden nicht noch einmal addiert. Schaden und Sonderfolgen werden nicht automatisch abgewickelt.
+
+Für diese Bereiche nach dem Update die Charakterdatei erneut importieren. Fehlen Pflichtwerte, erscheint ein Hinweis; es werden keine Ersatzwerte erfunden. Die Dateiversion bleibt 17, auch wenn neuere Dateien Portraits und Tierangriffe enthalten.
+
+Die Auswertung erfolgt über Ucurifunke – Proben 1.0.14. Dessen Kampfregeln unterscheiden sich in Randfällen vom neuen lokalen Pedipalpus-Würfelmodus: Die lokale Qualitätsdeckelung bei Netto-Erleichterung und die automatische Erfolgs-/Misserfolgsregel für natürliche 1/20 sind in Foundrys veröffentlichtem Modul noch nicht vollständig gleich umgesetzt. Für eine einheitliche Auswertung muss das Probenmodul entsprechend aktualisiert werden.
+
+## Charakter- und Tokenbilder
+
+Beim JSON-Import optional ein Bild auswählen oder anschließend den **Bildknopf** neben **JSON importieren** nutzen. Pedipalpus speichert das Bild separat unter `CharacterPortraits`; die JSON enthält nur `PortraitFileName`. Dieser Ordner kann im Browser nicht automatisch geöffnet werden, deshalb muss die Bilddatei zusätzlich ausgewählt werden.
+
+PNG, JPG/JPEG, BMP und WebP bis 10 MB werden unterstützt. BMP wird für Foundry in PNG umgewandelt. Das Bild wird als Charakterportrait, als Bild der Token-Vorlage und für bestehende verknüpfte Tokens übernommen, die der Benutzer bearbeiten darf. Unverknüpfte Tokens und Tokens anderer Charaktere behalten ihre Bilder. Ohne Bildauswahl bleiben sämtliche bestehenden Bilder erhalten. Die Übernahme benötigt Foundry-Uploadrechte; fehlende Tokenrechte werden gemeldet. Die Bilder werden im Datenordner der Welt gespeichert und gehören nicht zum Modul-Release.
+
 ## Werte aktualisieren
 
 Werte in Pedipalpus ändern, speichern und die JSON-Datei erneut **in denselben Foundry-Charakter** importieren. Bilder, Besitzerrechte und Token-Verknüpfungen bleiben erhalten. Es gibt keine automatische Synchronisierung mit der Windows-App oder den Foundry-Ressourcenfeldern.
 
-Vorhandene Importe aus früheren Modulversionen bleiben verwendbar; für das Update auf 0.6.0 ist kein erneuter Import erforderlich. Ein erneuter Import ersetzt auch Änderungen aus der früheren Bearbeitungsoberfläche. Die Speicherdateiversion 17 ist geprüft; andere Versionen erfordern einen Wertevergleich.
+Vorhandene Importe aus früheren Modulversionen bleiben verwendbar; für die bisherigen Talent- und Attributsproben ist kein erneuter Import erforderlich. Neue Kampf- und Tierproben benötigen einen erneuten Import. Ein erneuter Import ersetzt auch Änderungen aus der früheren Bearbeitungsoberfläche. Die Speicherdateiversion 17 ist geprüft; andere Versionen erfordern einen Wertevergleich.
 
 ## Optionales Makro
 

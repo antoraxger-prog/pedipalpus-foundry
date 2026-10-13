@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
-import { fixture } from './fixture.js';
+import { fixture, combatFixture } from './fixture.js';
 import { parseCharacter, normalizeCharacter, MODULE_ID, FLAG, MAX_FILE_SIZE } from '../scripts/data.js';
 import { buildCommand, connectionStatus, executeCheck } from '../scripts/commands.js';
 import { saveCharacter, getCharacter, linkToken } from '../scripts/storage.js';
 import { renderView, rollableChecks, mastery } from '../scripts/view.js';
+import { preparePortrait, uploadPortrait, applyPortrait } from '../scripts/portraits.js';
 
 test('Geographie uses saved totals and current attributes, ignoring default and selected copies', () => {
   const data = normalizeCharacter(fixture());
@@ -94,7 +95,15 @@ function runtime(version = '1.0.8') {
   globalThis.foundry = {
     applications: { sidebar: { tabs: { ChatLog: { CHAT_COMMANDS: commands } } }, api: { DialogV2: { async input() { state.dialogs++; return state.modifier; } } } },
     utils: { isNewerVersion: (a, b) => a.localeCompare(b, undefined, { numeric: true }) > 0, escapeHTML: value => value.replace(/[<>]/g, x => x === '<' ? '&lt;' : '&gt;') },
-    dice: { Roll: class { async evaluate() { this.dice = [{ faces: 20, results: state.dice.map(result => ({ result })) }]; return this; } } },
+    dice: { Roll: class {
+      constructor(formula) { this.formula = formula; }
+      async evaluate() {
+        const values = this.formula === '1d20' ? [state.dice[0]] : state.dice;
+        this.dice = [{ faces: 20, results: values.map(result => ({ result })) }];
+        this.total = values.reduce((sum, value) => sum + value, 0);
+        return this;
+      }
+    } },
     documents: {
       ChatMessage: { getSpeaker: ({ actor, token, scene } = {}) => ({ actor: actor?.id, token: token?.id, scene: scene?.id }),
         applyMode: (data, mode) => { data.rollModeApplied = true; data.mode = mode; }, create: async data => { messages.push(data); } },
@@ -316,4 +325,101 @@ test('Talent and attribute mastery use independent scales without changing impor
   assert.match(html, /data-grade="untrained"/);
   assert.equal(JSON.stringify(character), before);
   assert.equal(buildCommand(skill), '/skillcheck Geographie | Klugheit 16 | Klugheit 16 | Intuition 14 | 8');
+});
+
+const combatCheck = (type = 'attack', changes = {}) => {
+  const combat = { type, weaponName: 'Testwaffe', skillName: type === 'ranged' ? 'Armbrüste' : 'Fechtwaffen',
+    skillValue: 5, baseValue: 6, focusValue: type === 'ranged' ? 0 : -2, weaponModifier: 1, mobilityPenalty: 2, ...changes };
+  return { id: `combat:${type}`, name: 'Testwaffe', kind: 'combat', attributes: [], combat,
+    value: combat.skillValue + combat.baseValue + combat.focusValue + combat.weaponModifier - combat.mobilityPenalty };
+};
+
+test('Combat commands include skill, basis, signed focus, weapon modifier and effective BE', async () => {
+  const {document, messages, state} = runtime('1.0.14');
+  assert.equal(connectionStatus().combatReady, true);
+  assert.equal(buildCommand(combatCheck()), '/AT Testwaffe|Fechtwaffen|5|6|-2|1|2');
+  assert.equal(buildCommand(combatCheck('parry')), '/PA Testwaffe|Fechtwaffen|5|6|-2|1|2');
+  assert.equal(buildCommand(combatCheck('ranged')), '/FK Testwaffe|Armbrüste|5|6|1|2');
+  for (const type of ['attack','parry','ranged']) await executeCheck(document, combatCheck(type), null, {modifier:3,blind:true});
+  assert.equal(messages.length, 3);
+  assert.equal(state.dialogs, 0);
+  assert.ok(messages.every(message => message.mode === 'blind'));
+  assert.match(messages[0].content, /Testwaffe/);
+  assert.match(messages[1].content, /Parade/);
+  assert.match(messages[2].content, /Fernkampf/);
+});
+
+test('Old probes module and invalid combat data cannot silently produce a different roll', async () => {
+  const {document, calls} = runtime();
+  await assert.rejects(executeCheck(document, combatCheck(), null, {modifier:0}), /1.0.14/);
+  assert.equal(calls.length, 0);
+  assert.throws(() => buildCommand(combatCheck('attack', {mobilityPenalty:-1})), /widersprüchliche/);
+  assert.throws(() => buildCommand(combatCheck('attack', {weaponName:'Waffe|9'})), /widersprüchliche/);
+  assert.throws(() => buildCommand(combatCheck('ranged', {focusValue:2})), /widersprüchliche/);
+  const check = combatCheck();check.value++;
+  assert.throws(() => buildCommand(check), /widersprüchliche/);
+});
+
+test('Combat critical rolls are confirmed by the actual probes module', async () => {
+  const {document,state,messages} = runtime('1.0.14');
+  state.dice = [1];
+  await executeCheck(document,combatCheck(),null,{modifier:0});
+  assert.equal(messages[0].rolls.length,2);
+  assert.match(messages[0].content,/Kritischer Erfolg/);
+  state.dice = [20];
+  await executeCheck(document,combatCheck(),null,{modifier:0});
+  assert.equal(messages[1].rolls.length,2);
+  assert.match(messages[1].content,/Patzer/);
+});
+
+test('Updated saved data matches Pedipalpus best technique, BE tolerance and shield defense; animals use finished values', () => {
+  const raw = combatFixture();
+  const checks = normalizeCharacter(raw).checks;
+  const command = id => buildCommand(checks.find(check => check.id === id));
+  assert.equal(command('combat:MeleeWeapons:0:attack'), '/AT Rapier|Schwerter|6|5|-4|0|4');
+  assert.equal(command('combat:MeleeWeapons:0:parry'), '/PA Rapier|Schwerter|6|5|4|1|4');
+  assert.equal(command('combat:ParryWeapons:0:parry'), '/PA Schild|Schwerter|6|5|4|3|3');
+  assert.equal(command('combat:RangedWeapons:0:ranged'), '/FK Armbrust|Armbrüste|5|6|0|3');
+  assert.equal(command('animals:0:0:attack'), '/AT Wolf – Biss|Biss|14|0|0|0|0');
+  assert.equal(command('animals:0:0:parry'), '/PA Wolf – Biss|Biss|7|0|0|0|0');
+  raw.MeleeSkills[0].Value = 6;
+  assert.equal(normalizeCharacter(raw).checks.find(check => check.id === 'combat:MeleeWeapons:0:attack').combat.skillName, 'Fechtwaffen');
+  delete raw.Be;
+  assert.ok(normalizeCharacter(raw).checks.find(check => check.id === 'combat:MeleeWeapons:0:attack').reason);
+});
+
+test('Portrait import updates only the chosen actor and linked editable tokens, preserving other artwork', async () => {
+  const {document} = runtime();
+  const updates = [];
+  document.update = async value => { updates.push({actor:value}); };
+  const token = (actorId,actorLink,editable) => ({actorId,actorLink,canUserModify:() => editable,update:async value => updates.push({token:value})});
+  game.scenes = {contents:[{tokens:{contents:[token(document.id,true,true),token(document.id,false,true),token('other',true,true),token(document.id,true,false)]}}]};
+  ui.notifications.warn = message => updates.push({warning:message});
+  await applyPortrait(document,'worlds/test/portrait.png');
+  assert.deepEqual(updates[0],{actor:{img:'worlds/test/portrait.png','prototypeToken.texture.src':'worlds/test/portrait.png'}});
+  assert.deepEqual(updates[1],{token:{'texture.src':'worlds/test/portrait.png'}});
+  assert.equal(updates.length,3);
+  assert.match(updates[2].warning,/1 verknüpfte Tokens/);
+  document.canUserModify = () => false;
+  await assert.rejects(applyPortrait(document,'other.png'),/Besitzerrechte/);
+  assert.equal(updates.length,3);
+});
+
+test('Portrait upload checks bytes, owner/upload permission and world folder; same image is reused', async () => {
+  runtime();
+  await assert.rejects(preparePortrait(new File(['<svg></svg>'],'bild.png',{type:'image/png'})),/PNG/);
+  globalThis.createImageBitmap = async () => ({close(){}});
+  const file = new File([new Uint8Array([137,80,78,71,13,10,26,10])],'bild.png',{type:'image/png'});
+  const prepared = await preparePortrait(file);
+  await assert.rejects(uploadPortrait(prepared),/Upload-Rechte/);
+  game.user.can = () => true;game.world={id:'test'};
+  let uploadCount = 0;const files=[];const dirs=[];
+  foundry.applications.apps={FilePicker:{implementation:{browse:async (_source,path) => ({files:path.endsWith('portraits') ? files : [],dirs}),
+    createDirectory:async (_source,path) => dirs.push(path), upload:async (_source,path,file) => {uploadCount++;const dest=`${path}/${file.name}`;files.push(dest);return {path:dest};}}}};
+  const path = await uploadPortrait(prepared);
+  assert.match(path,/^worlds\/test\/pedipalpus-portraits\/[a-f0-9]{64}\.png$/);
+  assert.equal(await uploadPortrait(prepared),path);
+  assert.equal(uploadCount,1);
+  game.world.id = '../unsafe';
+  await assert.rejects(uploadPortrait(prepared),/Welt/);
 });
