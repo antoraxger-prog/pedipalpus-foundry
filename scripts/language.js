@@ -1,7 +1,8 @@
+import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
   'Werkzeuge':'Werkzeug holen', 'Einstellungen':'So einstellen', 'Vorlagen':'Schon gemerkt',
   'Favoriten':'Lieblingsdinge', 'Meine Favoriten':'Lieblingsdinge', 'Zuletzt verwendet':'Eben getan', 'Zuletzt benutzt':'Eben getan',
-  'Schnellleiste':'Schnell tun', 'Hinweise':'Unga erklärt', 'Berechnung ansehen':'Zahl erklären',
+  'Schnellleiste':'Schnell tun', 'Hinweise':'Kurz erklärt', 'Berechnung ansehen':'Zahl erklären',
   'Aus Favoriten entfernen':'Nicht mehr Lieblingsding', 'Zu Favoriten hinzufügen':'Mein Lieblingsding',
   'Kampfbrett öffnen':'Kleines Haubrett', 'Probenring öffnen':'Lieblingskreis holen',
   'Vollständiges Fenster öffnen':'Alles zeigen', 'Probenring schließen':'Kreis weg',
@@ -11,32 +12,32 @@ const words = {
   'Aus':'Nö. Aus.', 'Dezent':'Bisschen', 'Lebendig':'Mehr bewegen', 'Soundeffekte':'Geräusche',
   'Lautstärke':'Wie laut?', 'Klangset':'Welche Geräusche?', 'Neutral':'Einfach', 'Rastklang anhören':'Metall klick. Anhören.',
   'Ausgewähltem Token folgen':'Gewählte Figur folgen',
-  'Ohne Tokenfolgen bleibt der gewählte Charakter angeheftet. Mehrere Tokens werden nicht automatisch zugeordnet.':'Ohne Folgen bleibt dein Blatt. Viele Figuren? Unga rät nicht.',
+  'Ohne Tokenfolgen bleibt der gewählte Charakter angeheftet. Mehrere Tokens werden nicht automatisch zugeordnet.':'Ohne Folgen bleibt dein Blatt. Viele Figuren? Nicht raten.',
   'Favoriten ordnen':'Lieblingsdinge schieben', 'Nach oben':'Hoch', 'Nach unten':'Runter', 'Entfernen':'Weg',
   'Noch keine Favoriten.':'Noch kein Lieblingsding.', 'Speichern':'Merken', 'Schließen':'Zu',
   'Fokus gespeichert.':'Kampf-Laune bleibt so.', 'Favoriten gespeichert.':'Lieblingsdinge gemerkt.',
   'Einstellungen gespeichert.':'So bleibt es.', 'Vorlagen gespeichert.':'Zahlen gemerkt.',
-  'Probe wird ausgelöst …':'Unga würfelt …', 'Probe ausgelöst. Nächste Probe wieder ohne Modifikator.':'Gewürfelt. Nächster Wurf wieder normal.',
+  'Probe wird ausgelöst …':'Würfel werfen …', 'Probe ausgelöst. Nächste Probe wieder ohne Modifikator.':'Gewürfelt. Nächster Wurf wieder normal.',
   'Eine Vorlage pro Zeile: Name | Zahl. Positive Zahlen erschweren, negative erleichtern.':'Eine Zeile: Name | Zahl. Plus schwer. Minus leicht.',
   'Höchstens 24 Vorlagen verwenden.':'24 Dinge genug.', 'Vorlage im Format Name | ganze Zahl eingeben.':'So schreiben: Name | ganze Zahl.',
-  'Bitte zuerst einen eigenen Charakter auswählen.':'Erst deinen du wählen.', 'Bitte die laufende Aktion abwarten.':'Unga arbeitet. Kurz warten.',
+  'Bitte zuerst einen eigenen Charakter auswählen.':'Erst deinen du wählen.', 'Bitte die laufende Aktion abwarten.':'Arbeiten. Kurz warten.',
   'Versionsinformationen':'Welche Helfer da?', 'Austauschpaket gespeichert.':'Blatt-Paket da.',
   'Für das Austauschpaket bitte die Originaldatei einmal erneut importieren.':'Paket machen? Erst Originalblatt nochmal holen.',
   'Austauschpaket':'Blatt-Paket', 'Import vergleichen':'Neues Blatt angucken', 'Diese Änderungen werden übernommen:':'Das wird anders:',
-  'Bisher':'Vorher', 'Neu':'Jetzt', 'Mehrdeutig':'Unga nicht sicher', 'weitere Änderungen.':'weitere neue Dinge.',
+  'Bisher':'Vorher', 'Neu':'Jetzt', 'Mehrdeutig':'Nicht sicher', 'weitere Änderungen.':'weitere neue Dinge.',
   'Aktuellen Foundry-Fokus behalten':'Deine Kampf-Laune behalten', 'Übernehmen':'Jo. Nehmen.', 'Charakter importiert.':'Blatt geholt. Schön.',
   'Diese Probe ist im aktuellen Charakter nicht mehr vorhanden. Bitte die Auswahl aktualisieren.':'Ding nicht mehr im Blatt. Lieblingsding neu wählen.',
   'Diese Probe ist mehrdeutig. Bitte die passende Probe direkt in der Liste auswählen.':'Mehrere gleiche Dinge. Direkt richtiges Ding im Blatt wählen.',
-  'Pedipalpus – Proben':'Pedipalpus – Unga würfeln',
+  'Pedipalpus – Proben':'Pedipalpus – Würfel werfen',
   'Charakter':'Du', 'Foundry-Charakter':'Du wählen', 'Charakter auswählen …':'Wer du? Wählen.',
   ' · noch kein Import':' · Blatt fehlt', 'JSON importieren':'Blatt holen',
   'Charakterbild importieren':'Gesicht holen', 'Charakter- und Tokenbild importieren':'Gesicht für du und Figur holen',
   'Darstellung':'Aussehen', 'Fantasy':'Fantasy', 'Dunkel':'Nacht', 'Hell':'Tag', 'Ork':'Ork',
-  'Charakterdatei importieren, eine Probe auswählen und würfeln.':'Blatt holen. Ding wählen. Würfel werfen. Unga!',
+  'Charakterdatei importieren, eine Probe auswählen und würfeln.':'Blatt holen. Ding wählen. Würfel werfen.',
   'Einen vorhandenen Foundry-Charakter auswählen oder beim Import einen neuen anlegen.':'Du schon da? Wählen. Du neu? Blatt holen.',
   'Bereich':'Was tun?', 'Probenbereich':'Was du tun?', 'Suche':'Ding suchen',
   'Probe suchen …':'Wo Ding?', 'Fertigkeiten durchsuchen':'Dein Können suchen',
-  'Suche in allen Bereichen':'Unga sucht überall.', 'Nächste Probe':'Nächster Wurf',
+  'Suche in allen Bereichen':'Überall suchen.', 'Nächste Probe':'Nächster Wurf',
   'Erschwernis':'Schwer. Aua.', 'Erleichterung':'Leicht. Gut.',
   'Gilt für die nächste Probe, danach wieder 0':'Ein Wurf. Dann wieder null.',
   'Zwischen Erschwernis und Erleichterung wechseln':'Klicken. Schwer oder leicht.',
@@ -46,7 +47,7 @@ const words = {
   'Probe':'Ding', 'Attribute':'Du-Werte', 'Wert':'Zahl', 'Würfeln':'Würfel werfen',
   'Talent':'Können', 'Talentwert':'Können-Zahl', 'Probenwert':'Wurf-Zahl',
   'Fertigkeit':'Können', 'Basis':'Grund', 'Fokuswert':'Laune', 'Waffenbonus':'Waffe hilft',
-  'würfeln':'würfeln. Unga!', 'verdeckt ':'heimlich ',
+  'würfeln':'würfeln.', 'verdeckt ':'heimlich ',
   'verdeckt würfeln – Ergebnis nur für Spielleiter':'heimlich würfeln. Nur Meister guckt.',
   'Zum Würfeln werden Besitzerrechte benötigt.':'Du darfst nur mit deinem Blatt würfeln. Meister fragen.',
   'Kampfproben benötigen Ucurifunke – Proben ab 1.0.14.':'Hauen braucht Ucurifunke ab 1.0.14. Meister holen.',
@@ -68,14 +69,14 @@ const words = {
   'Zauber':'Zauber tun', 'Rituale':'Lange zaubern', 'Wunder':'Götter helfen',
   'Pedipalpus-Charakter importieren':'Dein Blatt holen', 'Importieren':'Holen', 'Abbrechen':'Nö',
   'Ja':'Jo. Machen.', 'Nein':'Nö.',
-  'Pedipalpus-Charakterdatei':'Dein Blatt (JSON)', 'Bitte eine JSON-Datei auswählen.':'JSON-Blatt wählen. Unga warten.',
+  'Pedipalpus-Charakterdatei':'Dein Blatt (JSON)', 'Bitte eine JSON-Datei auswählen.':'JSON-Blatt wählen. Kurz warten.',
   'In Foundry speichern als':'Blatt gehört wem?', 'Neuen Charakter anlegen':'Neuen du machen',
   'Optional ein Charakterbild auswählen.':'Gesicht da? Kannst holen.', 'Charakterbild (optional)':'Gesicht. Wenn du wollen.',
   'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.':'Kein neues Gesicht. Altes bleibt.',
   'Beim Import werden die Pedipalpus-Daten ersetzt. Mit Bildauswahl werden Charakterbild, Token-Vorlage und bearbeitbare verknüpfte Tokens aktualisiert. Berechtigungen und übrige Foundry-Werte bleiben erhalten.':'Neues Blatt ersetzt altes Blatt. Neues Gesicht kommt auf du und deine verbundenen Figuren. Andere Sachen bleiben.',
   'Bitte zuerst eine gültige Charakterdatei auswählen.':'Erst gutes Blatt wählen. Dann holen.',
   'Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.':'Bild kaputt? Gutes Bild nehmen. Oder kein Bild.',
-  'Datei wird gelesen …':'Unga liest Blatt …', 'Proben':'Dinge', 'Dateiversion':'Blatt-Version',
+  'Datei wird gelesen …':'Blatt lesen …', 'Proben':'Dinge', 'Dateiversion':'Blatt-Version',
   'Bilddatei':'Gesicht-Datei', 'Bild übernehmen':'Gesicht nehmen',
   'Bild bis 10 MB auswählen. Das Bild wird für Charakter, Token-Vorlage und bearbeitbare verknüpfte Tokens übernommen.':'Gesicht bis 10 MB. Kommt auf du und deine verbundenen Figuren.',
   'Charakter- und Tokenbild übernommen.':'Du und Figur haben Gesicht. Schön.',
@@ -83,7 +84,7 @@ const words = {
   'Dieser Token verwendet bisher ein eigenes Blatt. Nach dem Verknüpfen verwendet er die gemeinsamen Werte des gewählten Foundry-Charakters. Verknüpfen?':'Figur hat eigenes Blatt. Verbinden macht dein Blatt für beide. Machen?',
   'Bitte genau einen Token auf der Szene auswählen.':'Eine Figur wählen. Genau eine.',
   'Der Token verwendet jetzt das gemeinsame Charakterblatt.':'Figur hat jetzt dein Blatt.',
-  'Die Aktion konnte nicht ausgeführt werden.':'Unga. Geht nicht. Meister gucken.',
+  'Die Aktion konnte nicht ausgeführt werden.':'Geht nicht. Meister gucken.',
   'Der Fokus konnte nicht gespeichert werden.':'Laune nicht gespeichert. Nochmal versuchen.',
   'Das Design konnte nicht gespeichert werden.':'Aussehen nicht gemerkt. Nochmal wählen.',
   'Diese Darstellung ist nicht verfügbar.':'Aussehen nicht da.',
@@ -118,7 +119,7 @@ export function uiText(theme, text) {
   if (/Besitzerrechte|bearbeiten|Verknüpfung|ander.*Charakter|eigenes Charakterblatt|Token muss/.test(text)) return 'Blatt und Figur müssen dir gehören und zusammenpassen. Meister fragen.';
   if (/Bild|PNG|Welt.*Bildimport/.test(text)) return 'Gesicht holen ging nicht. Bild und Rechte prüfen. Meister fragen.';
   if (/Charakterdatei|Charakterdaten|Simple Worldbuilding/.test(text)) return 'Blatt passt nicht. Pedipalpus-Blatt und Simple Worldbuilding prüfen.';
-  return 'Unga. Geht nicht. Meister gucken.';
+  return 'Geht nicht. Meister gucken.';
 }
 
 function copyText(element, theme) {
@@ -168,7 +169,7 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
     rating.title = parts.join(' · '); rating.setAttribute('aria-label',rating.title);
     row.querySelectorAll('[data-action="roll"]').forEach(button => {
       const blind = button.dataset.blind === 'true';
-      const name = check.kind === 'combat' ? `${check.combat.weaponName} · ${t({attack:'Angriff',parry:'Parade',ranged:'Fernkampf'}[check.combat.type])}` : check.name;
+      const name = check.kind === 'combat' ? `${check.combat.weaponName} · ${t({attack:'Angriff',parry:'Parade',ranged:'Fernkampf'}[check.combat.type])}` : checkDisplayName(check,'ork');
       button.setAttribute('aria-label',`${name} ${t(blind ? 'verdeckt würfeln – Ergebnis nur für Spielleiter' : 'würfeln')}`);
       button.title = button.disabled ? t(button.title) : button.getAttribute('aria-label');
     });
@@ -177,7 +178,7 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
       const name = row.querySelector('.pp-check-name');
       for (const node of name.childNodes) if (node.nodeType === 3) node.textContent = `${name.querySelector('.pp-master-star') ? ' ' : ''}${row.classList.contains('pp-weapon-action') ? label : `${check.combat.weaponName} · ${label}`}`;
       const subtitle = row.querySelector('small');
-      if (subtitle && !check.id.startsWith('animals:')) subtitle.textContent = `${check.combat.skillName} · ${t('Talent')} ${check.combat.skillValue}`;
+      if (subtitle && !check.id.startsWith('animals:')) subtitle.textContent = `${orkTalentName(check.combat.skillName)} · ${t('Talent')} ${check.combat.skillValue}`;
       row.querySelector('.pp-single-probe').title = `${t('Fertigkeit')} ${check.combat.skillValue} + ${t('Basis')} ${check.combat.baseValue} + ${t('Fokus')} ${check.combat.focusValue} + ${t('Waffenbonus')} ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`;
       row.querySelector('.pp-single-probe').textContent = `${{attack:'Hau',parry:'Block',ranged:'Weit'}[check.combat.type]} · 1W20`;
     } else if (!check.foundation && ['primary','secondary','Spells','Rituals','Miracles'].includes(check.id.split(':')[0])) {
@@ -186,7 +187,7 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
   });
   root.querySelectorAll('.pp-weapon-header').forEach(header=>{
     const id=JSON.parse(header.dataset.checkIds || '[]')[0],check=checks.get(id),subtitle=header.querySelector('small');
-    if(subtitle && check && !check.animalName)subtitle.textContent=`${check.combat.skillName} · ${t('Talent')} ${check.combat.skillValue}`;
+    if(subtitle && check && !check.animalName){subtitle.textContent=`${orkTalentName(check.combat.skillName)} · ${t('Talent')} ${check.combat.skillValue}`;const original=header.ownerDocument.createElement('small');original.className='pp-original-name';original.textContent=check.combat.skillName;subtitle.after(original);}
   });
 }
 

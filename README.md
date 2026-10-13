@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.10.0
+# Pedipalpus – Proben · 0.10.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -36,7 +36,7 @@ Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sin
 
 ## Spielansicht und Werkzeuge
 
-Der Kopf zeigt Portrait, Charakter und Sprecher. Import, Bildwechsel, Darstellung, Einstellungen, Vorlagen, Austauschpaket und Versionsinformationen liegen unter **Werkzeuge**. Die Probenliste erhält dadurch mehr Platz. Hinweise und Legenden sind einklappbar; Probleme bleiben sichtbar. Die letzte Figur, der Bereich sowie Fenstergröße und Position werden wiederhergestellt. Fenstergröße und Position sind pro Benutzer im jeweiligen Browser gespeichert und werden auf den sichtbaren Bildschirm begrenzt.
+Der Kopf zeigt Portrait und Charakter; Auswahl und Knöpfe stehen auf einer Höhe. Import, Bildwechsel, Darstellung, Einstellungen, Vorlagen, Austauschpaket und Versionsinformationen liegen unter **Werkzeuge**. Die Probenliste erhält dadurch mehr Platz. Zusätzliche Sprecherzeile, Modifikatorüberschrift und die untere Hinweisleiste entfallen. Würfe erzeugen keinen zusätzlichen Bestätigungstext im Fenster; Fehler bleiben gemeldet. Die letzte Figur, der Bereich sowie Fenstergröße und Position werden wiederhergestellt. Fenstergröße und Position sind pro Benutzer im jeweiligen Browser gespeichert und werden auf den sichtbaren Bildschirm begrenzt.
 
 Unter **Einstellungen** stehen Normal, Kompakt und Große Knöpfe, die Sprache, Animationen und Klänge zur Wahl. Sprache lässt sich unabhängig vom Design auf Normal oder Ork stellen. **Ausgewähltem Token folgen** ist optional; ohne diese Option bleibt der ausgewählte Charakter fest. Bei mehreren ausgewählten Tokens findet kein automatischer Wechsel statt. Beim Charakterwechsel werden Erschwernis und Erleichterung zurückgesetzt.
 
@@ -70,11 +70,11 @@ Eine gemeinsame Ergebnis-/Proben-Schnittstelle mit Ucurifunke und ein eigener Pa
 
 ## Ork-Darstellung
 
-Unter **Darstellung → Ork** wird das Fenster zu einer groben Holz- und Lederoberfläche mit Knochen, Stoßzähnen und einfachen Beschriftungen. Beispielsweise: **Blatt holen**, **Was tun?**, **Schwer. Aua.**, **Kampf-Laune** und **Oberboss!**. Auch Importfenster, Hinweise und eigene Fehlermeldungen verwenden diese Sprache. Die Stärkeabstufungen bleiben sichtbar. Charakter-, Talent-, Attributs- und Waffennamen aus der Datei sowie Würfelbefehle und Chatkarten des Probenmoduls behalten ihre ursprüngliche Form. Beim Wechsel zu einer anderen Darstellung kehren die normalen Beschriftungen zurück.
+Unter **Darstellung → Ork** wird das Fenster zu einer groben Holz- und Lederoberfläche mit Knochen, Stoßzähnen und einfachen Beschriftungen. Beispielsweise: **Blatt holen**, **Was tun?**, **Schwer. Aua.**, **Kampf-Laune** und **Oberboss!**. Auch Importfenster und eigene Fehlermeldungen verwenden diese Sprache. Die Sprache verwendet kurze, einfache Sätze. Die Stärkeabstufungen bleiben sichtbar. Talente erhalten einfache Anzeigenamen, etwa **Welt wissen** für Geographie oder **Aua weg machen** für Heilkunde. Der ursprüngliche Talentname steht klein darunter, auch in Favoriten und im Probenring. Unbekannte eigene Talente heißen **Extra Ding können** mit ihrem Originalnamen darunter. Waffen- und Charakternamen sowie die gespeicherten Daten, Würfelbefehle und Chatkarten bleiben in ihrer ursprünglichen Form. Suche akzeptiert beide Namen. Beim Wechsel zur normalen Sprache kehren die ursprünglichen Beschriftungen zurück.
 
 ## Talentstärken erkennen
 
-Das Pergament wird mit höherem Gesamtwert des Talents schrittweise heller und feiner. Wert 0 oder darunter erscheint auf abgenutztem Pergament mit gestricheltem Wertfeld. Ab 10 hebt ein Goldrahmen mit Stern das Talent hervor. Die kleine Legende und der Hinweis am Wertfeld erklären die Abstufung: 0 ungeübt, 1–3 Grundlagen, 4–6 geübt, 7–9 versiert und 10+ meisterlich. Diese Bezeichnungen dienen der Orientierung in der Oberfläche; sie ändern keine Regeln oder Würfelwerte. Attribute verwenden eine eigene Skala: 1 sehr schwach, 10 durchschnittlich und ab 20 meisterlich. Widerstands- und Reaktionsproben bleiben ohne Stärke-Einstufung.
+Das Pergament wird mit höherem Gesamtwert des Talents schrittweise heller und feiner. Wert 0 oder darunter erscheint auf abgenutztem Pergament mit gestricheltem Wertfeld. Ab 10 hebt ein Goldrahmen mit Stern das Talent hervor. Der Hinweis am Wertfeld erklärt die Abstufung: 0 ungeübt, 1–3 Grundlagen, 4–6 geübt, 7–9 versiert und 10+ meisterlich. Diese Bezeichnungen dienen der Orientierung in der Oberfläche; sie ändern keine Regeln oder Würfelwerte. Attribute verwenden eine eigene Skala: 1 sehr schwach, 10 durchschnittlich und ab 20 meisterlich. Widerstands- und Reaktionsproben bleiben ohne Stärke-Einstufung.
 
 Kampftalente verwenden dieselbe Skala. Maßgeblich ist der Wert der besten verwendeten Waffentechnik, bevor Basis, Fokus, Waffenbonus und Behinderung einfließen. Dieser Talentwert steht unter dem Waffennamen; die Spalte **Wert** zeigt weiterhin den fertigen AT-/PA-/FK-Probenwert. Tierangriffe haben fertige AT-/PA-Werte und erhalten keine Talentstufe.
 
@@ -84,7 +84,7 @@ Auch in Dunkel und Hell bleiben ungeübte und meisterliche Talente durch Wertmar
 
 **Nächste Probe** gilt für genau einen Wurf und wird danach auf 0 zurückgesetzt. Das Feld zeigt den Betrag ohne Vorzeichen: rot bei Erschwernis, grün bei Erleichterung, neutral bei 0. Die Bezeichnung daneben lässt sich anklicken, um zwischen beiden Richtungen zu wechseln.
 
-Mit dem Mausrad über dem Feld: **↑ schwerer · ↓ leichter**. Beim Scrollen durch 0 wechselt die Richtung automatisch. Der Wert lässt sich auch eintippen. Die Probenliste scrollt weiterhin, wenn sich der Zeiger außerhalb des Felds befindet.
+Mit dem Mausrad über der Zahl oder der Richtungsbezeichnung: **↑ schwerer · ↓ leichter**. Beim Scrollen durch 0 wechselt die Richtung automatisch. Der Wert lässt sich auch eintippen. Die Probenliste scrollt weiterhin, wenn sich der Zeiger außerhalb des Felds befindet.
 
 Der zweite Knopf **? + Würfelsymbol** erzwingt einen verdeckten Wurf: Nur Spielleiter sehen das Ergebnis. Normale Würfe beachten den in Foundry eingestellten Chatmodus.
 

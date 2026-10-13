@@ -10,6 +10,7 @@ import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, refere
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback } from './feedback.js';
 import { readCharacterFile, writeCharacterBundle } from './bundle.js';
+import { checkDisplayName } from './ork-talents.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
 export class PedipalpusApp extends ApplicationV2 {
@@ -305,7 +306,7 @@ export class PedipalpusApp extends ApplicationV2 {
         this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"], [name="focus"]').forEach(field => { field.disabled = true; });
         const check = reference ? resolveCheck(getCharacter(actor),reference) : getCharacter(actor)?.checks.find(check => check.id === button.dataset.check);
         if (!reference && (!check || !clickedCheck || referenceKey(checkReference(check))!==referenceKey(checkReference(clickedCheck)))) throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
-        this.feedback('rollPending','Probe wird ausgelöst …');
+        this.feedback('rollPending','');
         pendingTimer=setTimeout(()=>button.setAttribute?.('aria-busy','true'),180);
         await executeCheck(actor, check, token, { modifier: this.modifier, blind: button.dataset.blind === 'true' });
         this.modifier = 0;
@@ -314,7 +315,7 @@ export class PedipalpusApp extends ApplicationV2 {
         await this.persist(recordRecent(this.preferences,actor.id,check));
         const recent=new Set((this.preferences.recent[actor.id] || []).flatMap(ref=>{try{return [resolveCheck(getCharacter(actor),ref).id];}catch{return [];}}));
         this.element.querySelectorAll('.pp-check-row').forEach(row=>{row.dataset.recent=String(recent.has(row.dataset.checkId));row.dataset.last=String(row.dataset.checkId===check.id);});
-        this.feedback('modifierConsumed','Probe ausgelöst. Nächste Probe wieder ohne Modifikator.');this.sound('roll');
+        this.feedback('modifierConsumed','');this.sound('roll');
       }
       if (button.dataset.action === 'token') await this.linkSelectedToken();
     } catch (error) {
@@ -380,7 +381,7 @@ export class PedipalpusApp extends ApplicationV2 {
       }},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
       render:(_event,dialog)=>{
         const host=dialog.element.querySelector('.pp-favorite-editor');
-        const update=()=>{host.innerHTML=(draft.favorites[this.actorId] || []).map((ref,index)=>`<div><span>${e(ref.name)}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`;};
+        const update=()=>{host.innerHTML=(draft.favorites[this.actorId] || []).map((ref,index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`;};
         update();
         host.addEventListener('click',event=>{
           const button=event.target.closest('[data-favorite-operation]');if(!button)return;
@@ -416,7 +417,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const c=check.combat;
     const body=c?`<p>${t('Fertigkeit')} ${c.skillValue} + ${t('Basis')} ${c.baseValue} + ${t('Fokus')} ${c.focusValue} + ${t('Waffenbonus')} ${c.weaponModifier} − BE ${c.mobilityPenalty} = <strong>${check.value}</strong></p>`
       : `<p>${(check.attributes || []).map(att=>`${e(att.name)} ${att.value}`).join(' · ')}</p><p>${t('Wert')}: <strong>${check.value}</strong></p>`;
-    await DialogV2.wait({window:{title:check.name},classes:['pedipalpus-dialog'],modal:true,rejectClose:false,content:body,buttons:[{action:'close',label:this.t('Schließen')}]});
+    await DialogV2.wait({window:{title:checkDisplayName(check,this.language)},classes:['pedipalpus-dialog'],modal:true,rejectClose:false,content:(this.language==='ork' && check.kind==='skill'?`<p class="pp-original-name">${e(check.name)}</p>`:'')+body,buttons:[{action:'close',label:this.t('Schließen')}]});
   }
   async diagnosticDialog() {
     const data={foundry:game.version,module:game.modules.get(MODULE_ID)?.version,probes:game.modules.get('ucurifunke-checks')?.version,system:game.system.id,sourceVersion:getCharacter(this.actor)?.sourceVersion,connection:connectionStatus().message};

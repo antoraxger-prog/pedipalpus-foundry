@@ -142,7 +142,6 @@
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-check-name { color: #714d11; font-weight: 600; }
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-rating { color: #714d11; border-color: #ab812d; background: linear-gradient(135deg, #f5e4ae, #fff8dc, #e8cc86); box-shadow: 0 0 0 1px #fff6, 0 1px 3px #85662633; }
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-rating { position: relative; }
-.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-rating::before { content: ''; position: absolute; pointer-events: none; inset: -6px -12px; background: url('../assets/laurel.svg') center / 48px 38px no-repeat; }
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="attribute"] { background-color: #e2cda0; }
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-rating { font-family: Georgia, 'Times New Roman', serif; font-size: 14px; }
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-rank-legend { border-color: #a1844b88; }
