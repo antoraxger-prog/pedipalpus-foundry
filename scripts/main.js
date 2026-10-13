@@ -7,7 +7,7 @@ export function openPedipalpus(actorId = null) {
 }
 
 Hooks.once('init', () => {
-  game.settings.register(MODULE_ID, 'theme', { scope: 'client', config: false, type: String, default: 'dark' });
+  game.settings.register(MODULE_ID, 'theme', { scope: 'client', config: false, type: String, default: 'fantasy' });
   game.settings.registerMenu(MODULE_ID, 'open', {
     name: 'Pedipalpus – Proben', label: 'Proben öffnen',
     hint: 'JSON-Datei importieren, einen Charakter auswählen und direkt würfeln.',

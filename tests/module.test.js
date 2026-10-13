@@ -6,7 +6,7 @@ import { fixture } from './fixture.js';
 import { parseCharacter, normalizeCharacter, MODULE_ID, FLAG, MAX_FILE_SIZE } from '../scripts/data.js';
 import { buildCommand, connectionStatus, executeCheck } from '../scripts/commands.js';
 import { saveCharacter, getCharacter, linkToken } from '../scripts/storage.js';
-import { renderView, rollableChecks } from '../scripts/view.js';
+import { renderView, rollableChecks, mastery } from '../scripts/view.js';
 
 test('Geographie uses saved totals and current attributes, ignoring default and selected copies', () => {
   const data = normalizeCharacter(fixture());
@@ -293,4 +293,27 @@ test('Unrelated synchronous dialogs are forwarded and retain their receiver', as
   };
   await executeCheck(document, check, null, { modifier: 0 });
   assert.equal(state.dialogs, 1);
+});
+
+test('Talent and attribute mastery use independent scales without changing imported roll values', () => {
+  const character = normalizeCharacter(fixture());
+  const skill = character.checks.find(check => check.name === 'Geographie');
+  const before = JSON.stringify(character);
+  assert.equal(mastery({ ...skill, value: 0 }).grade, 'untrained');
+  assert.equal(mastery({ ...skill, value: -2 }).grade, 'untrained');
+  assert.equal(mastery({ ...skill, value: 9 }).grade, 'adept');
+  assert.equal(mastery({ ...skill, value: 10 }).grade, 'master');
+  assert.equal(mastery({ ...skill, value: 20 }).progress, 1);
+  assert.ok(mastery({ ...skill, value: 5 }).progress > mastery({ ...skill, value: 4 }).progress);
+  const primary = character.checks.find(check => check.kind === 'attribute');
+  assert.equal(mastery({ ...primary, value: 1 }).label, 'Sehr schwach');
+  assert.equal(mastery({ ...primary, value: 10 }).label, 'Durchschnittlich');
+  assert.notEqual(mastery({ ...primary, value: 19 }).grade, 'master');
+  assert.equal(mastery({ ...primary, value: 20 }).grade, 'master');
+  assert.equal(mastery(character.checks.find(check => check.id.startsWith('secondary:'))).grade, 'attribute');
+  const html = renderView({actors:[], actor:{isOwner:true}, character, status:{ready:true,message:'Verbunden'}, canImport:true});
+  assert.match(html, /data-theme="fantasy"/);
+  assert.match(html, /data-grade="untrained"/);
+  assert.equal(JSON.stringify(character), before);
+  assert.equal(buildCommand(skill), '/skillcheck Geographie | Klugheit 16 | Klugheit 16 | Intuition 14 | 8');
 });

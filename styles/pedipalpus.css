@@ -1,3 +1,4 @@
+.pedipalpus-app { box-sizing: border-box; }
 .pedipalpus-app .window-content { padding: 0; overflow: hidden; }
 .pedipalpus-app .pp-root {
   --pp-bg: #2b3138; --pp-surface: #343b44; --pp-muted-surface: #3d4651; --pp-hover: #46515e;
@@ -58,6 +59,95 @@
 .pedipalpus-app .pp-root[data-theme="light"] .pp-warning { color: #8b4d00; }
 .pedipalpus-app .pp-hint, .pedipalpus-app .pp-no-results { color: var(--pp-muted); font-size: 11px; }
 .pedipalpus-app .pp-no-results { padding: 20px; text-align: center; }
+.pedipalpus-app .pp-rating { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 28px; border: 1px solid transparent; font-weight: 600; }
+.pedipalpus-app .pp-check-row[data-grade="untrained"] .pp-rating { border: 1px dashed var(--pp-muted); }
+.pedipalpus-app .pp-check-row[data-grade="master"] .pp-rating { border: 3px double #bb974f; color: #f1cc80; }
+.pedipalpus-app .pp-master-star { color: #bb974f; font-size: 13px; }
+.pedipalpus-app .pp-root[data-theme="light"] .pp-check-row[data-grade="master"] .pp-rating { color: #765112; border-color: #9d7528; }
+.pedipalpus-app .pp-rank-legend { display: flex; flex-wrap: wrap; gap: 3px 9px; flex-basis: 100%; padding-bottom: 4px; border-bottom: 1px solid var(--pp-border); font-size: 9px; }
+.pedipalpus-app .pp-rank-legend span:last-child { color: #e4bd74; }
+.pedipalpus-app .pp-root[data-theme="light"] .pp-rank-legend span:last-child { color: #765112; }
+
+.pedipalpus-app[data-pp-theme="fantasy"] { border: 1px solid #a98748; box-shadow: 0 7px 28px #0008, inset 0 0 0 2px #2e1d13; }
+.pedipalpus-app[data-pp-theme="fantasy"] .window-header { background: #40291c url('../assets/wood.svg'); color: #ead5a8; border-bottom: 1px solid #a98748; }
+.pedipalpus-app[data-pp-theme="fantasy"] .window-title { font-family: Georgia, 'Times New Roman', serif; letter-spacing: .4px; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] {
+  --pp-bg: #483020; --pp-surface: #e4d0a0; --pp-muted-surface: #dbc38f; --pp-hover: #efdeb7;
+  --pp-border: #9a7843; --pp-text: #342618; --pp-muted: #695337; --pp-accent: #755027;
+  --pp-row-alt: #e0ca98; --pp-field: #ecdfbd;
+  position: relative; padding: 12px; gap: 8px;
+  background: linear-gradient(#1c120922, #1c120922), url('../assets/wood.svg');
+  box-shadow: inset 0 0 0 3px #291a12, inset 0 0 0 4px #aa8244, inset 0 0 16px 6px #1c120977;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"]::before {
+  content: ''; pointer-events: none; position: absolute; z-index: 2; inset: 5px;
+  background: linear-gradient(#c3a26a, #c3a26a) left top / 18px 1px no-repeat,
+    linear-gradient(#c3a26a, #c3a26a) left top / 1px 18px no-repeat,
+    linear-gradient(#c3a26a, #c3a26a) right top / 18px 1px no-repeat,
+    linear-gradient(#c3a26a, #c3a26a) right top / 1px 18px no-repeat,
+    linear-gradient(#c3a26a, #c3a26a) left bottom / 18px 1px no-repeat,
+    linear-gradient(#c3a26a, #c3a26a) left bottom / 1px 18px no-repeat,
+    linear-gradient(#c3a26a, #c3a26a) right bottom / 18px 1px no-repeat,
+    linear-gradient(#c3a26a, #c3a26a) right bottom / 1px 18px no-repeat;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-toolbar label,
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-filters label,
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-modifier,
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-search-scope,
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-footer { color: #eddbb4; text-shadow: 0 1px #291a12; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] select,
+.pedipalpus-app .pp-root[data-theme="fantasy"] input[type="search"],
+.pedipalpus-app .pp-root[data-theme="fantasy"] input[data-mode="neutral"] {
+  background: url('../assets/parchment.svg'), linear-gradient(#ecdfbd, #dcc496);
+  border-color: #b69962; box-shadow: inset 0 1px 4px #5d3c1b33, 0 1px 2px #160e0955;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] input::placeholder { color: #756349; opacity: 1; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] button {
+  background: url('../assets/parchment.svg'), linear-gradient(#e9d6aa, #c8a971);
+  color: #392816; border-color: #a98448; box-shadow: inset 0 1px #fff4, 0 1px 2px #1e120d66;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] button:hover:not(:disabled) { background-color: #f3e3bd; filter: brightness(1.08); }
+.pedipalpus-app .pp-root[data-theme="fantasy"] button.pp-import-button {
+  background: linear-gradient(#5c7046, #394b2e); color: #f8ecd2; border-color: #a48e55;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-list {
+  border: 1px solid #c5a86b; box-shadow: 0 2px 7px #1c110b80, 0 0 0 2px #2d1c1266;
+  background: #d6bc87 url('../assets/parchment.svg'); scrollbar-color: #967644 #e2cea4;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-table { background: transparent; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-table th {
+  background: url('../assets/parchment.svg'), linear-gradient(#ceb079, #b99a61);
+  color: #352416; border-bottom-color: #9b753b; font-family: Georgia, 'Times New Roman', serif;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row {
+  background: hsl(38 43% calc(68% + var(--pp-mastery) * 21%));
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row td {
+  background-image: url('../assets/parchment.svg'); border-bottom-color: #997d4955;
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-name { font: 13px/1.35 Georgia, 'Times New Roman', serif; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="untrained"] td {
+  background-image: radial-gradient(ellipse at 10% 100%, #86532933, transparent 65%),
+    repeating-linear-gradient(168deg, transparent 0 8px, #674a1912 9px, transparent 10px 18px), url('../assets/parchment.svg');
+}
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="untrained"] td:first-child { box-shadow: inset 3px 0 #8c6a3c; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="adept"] td:first-child { box-shadow: inset 2px 0 #aa8950; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] td { box-shadow: inset 0 1px #b68a343f, inset 0 -1px #b68a3470; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] td:first-child { box-shadow: inset 3px 0 #b68a34, inset 0 1px #b68a343f, inset 0 -1px #b68a3470; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-check-name { color: #714d11; font-weight: 600; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-rating { color: #714d11; border-color: #ab812d; background: linear-gradient(135deg, #f5e4ae, #fff8dc, #e8cc86); box-shadow: 0 0 0 1px #fff6, 0 1px 3px #85662633; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-rating { position: relative; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] .pp-rating::before { content: ''; position: absolute; pointer-events: none; inset: -6px -12px; background: url('../assets/laurel.svg') center / 48px 38px no-repeat; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="attribute"] { background-color: #e2cda0; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-rating { font-family: Georgia, 'Times New Roman', serif; font-size: 14px; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-rank-legend { border-color: #a1844b88; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-rank-legend span:last-child { color: #f1cd83; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-footer .pp-hint { color: #dbc493; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-welcome { color: #f0ddb5; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-welcome h2 { color: #f0ddb5; font-family: Georgia, 'Times New Roman', serif; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-welcome > i,
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-welcome .pp-hint { color: #dbc493; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-no-results { color: #695337; }
 .pedipalpus-app .pp-welcome { margin: auto; padding: 30px 15px; text-align: center; }
 .pedipalpus-app .pp-welcome > i { font-size: 32px; color: var(--pp-muted); }
 .pedipalpus-app .pp-welcome h2 { font-size: 18px; border: 0; color: var(--pp-text); }

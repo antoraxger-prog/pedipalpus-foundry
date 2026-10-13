@@ -15,7 +15,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.actorId = null;
     this.search = '';
     this.category = 'all';
-    this.theme = game.settings.get(MODULE_ID, 'theme') || 'dark';
+    this.theme = game.settings.get(MODULE_ID, 'theme') || 'fantasy';
     this.busy = false;
     this.modifier = 0;
     this.modifierDirection = 1;
@@ -48,6 +48,7 @@ export class PedipalpusApp extends ApplicationV2 {
       search: this.search, category: this.category, theme: this.theme, modifier: this.modifier, modifierDirection: this.modifierDirection });
   }
   _replaceHTML(result, content) {
+    this.element.dataset.ppTheme = this.theme;
     content.innerHTML = result;
     content.querySelector('[name="actor"]').addEventListener('change', async event => {
       this.actorId = event.target.value || null;
@@ -60,7 +61,8 @@ export class PedipalpusApp extends ApplicationV2 {
       this.filterChecks(content);
     });
     content.querySelector('[name="theme"]').addEventListener('change', event => {
-      this.theme = event.target.value === 'light' ? 'light' : 'dark';
+      this.theme = ['fantasy', 'light', 'dark'].includes(event.target.value) ? event.target.value : 'fantasy';
+      this.element.dataset.ppTheme = this.theme;
       content.querySelector('.pp-root').dataset.theme = this.theme;
       game.settings.set(MODULE_ID, 'theme', this.theme).catch(error => console.error(MODULE_ID, error));
     });
@@ -107,14 +109,16 @@ export class PedipalpusApp extends ApplicationV2 {
   filterChecks(content = this.element) {
     const query = this.search.trim().toLocaleLowerCase('de');
     let count = 0;
+    const scales = new Set();
     content.querySelectorAll('.pp-check-row').forEach(row => {
       row.hidden = query ? !row.dataset.search.includes(query) : this.category !== 'all' && row.dataset.category !== this.category;
-      if (!row.hidden) count++;
+      if (!row.hidden) { count++; scales.add(row.dataset.scale); }
     });
     const scope = content.querySelector('.pp-search-scope');
     if (scope) scope.hidden = !query;
     const empty = content.querySelector('.pp-no-results');
     if (empty) empty.hidden = count > 0;
+    content.querySelectorAll('.pp-rank-legend').forEach(legend => { legend.hidden = !scales.has(legend.dataset.scale); });
   }
   async onAction(button) {
     if (this.busy) return;

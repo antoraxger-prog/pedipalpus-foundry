@@ -9,6 +9,7 @@ output.parent.mkdir(parents=True, exist_ok=True)
 files = [root / 'module.json', root / 'README.md']
 files += sorted((root / 'scripts').glob('*.js'))
 files += sorted((root / 'styles').glob('*.css'))
+files += sorted((root / 'assets').glob('*.svg'))
 for relative in manifest['esmodules'] + manifest['styles']:
     assert (root / relative) in files, relative
 with ZipFile(output, 'w', ZIP_DEFLATED) as archive:

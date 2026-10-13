@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="320" viewBox="0 0 240 320">
+  <defs>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".045 .5" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+    <linearGradient id="timber"><stop stop-color="#41291e"/><stop offset=".48" stop-color="#63402b"/><stop offset="1" stop-color="#352018"/></linearGradient>
+  </defs>
+  <path fill="url(#timber)" d="M0 0h240v320H0z"/>
+  <g fill="none" stroke="#1e130e" opacity=".3">
+    <path d="M0 14Q75 7 120 17T240 14M0 28Q80 36 150 25T240 28M0 65Q80 50 130 63T240 65M0 97Q70 107 120 91T240 97M0 119Q30 110 59 124T155 130T240 119M0 154Q35 147 59 152Q89 168 143 157T240 154M0 201Q70 187 135 200T240 201M0 229Q80 239 153 227T240 229M0 259Q30 241 90 262T240 259M0 301Q90 288 140 305T240 301"/>
+    <path d="M0 133Q27 126 43 138Q70 170 99 139Q149 130 240 133M0 140Q23 133 43 148Q65 178 95 149Q140 139 240 140"/>
+    <ellipse cx="66" cy="146" rx="14" ry="8"/><ellipse cx="66" cy="146" rx="5" ry="3"/>
+  </g>
+  <path d="M0 52h240M0 181h240M0 287h240" fill="none" stroke="#be9262" opacity=".11"/>
+  <path filter="url(#grain)" opacity=".16" d="M0 0h240v320H0z"/>
+</svg>
