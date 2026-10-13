@@ -1,7 +1,7 @@
 import { parseCharacter, MODULE_ID } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
 import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus } from './storage.js';
-import { renderView, renderImportOptions, updateFocusView, escapeHTML } from './view.js';
+import { renderView, renderImportOptions, updateFocusView, escapeHTML, checksForView } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
@@ -75,7 +75,7 @@ export class PedipalpusApp extends ApplicationV2 {
     if (!actor) this.actorId = null;
     const current = getCharacter(actor);
     if(this.mode==='full' && !['all','favorites','recent'].includes(this.category)){
-      const available=new Set((current?.checks || []).map(check=>['primary','secondary'].includes(check.id.split(':')[0])?'attributes':['Spells','Rituals'].includes(check.id.split(':')[0])?'magic':check.id.split(':')[0]));
+      const available=new Set(checksForView(current,'full').map(check=>['primary','secondary'].includes(check.id.split(':')[0])?'attributes':['Spells','Rituals'].includes(check.id.split(':')[0])?'magic':check.id.split(':')[0]));
       if(!available.has(this.category))this.category='all';
     }
     const keys = type => (this.preferences[type][actor?.id] ?? []).flatMap(ref => {
@@ -97,7 +97,7 @@ export class PedipalpusApp extends ApplicationV2 {
       if(globalThis.ResizeObserver){this.sizeObserver=new ResizeObserver(remember);this.sizeObserver.observe(this.element);}
     }
     const title = this.element.querySelector('.window-title');
-    if (title) title.textContent = 'Pedipalpus – Proben';
+    if (title) title.textContent = this.mode==='battle' ? 'Pedipalpus – Kampf' : 'Pedipalpus – Proben';
     const root = content.querySelector('.pp-root');
     if (root) { root.dataset.language = this.language; root.dataset.animation = this.preferences.animations;root.dataset.ppAnimations=this.effects.animations; }
     if(root && this.characterChanged){if(this.preferences.animations!=='none')root.classList.add('pp-sheet-changed');this.characterChanged=false;}
@@ -125,7 +125,7 @@ export class PedipalpusApp extends ApplicationV2 {
       this.search = '';
       content.querySelector('[name="search"]').value = '';
       this.filterChecks(content);
-      this.persist({...this.preferences,category:this.category}).catch(error => this.notify('error',error.message));
+      if(this.mode==='full')this.persist({...this.preferences,category:this.category}).catch(error => this.notify('error',error.message));
     });
     content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => this.onAction(button)));
     content.querySelectorAll('.pp-check-name').forEach(name => {
@@ -353,6 +353,8 @@ export class PedipalpusApp extends ApplicationV2 {
     }
     await this.persist({...this.preferences,actorId});
     if (this.rendered) await this.render({force:true});
+    if(check.kind==='combat' && this.mode!=='battle')await this.setMode('battle');
+    else if(check.kind!=='combat' && this.mode==='battle')await this.setMode('full');
     await this.onAction({dataset:{action:'roll',check:check.id,blind:String(blind)},disabled:false},{reserved:true,reference});
     } finally { this.referenceBusy=false; }
   }
@@ -365,9 +367,9 @@ export class PedipalpusApp extends ApplicationV2 {
       ${row('Sprache',select('language',[['theme','Passend zum Design'],['standard','Normal'],['ork','Ork']]))}
       ${row('Animationen',select('animations',[['none','Aus'],['subtle','Dezent'],['full','Lebendig']]))}
       ${row('Soundeffekte',`<input name="sound" type="checkbox" ${draft.sound?'checked':''}>`)}
-      ${row('Lautstärke',`<input name="volume" type="range" min="0" max="1" step="0.05" value="${draft.volume}">`)}
+      ${row('Lautstärke',`<span><input name="volume" type="range" min="0" max="1" step="0.05" value="${draft.volume}"><output data-volume>${Math.round(draft.volume*100)}%</output></span>`)}
       ${row('Klangset',select('soundSet',[['theme','Passend zum Design'],['fantasy','Fantasy'],['ork','Ork'],['dark','Neutral']]))}
-      <button type="button" data-sound-preview>${t('Rastklang anhören')}</button>
+      <button type="button" data-sound-preview>${t('Rastklang anhören')}</button><p data-sound-status role="status" hidden></p>
       ${row('Ausgewähltem Token folgen',`<input name="followToken" type="checkbox" ${draft.followToken?'checked':''}>`)}
       <p>${t('Ohne Tokenfolgen bleibt der gewählte Charakter angeheftet. Mehrere Tokens werden nicht automatisch zugeordnet.')}</p>
       <h3>${t('Favoriten ordnen')}</h3><div class="pp-favorite-editor"></div></div>`;
@@ -390,8 +392,15 @@ export class PedipalpusApp extends ApplicationV2 {
           else draft.favorites=moveFavorite(draft,this.actorId,refs[index],button.dataset.favoriteOperation).favorites;
           update();
         });
-        dialog.element.querySelector('[data-sound-preview]').addEventListener('click',()=>{
-          playFeedback('preview',{sound:true,volume:Number(dialog.element.querySelector('[name="volume"]').value),theme:this.theme,soundSet:dialog.element.querySelector('[name="soundSet"]').value}).catch(error=>console.warn(MODULE_ID,error));
+        const volume=dialog.element.querySelector('[name="volume"]');
+        volume.addEventListener('input',()=>{dialog.element.querySelector('[data-volume]').textContent=`${Math.round(Number(volume.value)*100)}%`;});
+        dialog.element.querySelector('[data-sound-preview]').addEventListener('click',async()=>{
+          const status=dialog.element.querySelector('[data-sound-status]');
+          status.hidden=true;
+          const amount=Number(volume.value);
+          if(amount===0){status.textContent=this.t('Lautstärke ist 0. Zum Anhören erhöhen.');status.hidden=false;return;}
+          const played=await playFeedback('preview',{sound:true,volume:amount,theme:this.theme,soundSet:dialog.element.querySelector('[name="soundSet"]').value});
+          if(!played){status.textContent=this.t('Der Browser konnte den Klang nicht starten. Tonfreigabe und stummgeschalteten Tab prüfen.');status.hidden=false;}
         });
       }});
     if(!answer)return;

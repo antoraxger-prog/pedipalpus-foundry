@@ -87,8 +87,8 @@ export async function playFeedback(event, { sound = false, volume = .25, soundSe
     if (context.state === 'suspended') await context.resume();
     if (context.state !== 'running') return false;
     const start = context.currentTime;
-    if ((event === 'dial' || event === 'preview') && start - lastDial < 1 / 12) return false;
-    if (event === 'dial' || event === 'preview') lastDial = start;
+    if (event === 'dial' && start - lastDial < 1 / 12) return false;
+    if (event === 'dial') lastDial = start;
     const output = context.createGain();
     output.gain.setValueAtTime(Math.min(numericVolume, 1) * .16, start);
     output.connect(context.destination);

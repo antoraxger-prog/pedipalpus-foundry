@@ -40,7 +40,7 @@ function element() {
   return root;
 }
 
-test('Sounds are silent by default and at zero volume without allocating audio resources', async () => {
+test('Disabled sound and zero volume do not allocate audio resources', async () => {
   const contexts = audioRuntime();
   assert.equal(await playFeedback('dial'), false);
   assert.equal(await playFeedback('dial', { sound: true, volume: 0 }), false);

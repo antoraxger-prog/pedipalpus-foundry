@@ -96,7 +96,7 @@ test('Preferences validate untrusted entries and never share mutable defaults', 
   assert.equal(prefs.density, 'normal');
   assert.equal(prefs.language, 'theme');
   assert.equal(prefs.animations, 'subtle');
-  assert.equal(prefs.sound, false);
+  assert.equal(prefs.sound, true);
   assert.equal(prefs.followToken, false);
   assert.equal(prefs.volume, 0.25);
   assert.equal(prefs.soundSet, 'theme');
@@ -109,6 +109,16 @@ test('Preferences validate untrusted entries and never share mutable defaults', 
   assert.equal(DEFAULT_WORKBENCH.favorites.example, undefined);
   assert.equal(validateWorkbench({ volume: -0.5 }).volume, 0);
   assert.equal(validateWorkbench({ volume: 1.5 }).volume, 1);
+});
+
+test('Quiet sounds start enabled once; a later personal mute and zero volume persist', () => {
+  const first=validateWorkbench(null);
+  assert.equal(first.sound,true);
+  assert.equal(first.volume,0.25);
+  assert.equal(validateWorkbench({sound:false,volume:0.25}).sound,true);
+  const muted=validateWorkbench({...first,sound:false,volume:0});
+  assert.equal(validateWorkbench(muted).sound,false);
+  assert.equal(validateWorkbench(muted).volume,0);
 });
 
 test('Workbench uses individual user storage; window dimensions use client storage', async () => {
@@ -126,7 +136,7 @@ test('Workbench uses individual user storage; window dimensions use client stora
     await saveWorkbench({ actorId: 'actor-a', category: 'favorites', sound: true });
     game.user.id = 'player-b';
     assert.equal(loadWorkbench().actorId, null);
-    assert.equal(loadWorkbench().sound, false);
+    assert.equal(loadWorkbench().sound, true);
     await saveWorkbench({ actorId: 'actor-b', category: 'battle' });
     game.user.id = 'player-a';
     assert.equal(loadWorkbench().actorId, 'actor-a');

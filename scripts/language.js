@@ -1,5 +1,10 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Alle Kampfproben':'Alles hauen', 'Kampffavoriten':'Lieblingshauen', 'Zuletzt im Kampf':'Eben gehauen',
+  'Kampfprobe suchen …':'Welches Hauen?', 'Kampfproben durchsuchen':'Hauen suchen',
+  'Pedipalpus – Kampf':'Pedipalpus – Hauen',
+  'Lautstärke ist 0. Zum Anhören erhöhen.':'Laut null. Höher machen. Dann hören.',
+  'Der Browser konnte den Klang nicht starten. Tonfreigabe und stummgeschalteten Tab prüfen.':'Geräusch geht nicht. Browser darf Ton? Tab stumm? Gucken.',
   'Werkzeuge':'Werkzeug holen', 'Einstellungen':'So einstellen', 'Vorlagen':'Schon gemerkt',
   'Favoriten':'Lieblingsdinge', 'Meine Favoriten':'Lieblingsdinge', 'Zuletzt verwendet':'Eben getan', 'Zuletzt benutzt':'Eben getan',
   'Schnellleiste':'Schnell tun', 'Hinweise':'Kurz erklärt', 'Berechnung ansehen':'Zahl erklären',

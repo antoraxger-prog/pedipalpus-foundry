@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.10.1
+# Pedipalpus – Proben · 0.11.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -32,7 +32,7 @@ Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benöti
 
 Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell und Ork bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
 
-Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben stehen als eigene Bereiche zur Verfügung.
+Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben sind ausschließlich im **Kampfbrett** über das gekreuzte Waffensymbol erreichbar. Sie erscheinen weder in der normalen Probenliste noch im Probenring. Der Fokusregler gehört ebenfalls zum Kampfbrett.
 
 ## Spielansicht und Werkzeuge
 
@@ -42,17 +42,17 @@ Unter **Einstellungen** stehen Normal, Kompakt und Große Knöpfe, die Sprache, 
 
 ## Favoriten und schneller Zugriff
 
-Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** und **Zuletzt verwendet** stehen im Bereichsfilter. Bis zu sechs Favoriten erscheinen in der einklappbaren Schnellleiste. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
+Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** und **Zuletzt verwendet** stehen im Bereichsfilter. Bis zu sechs normale Favoriten erscheinen in der einklappbaren Schnellleiste. Kampffavoriten und zuletzt verwendete Kampfproben sind im Kampfbrett über den Bereichsfilter erreichbar; gespeicherte Einträge bleiben erhalten. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
 
-Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Ein Klick auf die Wertplakette zeigt die vorhandene Berechnung. Der Kopf enthält Knöpfe für ein kleineres **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Alle Ansichten teilen Charakter, Fokus und nächsten Modifikator.
+Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Ein Klick auf die Wertplakette zeigt die vorhandene Berechnung. Der Kopf enthält Knöpfe für ein kleineres **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Kampfbrett und normale Probenansicht teilen Charakter und nächsten Modifikator. Der gespeicherte Fokus gilt für Kampfproben und wird nur im Kampfbrett angezeigt.
 
-Eine Probe am Namen auf Foundrys Makroleiste ziehen. Dafür werden Besitzerrechte und das Recht zum Erstellen von Makros benötigt. Das Makro liest die aktuellen Werte; bei geöffnetem Würfelfenster verwendet es dessen nächsten Modifikator, sonst 0. Die öffentliche API ist `game.modules.get('pedipalpus-foundry').api.roll({actorId, reference, blind, modifier})`. Es werden keine Zahlen in Makros eingefroren.
+Eine Probe am Namen auf Foundrys Makroleiste ziehen. Dafür werden Besitzerrechte und das Recht zum Erstellen von Makros benötigt. Das Makro liest die aktuellen Werte; ein Kampfmakro wechselt bei geöffnetem Fenster ins Kampfbrett, ein normales Makro von dort zurück zur Probenansicht; bei geöffnetem Würfelfenster verwendet es dessen nächsten Modifikator, sonst 0. Die öffentliche API ist `game.modules.get('pedipalpus-foundry').api.roll({actorId, reference, blind, modifier})`. Es werden keine Zahlen in Makros eingefroren.
 
 Foundrys Tastaturkonfiguration enthält frei belegbare Aktionen für Öffnen/Suche, Kampfbrett und Probenring. Es werden keine bestehenden Tasten vorbelegt. In Textfeldern werden diese Aktionen nicht ausgelöst. In der Suche setzt Pfeil nach unten den Fokus auf den ersten erreichbaren Würfelknopf; Escape leert die Suche.
 
 ## Rückmeldungen und Soundeffekte
 
-**Einstellungen → Soundeffekte** schaltet die persönlichen Klänge ein oder vollständig aus. Standardmäßig sind sie aus. Lautstärke 0 bleibt still. Die Vorschau **Rastklang anhören** spielt auf Wunsch den kurzen metallischen Klick; normale Klänge bleiben bis zur Aktivierung aus. Alle Sounds entstehen lokal, ohne externe Dienste oder Übertragung an andere Spieler.
+**Einstellungen → Soundeffekte** schaltet die persönlichen Klänge ein oder vollständig aus. Standardmäßig sind sie eingeschaltet, mit 25 % UI-Lautstärke und zusätzlich gedämpfter Wiedergabe. Die bisherige Voreinstellung wird beim Update einmal auf diesen leisen Standard umgestellt. Danach bleibt eine persönliche Deaktivierung gespeichert. Lautstärke 0 bleibt still. Die Vorschau **Rastklang anhören** spielt den kurzen metallischen Klick; bei 0 oder blockierter Wiedergabe gibt sie einen Hinweis. Alle Sounds entstehen lokal, ohne externe Dienste oder Übertragung an andere Spieler.
 
 Das Mausrad funktioniert über der Zahl und über **Erschwernis/Erleichterung**. Änderungen geben bei aktiviertem Sound einen kurzen metallischen Rastklang wie ein Safe-Drehknopf. Nur die Klangfolge wird bei schnellem Drehen begrenzt; jeder Mausradschritt ändert weiter den Wert. Weitere kurze Klänge bestätigen Fokus, Import und Favoriten. Es gibt keine Ergebnisfanfaren oder gesprochenen Kommentare.
 
@@ -110,7 +110,7 @@ Die Auswertung erfolgt über Ucurifunke – Proben 1.0.14. Dessen Kampfregeln un
 
 ## Kampffokus
 
-Im Kampfbereich den **Fokus** zwischen DEF (links) und OFF (rechts) einstellen, von −4 bis +4 wie in Pedipalpus. Angriff und Parade ändern sich sofort gegensinnig; Fernkampf, Tierproben und Talentstärken bleiben gleich. Der Fokus wird am Foundry-Charakter gespeichert und gilt bis zur nächsten Änderung. Besitzer dürfen ihn ändern, Beobachter können ihn sehen. Vorhandene Kampfimporte ab 0.7.0 sind direkt nutzbar. Ein neuer JSON-Import übernimmt wieder den Fokus aus der importierten Datei. Die lokale Windows-Datei wird nicht verändert.
+Im Kampfbrett den **Fokus** zwischen DEF (links) und OFF (rechts) einstellen, von −4 bis +4 wie in Pedipalpus. Angriff und Parade ändern sich sofort gegensinnig; Fernkampf, Tierproben und Talentstärken bleiben gleich. Der Fokus wird am Foundry-Charakter gespeichert und gilt bis zur nächsten Änderung. Besitzer dürfen ihn ändern, Beobachter können ihn sehen. Vorhandene Kampfimporte ab 0.7.0 sind direkt nutzbar. Ein neuer JSON-Import übernimmt wieder den Fokus aus der importierten Datei. Die lokale Windows-Datei wird nicht verändert.
 
 ## Charakter- und Tokenbilder
 

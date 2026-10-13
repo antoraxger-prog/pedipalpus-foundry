@@ -6,7 +6,7 @@ import { fixture, combatFixture } from './fixture.js';
 import { parseCharacter, normalizeCharacter, MODULE_ID, FLAG, MAX_FILE_SIZE } from '../scripts/data.js';
 import { buildCommand, connectionStatus, executeCheck } from '../scripts/commands.js';
 import { saveCharacter, getCharacter, linkToken } from '../scripts/storage.js';
-import { renderView, rollableChecks, mastery } from '../scripts/view.js';
+import { renderView, rollableChecks, mastery, checksForView } from '../scripts/view.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from '../scripts/portraits.js';
 import { characterFocus, withFocus } from '../scripts/combat.js';
 import { saveFocus } from '../scripts/storage.js';
@@ -45,6 +45,20 @@ test('Ork copy is presentation only; names, numbers and roll commands retain the
   const html=renderView({actors:[],actor:{isOwner:true},character:data,status:{ready:true,message:'Verbunden'},canImport:true,theme:'ork'});
   assert.ok(html.includes('value="ork" selected'));
   assert.equal(buildCommand(geo),'/skillcheck Geographie | Klugheit 16 | Klugheit 16 | Intuition 14 | 8');
+});
+
+test('Combat and animal checks belong to the combat view; imports and semantic references retain all probes', () => {
+  const character=normalizeCharacter(combatFixture()),before=JSON.stringify(character);
+  const combat=checksForView(character,'battle'),normal=checksForView(character,'full');
+  assert.ok(combat.some(check=>check.id.startsWith('animals:')));
+  assert.ok(combat.every(check=>check.kind==='combat'));
+  assert.ok(normal.length>0 && normal.every(check=>check.kind!=='combat'));
+  assert.deepEqual(checksForView(character,'ring'),normal);
+  const props={actor:{isOwner:true},character,status:{ready:true},favoriteKeys:character.checks.map(check=>check.id)};
+  assert.doesNotMatch(renderView({...props,mode:'full'}),/data-check-id="(?:combat|animals):|name="focus"|value="combat"|value="animals"/);
+  assert.doesNotMatch(renderView({...props,mode:'ring'}),/data-check-id="(?:combat|animals):|name="focus"/);
+  assert.match(renderView({...props,mode:'battle'}),/data-check-id="combat:|name="focus"/);
+  assert.equal(JSON.stringify(character),before);
 });
 
 test('Focus updates attack and parry in opposite directions without changing ranged, animal or talent values', () => {
