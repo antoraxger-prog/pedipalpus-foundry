@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.9.0
+# Pedipalpus – Proben · 0.10.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -22,7 +22,7 @@ In der Welt **Pedipalpus – Proben** und **Ucurifunke – Proben** aktivieren. 
 
 1. Den Charakter in der Windows-App speichern.
 2. Im Foundry-Charakterverzeichnis auf **Pedipalpus** klicken. Alternativ: **Einstellungen → Einstellungen konfigurieren → Pedipalpus – Proben → Proben öffnen**.
-3. **JSON importieren** wählen und die gespeicherte Charakterdatei auswählen.
+3. **Werkzeuge** (Zahnrad) öffnen und **JSON importieren** wählen. Eine JSON-Datei oder ein Charakter-ZIP auswählen.
 4. Unter **In Foundry speichern als** einen bestehenden Charakter auswählen oder einen neuen anlegen.
 5. Einen Bereich auswählen oder über die Suche eine Probe finden. Das Würfelsymbol würfelt direkt; **? + Würfelsymbol** würfelt verdeckt. Das Ergebnis erscheint ohne weitere Modifikator-Abfrage im Chat.
 
@@ -33,6 +33,40 @@ Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benöti
 Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell und Ork bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
 
 Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben stehen als eigene Bereiche zur Verfügung.
+
+## Spielansicht und Werkzeuge
+
+Der Kopf zeigt Portrait, Charakter und Sprecher. Import, Bildwechsel, Darstellung, Einstellungen, Vorlagen, Austauschpaket und Versionsinformationen liegen unter **Werkzeuge**. Die Probenliste erhält dadurch mehr Platz. Hinweise und Legenden sind einklappbar; Probleme bleiben sichtbar. Die letzte Figur, der Bereich sowie Fenstergröße und Position werden wiederhergestellt. Fenstergröße und Position sind pro Benutzer im jeweiligen Browser gespeichert und werden auf den sichtbaren Bildschirm begrenzt.
+
+Unter **Einstellungen** stehen Normal, Kompakt und Große Knöpfe, die Sprache, Animationen und Klänge zur Wahl. Sprache lässt sich unabhängig vom Design auf Normal oder Ork stellen. **Ausgewähltem Token folgen** ist optional; ohne diese Option bleibt der ausgewählte Charakter fest. Bei mehreren ausgewählten Tokens findet kein automatischer Wechsel statt. Beim Charakterwechsel werden Erschwernis und Erleichterung zurückgesetzt.
+
+## Favoriten und schneller Zugriff
+
+Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** und **Zuletzt verwendet** stehen im Bereichsfilter. Bis zu sechs Favoriten erscheinen in der einklappbaren Schnellleiste. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
+
+Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Ein Klick auf die Wertplakette zeigt die vorhandene Berechnung. Der Kopf enthält Knöpfe für ein kleineres **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Alle Ansichten teilen Charakter, Fokus und nächsten Modifikator.
+
+Eine Probe am Namen auf Foundrys Makroleiste ziehen. Dafür werden Besitzerrechte und das Recht zum Erstellen von Makros benötigt. Das Makro liest die aktuellen Werte; bei geöffnetem Würfelfenster verwendet es dessen nächsten Modifikator, sonst 0. Die öffentliche API ist `game.modules.get('pedipalpus-foundry').api.roll({actorId, reference, blind, modifier})`. Es werden keine Zahlen in Makros eingefroren.
+
+Foundrys Tastaturkonfiguration enthält frei belegbare Aktionen für Öffnen/Suche, Kampfbrett und Probenring. Es werden keine bestehenden Tasten vorbelegt. In Textfeldern werden diese Aktionen nicht ausgelöst. In der Suche setzt Pfeil nach unten den Fokus auf den ersten erreichbaren Würfelknopf; Escape leert die Suche.
+
+## Rückmeldungen und Soundeffekte
+
+**Einstellungen → Soundeffekte** schaltet die persönlichen Klänge ein oder vollständig aus. Standardmäßig sind sie aus. Lautstärke 0 bleibt still. Die Vorschau **Rastklang anhören** spielt auf Wunsch den kurzen metallischen Klick; normale Klänge bleiben bis zur Aktivierung aus. Alle Sounds entstehen lokal, ohne externe Dienste oder Übertragung an andere Spieler.
+
+Das Mausrad funktioniert über der Zahl und über **Erschwernis/Erleichterung**. Änderungen geben bei aktiviertem Sound einen kurzen metallischen Rastklang wie ein Safe-Drehknopf. Nur die Klangfolge wird bei schnellem Drehen begrenzt; jeder Mausradschritt ändert weiter den Wert. Weitere kurze Klänge bestätigen Fokus, Import und Favoriten. Es gibt keine Ergebnisfanfaren oder gesprochenen Kommentare.
+
+Animationen lassen sich auf Aus, Dezent oder Lebendig stellen. Gedrückte Knöpfe, gespeicherte Änderungen, Fokuswirkung und verbrauchter Modifikator erhalten kurze Rückmeldungen. Zahlen ändern sich sofort; Knöpfe wandern nicht. Reduzierte Bewegung wird berücksichtigt. „Probe ausgelöst“ bezeichnet die ausgeführte Aktion, nicht einen regeltechnischen Erfolg.
+
+## Importvergleich und Austauschpakete
+
+Vor einem erneuten Import mit tatsächlichen Unterschieden zeigt ein Vergleich Änderungen, hinzugefügte/entfernte Proben und den Fokus. **Aktuellen Foundry-Fokus behalten** ist optional. Abbrechen übernimmt keine Daten.
+
+Ein Charakter-ZIP enthält genau eine gültige Pedipalpus-JSON und optional ein PNG/JPG/BMP/WebP-Bild; Ordner sind erlaubt. ZIP bis 17 MB, JSON bis 5 MB, Bild bis 10 MB. Programm-ZIPs oder Archive mit mehreren Charakteren werden abgelehnt. Ein zusätzlich gewähltes manuelles Bild hat Vorrang vor dem Paketbild.
+
+**Austauschpaket** exportiert die beim Import mitgeführte Original-JSON und ein erreichbares Portrait aus der Foundry-Welt. Alte Importe benötigen dafür einmalig einen erneuten Originalimport. Beim Export werden die drei Fokuswerte auf den aktuellen Foundry-Stand gesetzt und der Portraitdateiname passend zur beiliegenden Bilddatei gespeichert; alle anderen Originalfelder bleiben erhalten. Die ursprüngliche Windows-Datei wird nicht verändert. Das Paket kann in einer anderen Foundry-Welt importiert werden. Windows-Daten werden weiterhin bewusst über Dateien und den Ordner CharacterPortraits übernommen, nicht automatisch synchronisiert.
+
+Eine gemeinsame Ergebnis-/Proben-Schnittstelle mit Ucurifunke und ein eigener Paketexport in der Windows-App benötigen weiterhin Abstimmung mit deren Entwickler. Das Modul verändert keine fremde Regelauswertung. Ergebnissiegel und Erfolgs-/Patzerklänge bleiben bis zu einer verlässlichen Ergebnisanbindung aus.
 
 ## Ork-Darstellung
 

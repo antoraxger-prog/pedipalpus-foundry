@@ -1,0 +1,66 @@
+.pedipalpus-app .pp-feedback {
+  min-height: 1.4em;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--pp-muted);
+  overflow-wrap: anywhere;
+}
+.pedipalpus-app .pp-feedback:empty { visibility: hidden; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] .pp-feedback,
+.pedipalpus-app .pp-root[data-theme="ork"] .pp-feedback { color: #eddbb4; }
+.pedipalpus-app .pp-feedback-pending .pp-feedback { text-decoration: underline dotted; text-underline-offset: 3px; }
+.pedipalpus-app .pp-feedback-error .pp-feedback { font-weight: 600; }
+.pedipalpus-app [data-pp-animations="subtle"].pp-feedback-success .pp-feedback,
+.pedipalpus-app [data-pp-animations="subtle"].pp-feedback-focus-changed .pp-feedback,
+.pedipalpus-app [data-pp-animations="subtle"].pp-feedback-modifier-consumed .pp-feedback,
+.pedipalpus-app [data-pp-animations="subtle"].pp-feedback-saved .pp-feedback,
+.pedipalpus-app [data-pp-animations="subtle"].pp-feedback-favorite .pp-feedback,
+.pedipalpus-app [data-pp-animations="lively"].pp-feedback-success .pp-feedback,
+.pedipalpus-app [data-pp-animations="lively"].pp-feedback-focus-changed .pp-feedback,
+.pedipalpus-app [data-pp-animations="lively"].pp-feedback-modifier-consumed .pp-feedback,
+.pedipalpus-app [data-pp-animations="lively"].pp-feedback-saved .pp-feedback,
+.pedipalpus-app [data-pp-animations="lively"].pp-feedback-favorite .pp-feedback {
+  animation: pp-feedback-mark 450ms ease-out;
+}
+.pedipalpus-app [data-pp-animations="subtle"] button:not(:disabled):active,
+.pedipalpus-app [data-pp-animations="lively"] button:not(:disabled):active {
+  filter: brightness(.9);
+  box-shadow: inset 0 1px 3px #0005;
+}
+.pedipalpus-app [data-pp-animations="lively"] .pp-rating {
+  background-size: 180% 100%;
+}
+.pedipalpus-app [data-pp-animations="lively"] .pp-check-row[data-grade="master"]:hover .pp-rating {
+  background-position: 100% 50%;
+  transition: background-position 180ms ease-out;
+}
+.pedipalpus-app .pp-feedback-focus-changed[data-pp-animations="subtle"] .pp-focus output,
+.pedipalpus-app .pp-feedback-focus-changed[data-pp-animations="lively"] .pp-focus output,
+.pedipalpus-app .pp-feedback-modifier-consumed[data-pp-animations="subtle"] .pp-modifier input,
+.pedipalpus-app .pp-feedback-modifier-consumed[data-pp-animations="lively"] .pp-modifier input,
+.pedipalpus-app [data-pp-animations="subtle"] .pp-changed-value,
+.pedipalpus-app [data-pp-animations="lively"] .pp-changed-value {
+  animation: pp-feedback-outline 320ms ease-out;
+}
+@keyframes pp-feedback-mark {
+  from { text-shadow: 0 0 4px currentColor; }
+  to { text-shadow: none; }
+}
+.pedipalpus-app .pp-tools-opening { animation: pp-surface-open 160ms ease-out; }
+.pedipalpus-app .pp-sheet-changed { animation: pp-surface-open 120ms ease-out; }
+@keyframes pp-surface-open { from { opacity: .7; } to { opacity: 1; } }
+@keyframes pp-feedback-outline {
+  from { outline: 1px solid currentColor; outline-offset: 2px; }
+  to { outline: 1px solid transparent; outline-offset: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pedipalpus-app .pp-tools-opening, .pedipalpus-app .pp-sheet-changed { animation: none; }
+  .pedipalpus-app [data-pp-animations] .pp-feedback,
+  .pedipalpus-app [data-pp-animations] .pp-rating,
+  .pedipalpus-app [data-pp-animations] .pp-focus output,
+  .pedipalpus-app [data-pp-animations] .pp-modifier input,
+  .pedipalpus-app [data-pp-animations] .pp-changed-value {
+    animation: none !important;
+    transition: none !important;
+  }
+}

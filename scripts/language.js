@@ -1,4 +1,32 @@
 const words = {
+  'Werkzeuge':'Werkzeug holen', 'Einstellungen':'So einstellen', 'Vorlagen':'Schon gemerkt',
+  'Favoriten':'Lieblingsdinge', 'Meine Favoriten':'Lieblingsdinge', 'Zuletzt verwendet':'Eben getan', 'Zuletzt benutzt':'Eben getan',
+  'Schnellleiste':'Schnell tun', 'Hinweise':'Unga erklärt', 'Berechnung ansehen':'Zahl erklären',
+  'Aus Favoriten entfernen':'Nicht mehr Lieblingsding', 'Zu Favoriten hinzufügen':'Mein Lieblingsding',
+  'Kampfbrett öffnen':'Kleines Haubrett', 'Probenring öffnen':'Lieblingskreis holen',
+  'Vollständiges Fenster öffnen':'Alles zeigen', 'Probenring schließen':'Kreis weg',
+  'Favoriten im vollständigen Fenster mit dem Stern auswählen.':'Erst Lieblingsdinge mit Stern merken. Dann Kreis.',
+  'Darstellung der Liste':'Wie viele Dinge?', 'Normal':'Normal', 'Kompakt':'Eng zusammen', 'Große Knöpfe':'Große Knöpfe. Gut.',
+  'Sprache':'Wie reden?', 'Passend zum Design':'Passt zum Aussehen', 'Animationen':'Dinge bewegen',
+  'Aus':'Nö. Aus.', 'Dezent':'Bisschen', 'Lebendig':'Mehr bewegen', 'Soundeffekte':'Geräusche',
+  'Lautstärke':'Wie laut?', 'Klangset':'Welche Geräusche?', 'Neutral':'Einfach', 'Rastklang anhören':'Metall klick. Anhören.',
+  'Ausgewähltem Token folgen':'Gewählte Figur folgen',
+  'Ohne Tokenfolgen bleibt der gewählte Charakter angeheftet. Mehrere Tokens werden nicht automatisch zugeordnet.':'Ohne Folgen bleibt dein Blatt. Viele Figuren? Unga rät nicht.',
+  'Favoriten ordnen':'Lieblingsdinge schieben', 'Nach oben':'Hoch', 'Nach unten':'Runter', 'Entfernen':'Weg',
+  'Noch keine Favoriten.':'Noch kein Lieblingsding.', 'Speichern':'Merken', 'Schließen':'Zu',
+  'Fokus gespeichert.':'Kampf-Laune bleibt so.', 'Favoriten gespeichert.':'Lieblingsdinge gemerkt.',
+  'Einstellungen gespeichert.':'So bleibt es.', 'Vorlagen gespeichert.':'Zahlen gemerkt.',
+  'Probe wird ausgelöst …':'Unga würfelt …', 'Probe ausgelöst. Nächste Probe wieder ohne Modifikator.':'Gewürfelt. Nächster Wurf wieder normal.',
+  'Eine Vorlage pro Zeile: Name | Zahl. Positive Zahlen erschweren, negative erleichtern.':'Eine Zeile: Name | Zahl. Plus schwer. Minus leicht.',
+  'Höchstens 24 Vorlagen verwenden.':'24 Dinge genug.', 'Vorlage im Format Name | ganze Zahl eingeben.':'So schreiben: Name | ganze Zahl.',
+  'Bitte zuerst einen eigenen Charakter auswählen.':'Erst deinen du wählen.', 'Bitte die laufende Aktion abwarten.':'Unga arbeitet. Kurz warten.',
+  'Versionsinformationen':'Welche Helfer da?', 'Austauschpaket gespeichert.':'Blatt-Paket da.',
+  'Für das Austauschpaket bitte die Originaldatei einmal erneut importieren.':'Paket machen? Erst Originalblatt nochmal holen.',
+  'Austauschpaket':'Blatt-Paket', 'Import vergleichen':'Neues Blatt angucken', 'Diese Änderungen werden übernommen:':'Das wird anders:',
+  'Bisher':'Vorher', 'Neu':'Jetzt', 'Mehrdeutig':'Unga nicht sicher', 'weitere Änderungen.':'weitere neue Dinge.',
+  'Aktuellen Foundry-Fokus behalten':'Deine Kampf-Laune behalten', 'Übernehmen':'Jo. Nehmen.', 'Charakter importiert.':'Blatt geholt. Schön.',
+  'Diese Probe ist im aktuellen Charakter nicht mehr vorhanden. Bitte die Auswahl aktualisieren.':'Ding nicht mehr im Blatt. Lieblingsding neu wählen.',
+  'Diese Probe ist mehrdeutig. Bitte die passende Probe direkt in der Liste auswählen.':'Mehrere gleiche Dinge. Direkt richtiges Ding im Blatt wählen.',
   'Pedipalpus – Proben':'Pedipalpus – Unga würfeln',
   'Charakter':'Du', 'Foundry-Charakter':'Du wählen', 'Charakter auswählen …':'Wer du? Wählen.',
   ' · noch kein Import':' · Blatt fehlt', 'JSON importieren':'Blatt holen',
@@ -80,6 +108,7 @@ export function uiText(theme, text) {
   if (Object.hasOwn(words, text)) return words[text];
   let match;
   if ((match = text.match(/^Ucurifunke – Proben ([\d.]+) verbunden$/))) return `Ucurifunke ${match[1]} da. Würfeln geht.`;
+  if ((match = text.match(/^Vorlage angewendet: (.*)$/))) return `Ding hilft: ${match[1]}`;
   if ((match = text.match(/^Bild ausgewählt: (.*)$/))) return `Gesicht da: ${match[1]}`;
   if ((match = text.match(/^(.*) wurde importiert\.$/))) return `${match[1]} hat Blatt. Gut.`;
   if ((match = text.match(/^Pedipalpus-Bild: (.*)\. Diese separate Bilddatei unten auswählen\.$/))) return `Gesicht liegt hier: ${match[1]}. Bild unten holen.`;
@@ -103,7 +132,11 @@ function copyText(element, theme) {
 export function localizeSurface(root, theme, character = null, actor = null, token = null) {
   if (theme !== 'ork') return;
   const t = text => uiText(theme,text);
-  root.querySelectorAll('.window-title, .pp-picker, .pp-theme, .pp-filters label, .pp-modifier label, .pp-wheel-hint span, .pp-focus > span, .pp-table th, .pp-sr-only, .pp-no-results, .pp-rank-legend span, .pp-status, .pp-hint, .pp-warning, .pp-search-scope, .pp-welcome h2, .pp-welcome p, [data-action="import"], [data-action="token"], [name="modifierDirection"], [name="theme"] option, [name="category"] option, [name="actor"] option[value=""]').forEach(element => copyText(element,theme));
+  root.querySelectorAll('.window-title, .pp-picker, .pp-theme, .pp-filters label, .pp-modifier label, .pp-wheel-hint span, .pp-focus > span, .pp-table thead th, .pp-sr-only, .pp-no-results, .pp-rank-legend span, .pp-status, .pp-hint, .pp-warning, .pp-search-scope, .pp-welcome h2, .pp-welcome p, .pp-ring-help, .pp-quickbar summary, .pp-details summary, [data-action="import"], [data-action="token"], [data-action="preferences"], [data-action="presets"], [data-action="export"], [data-action="diagnostic"], [name="modifierDirection"], [name="theme"] option, [name="category"] option, [name="actor"] option[value=""]').forEach(element => copyText(element,theme));
+  root.querySelectorAll('[data-action="administration"], [data-action="battle"], [data-action="ring"], [data-action="full"], [data-action="favorite"]').forEach(button=>{
+    if(button.title)button.title=t(button.title);
+    if(['administration','battle','ring','full'].includes(button.dataset.action))button.setAttribute('aria-label',button.title);
+  });
   for (const selector of ['[name="actor"]','[name="theme"]','[name="category"]','[name="search"]','[name="modifier"]','[name="modifierDirection"]','[name="focus"]','[data-action="portrait"]','.pp-focus']) {
     const element = root.querySelector(selector);
     for (const key of ['title','aria-label','placeholder']) if (element?.hasAttribute(key)) element.setAttribute(key,t(element.getAttribute(key)));
@@ -113,6 +146,8 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
   options.forEach(option => { if (option.textContent.endsWith(suffix)) option.textContent = option.textContent.slice(0,-suffix.length) + t(suffix); });
   const speaker = root.querySelector('.pp-status + span');
   if (speaker) speaker.textContent = `${t(actor?.isOwner ? 'Besitzerzugriff' : 'Lesezugriff')} · ${t(token ? 'Token:' : 'Sprecher:')} ${token?.name || actor?.name || character?.profile.name || ''}`;
+  const headSpeaker=root.querySelector('.pp-speaker');
+  if(headSpeaker){headSpeaker.textContent=`${t(token?'Token:':'Sprecher:')} ${token?.name||actor?.name||character?.profile.name||'–'}`;headSpeaker.title=headSpeaker.textContent;}
   const focus = root.querySelector('[name="focus"]');
   if (focus) {
     const value = Number(focus.value);
@@ -140,14 +175,18 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
     if (check.kind === 'combat') {
       const label = t({attack:'Angriff',parry:'Parade',ranged:'Fernkampf'}[check.combat.type]);
       const name = row.querySelector('.pp-check-name');
-      for (const node of name.childNodes) if (node.nodeType === 3) node.textContent = `${name.querySelector('.pp-master-star') ? ' ' : ''}${check.combat.weaponName} · ${label}`;
+      for (const node of name.childNodes) if (node.nodeType === 3) node.textContent = `${name.querySelector('.pp-master-star') ? ' ' : ''}${row.classList.contains('pp-weapon-action') ? label : `${check.combat.weaponName} · ${label}`}`;
       const subtitle = row.querySelector('small');
-      if (!check.id.startsWith('animals:')) subtitle.textContent = `${check.combat.skillName} · ${t('Talent')} ${check.combat.skillValue}`;
+      if (subtitle && !check.id.startsWith('animals:')) subtitle.textContent = `${check.combat.skillName} · ${t('Talent')} ${check.combat.skillValue}`;
       row.querySelector('.pp-single-probe').title = `${t('Fertigkeit')} ${check.combat.skillValue} + ${t('Basis')} ${check.combat.baseValue} + ${t('Fokus')} ${check.combat.focusValue} + ${t('Waffenbonus')} ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`;
       row.querySelector('.pp-single-probe').textContent = `${{attack:'Hau',parry:'Block',ranged:'Weit'}[check.combat.type]} · 1W20`;
     } else if (!check.foundation && ['primary','secondary','Spells','Rituals','Miracles'].includes(check.id.split(':')[0])) {
-      row.querySelector('small').textContent = t(check.group);
+      if(row.querySelector('small'))row.querySelector('small').textContent = t(check.group);
     }
+  });
+  root.querySelectorAll('.pp-weapon-header').forEach(header=>{
+    const id=JSON.parse(header.dataset.checkIds || '[]')[0],check=checks.get(id),subtitle=header.querySelector('small');
+    if(subtitle && check && !check.animalName)subtitle.textContent=`${check.combat.skillName} · ${t('Talent')} ${check.combat.skillValue}`;
   });
 }
 
