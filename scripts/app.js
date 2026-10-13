@@ -24,7 +24,7 @@ export class PedipalpusApp extends ApplicationV2 {
       .find(token => token.actorId === this.actorId && token.actorLink) ?? null;
   }
   async open(actorId = null) {
-    if (actorId) this.actorId = actorId;
+    if (actorId && actorId !== this.actorId) { this.actorId = actorId; this.search = ''; this.category = 'all'; }
     else if (!this.actorId) {
       const controlled = canvas.tokens?.controlled?.[0]?.document;
       const actor = controlled?.actorLink && game.actors.get(controlled.actorId);
@@ -50,6 +50,7 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelector('[name="actor"]').addEventListener('change', async event => {
       this.actorId = event.target.value || null;
       this.search = '';
+      this.category = 'all';
       await this.render({ force: true });
     });
     content.querySelector('[name="search"]')?.addEventListener('input', event => {
@@ -138,6 +139,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const actor = await saveCharacter(answer.snapshot, answer.actorId);
     this.actorId = actor.id;
     this.search = '';
+    this.category = 'all';
     await this.render({ force: true });
     ui.notifications.info(`${answer.snapshot.profile.name} wurde importiert.`);
   }
@@ -156,3 +158,4 @@ export class PedipalpusApp extends ApplicationV2 {
     ui.notifications.info('Der Token verwendet jetzt das gemeinsame Charakterblatt.');
   }
 }
+
