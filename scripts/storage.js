@@ -1,4 +1,5 @@
 import { MODULE_ID, FLAG, validSnapshot } from './data.js';
+import { applyCharacterChanges, characterRevision } from './editing.js';
 
 export const getCharacter = actor => {
   const value = actor?.getFlag(MODULE_ID, FLAG);
@@ -8,6 +9,16 @@ export const getCharacter = actor => {
 export function visibleActors() {
   return game.actors.contents.filter(actor => actor.testUserPermission(game.user, 'OBSERVER'))
     .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
+
+export async function saveChanges(actor, changes, expectedRevision) {
+  if (!actor?.isOwner || !actor.canUserModify(game.user, 'update')) throw new Error('Du benötigst Besitzerrechte, um diesen Charakter zu bearbeiten.');
+  const current = getCharacter(actor);
+  if (!current) throw new Error('Bitte zuerst einen Charakter importieren.');
+  if (characterRevision(current) !== expectedRevision) throw new Error('Das Blatt wurde inzwischen geändert. Bitte Änderungen verwerfen und mit dem aktuellen Stand erneut bearbeiten.');
+  const next = applyCharacterChanges(current, changes);
+  await actor.setFlag(MODULE_ID, FLAG, next);
+  return next;
 }
 
 export async function saveCharacter(snapshot, actorId = null) {

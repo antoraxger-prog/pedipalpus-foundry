@@ -7,6 +7,8 @@ import { parseCharacter, normalizeCharacter, MODULE_ID, FLAG, MAX_FILE_SIZE } fr
 import { buildCommand, connectionStatus, executeCheck } from '../scripts/commands.js';
 import { saveCharacter, getCharacter, linkToken } from '../scripts/storage.js';
 import { renderView } from '../scripts/view.js';
+import { applyCharacterChanges, characterRevision } from '../scripts/editing.js';
+import { saveChanges } from '../scripts/storage.js';
 
 test('Geographie uses saved totals and current attributes, ignoring default and selected copies', () => {
   const data = normalizeCharacter(fixture());
@@ -78,7 +80,7 @@ test('Character content is rendered as text, with no executable HTML', () => {
   assert.ok(html.includes('data-action="roll"'));
 });
 
-function runtime() {
+function runtime(version = '1.0.8') {
   const commands = {}, hooks = {}, messages = [], calls = [];
   const state = { modifier: { difficulty: 0, relief: 0, hidden: false }, dice: [17, 10, 16] };
   const document = {
@@ -88,7 +90,7 @@ function runtime() {
   };
   globalThis.game = { system: { id: 'worldbuilding' }, user: { id: 'player', isGM: false }, users: [{ id: 'gm', isGM: true }],
     actors: { get: id => id === document.id ? document : null },
-    modules: new Map([['ucurifunke-checks', { active: true, version: '1.0.8' }]]) };
+    modules: new Map([['ucurifunke-checks', { active: true, version }]]) };
   globalThis.foundry = {
     applications: { sidebar: { tabs: { ChatLog: { CHAT_COMMANDS: commands } } }, api: { DialogV2: { async input() { return state.modifier; } } } },
     utils: { isNewerVersion: (a, b) => a.localeCompare(b, undefined, { numeric: true }) > 0, escapeHTML: value => value.replace(/[<>]/g, x => x === '<' ? '&lt;' : '&gt;') },
@@ -110,11 +112,89 @@ function runtime() {
       throw new Error('Unknown command');
     }
   } };
-  const source = fs.readFileSync(new URL('../../pedipalpus-checks/ucurifunke-v1.0.8/ucurifunke-checks/scripts/ucurifunke-checks.js', import.meta.url), 'utf8');
+  const source = fs.readFileSync(new URL(`../../pedipalpus-checks/ucurifunke-v${version}/${version === '1.0.8' ? 'ucurifunke-checks/' : ''}scripts/ucurifunke-checks.js`, import.meta.url), 'utf8');
   vm.runInNewContext(source, { foundry, game, ui, CONST, console: { log() {} }, Hooks: { once: (key, fn) => { hooks[key] = fn; }, on() {} } });
-  hooks.init(); hooks.ready();
+  hooks.init(); hooks.ready?.();
   return { document, state, messages, calls };
 }
+
+test('Published 1.0.14 uses the current registry and accepts skills and attribute commands', async () => {
+  const { document, messages, state } = runtime('1.0.14');
+  assert.equal(connectionStatus().ready, true);
+  const character = normalizeCharacter(fixture());
+  await executeCheck(document, character.checks.find(check => check.name === 'Geographie'));
+  await executeCheck(document, character.checks.find(check => check.kind === 'attribute'));
+  assert.equal(messages.length, 2);
+  assert.match(messages[0].content, /Geographie/);
+  assert.match(messages[1].content, /Mut/);
+  state.modifier = null;
+  await executeCheck(document, character.checks[0]);
+  assert.equal(messages.length, 2);
+});
+
+test('Editing attributes updates the primary roll and all references without changing the source', () => {
+  const raw = fixture(); raw.PrimaryAttributes[1].BaseValue = 15; raw.PrimaryAttributes[1].ModValue = 1;
+  const original = normalizeCharacter(raw);
+  const next = applyCharacterChanges(original, [{ path: 'attributes.1.base', value: 16 }]);
+  assert.equal(next.attributes[1].value, 17);
+  assert.equal(next.checks.find(check => check.id === 'primary:1').value, 17);
+  const geo = next.checks.find(check => check.name === 'Geographie');
+  assert.equal(buildCommand(geo), '/skillcheck Geographie | Klugheit 17 | Klugheit 17 | Intuition 14 | 8');
+  assert.equal(original.attributes[1].value, 16);
+});
+
+test('Foundation and specialization edits retain imported bonuses and sibling consistency', () => {
+  const raw = fixture(); raw.AcademicSkills[0].Subskills.push({ Name: 'Geschichtswissen', BaseValue: 3, TotalValue: 9 });
+  const next = applyCharacterChanges(normalizeCharacter(raw), [
+    { path: 'checks.AcademicSkills:0:0.foundationValue', value: 5 },
+    { path: 'checks.AcademicSkills:0:0.specializationValue', value: 6 }
+  ]);
+  const geo = next.checks.find(check => check.name === 'Geographie'), history = next.checks.find(check => check.name === 'Geschichtswissen');
+  assert.equal(geo.value, 11);
+  assert.equal(history.value, 10);
+  assert.equal(history.foundationValue, 5);
+});
+
+test('Editing energy maxima and derived totals stays consistent; missing old base fields are supported', () => {
+  const original = normalizeCharacter(fixture());
+  const next = applyCharacterChanges(original, [{ path: 'derived.0.modifier', value: 2 }, { path: 'resources.0.value', value: 20 }]);
+  assert.equal(next.derived[0].value, 33);
+  assert.equal(next.resources[0].max, 33);
+  assert.equal(next.resources[0].value, 20);
+  const adjusted = applyCharacterChanges(next, [{ path: 'resources.0.max', value: 35 }]);
+  assert.equal(adjusted.derived[0].value, 35);
+});
+
+test('Conditions, money, equipment and notes are editable with validated fields only', () => {
+  const raw = fixture(); raw.SimpleConditions = [{ Name: 'Krank', IsActive: false }]; raw.ComplexConditions = [{ Name: 'Angst', Level: 0 }];
+  raw.MoneySources = [{ Location: 'Beutel', Worth: { Gold: 25 } }];
+  const original = normalizeCharacter(raw);
+  const next = applyCharacterChanges(original, [
+    { path: 'conditions.simple.0.active', value: true }, { path: 'conditions.complex.0.level', value: 2 },
+    { path: 'money.0.gold', value: 24 }, { path: 'equipment.0.carried', value: false },
+    { path: 'profile.notes', value: '<script>not executable</script>' }
+  ]);
+  assert.equal(next.conditions.simple[0].active, true); assert.equal(next.conditions.complex[0].level, 2);
+  assert.equal(next.money[0].gold, 24); assert.equal(next.equipment[0].carried, false);
+  for (const change of [
+    { path: '__proto__.polluted', value: true }, { path: 'checks.AcademicSkills:0:0.value', value: 1.5 },
+    { path: 'money.0.gold', value: -1 }, { path: 'profile.name', value: '' },
+    { path: 'equipment.0.quantity', value: Infinity }, { path: 'conditions.simple.0.active', value: 'false' }
+  ]) assert.throws(() => applyCharacterChanges(original, [change]));
+  assert.equal({}.polluted, undefined);
+});
+
+test('Saving changes persists, retains other flags and rejects observers or stale drafts', async () => {
+  const { document } = runtime();
+  await saveCharacter(normalizeCharacter(fixture()), document.id);
+  const before = getCharacter(document), rev = characterRevision(before);
+  await saveChanges(document, [{ path: 'profile.apAvailable', value: 12 }], rev);
+  assert.equal(getCharacter(document).profile.apAvailable, 12);
+  assert.equal(document.flags.thirdParty.value, 7);
+  await assert.rejects(saveChanges(document, [{ path: 'profile.apAvailable', value: 10 }], rev), /inzwischen geändert/);
+  document.isOwner = false;
+  await assert.rejects(saveChanges(document, [{ path: 'profile.apAvailable', value: 10 }], characterRevision(getCharacter(document))), /Besitzerrechte/);
+});
 test('Actual published 1.0.8 handler receives our command and linked token speaker', async () => {
   const { document, messages, calls } = runtime();
   const check = normalizeCharacter(fixture()).checks.find(check => check.name === 'Geographie');

@@ -33,6 +33,13 @@
 .pedipalpus-app .pp-editor-header .pp-group { margin: 0; padding: 5px 9px; }
 .pedipalpus-app .pp-editor-header small { display: block; text-align: center; font-size: 9px; color: var(--pp-muted); }
 .pedipalpus-app .pp-number-box { display: inline-flex; align-items: center; justify-content: center; width: 46px; min-height: 27px; padding: 3px; border: 1px solid var(--pp-border); background: var(--pp-field); color: var(--pp-text); border-radius: 3px; font-variant-numeric: tabular-nums; margin: 0 2px; }
+.pedipalpus-app .pp-root input.pp-number-box { height: 27px; text-align: center; box-shadow: none; }
+.pedipalpus-app .pp-root input.pp-number-box::-webkit-inner-spin-button { -webkit-appearance: none; }
+.pedipalpus-app .pp-edit-text { width: 100%; min-width: 65px; min-height: 28px; padding: 5px 7px; border: 1px solid var(--pp-border); border-radius: 2px; background: var(--pp-field); color: var(--pp-text); font: inherit; }
+.pedipalpus-app textarea.pp-edit-text { min-height: 90px; resize: vertical; }
+.pedipalpus-app .pp-edit-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 4px 8px; }
+.pedipalpus-app .pp-edit-bar small { flex-basis: 100%; color: var(--pp-muted); }
+.pedipalpus-app .pp-save-status { font-size: 11px; color: var(--pp-muted); }
 .pedipalpus-app .pp-energies { display: flex; gap: 18px; align-items: center; }
 .pedipalpus-app .pp-energy { display: inline-flex; gap: 2px; align-items: center; }
 .pedipalpus-app .pp-energy > span:first-child { color: var(--pp-muted); padding-right: 5px; }

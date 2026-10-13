@@ -4,7 +4,7 @@ export function buildCommand(check) {
   if (!check || check.reason) throw new Error(check?.reason || 'Die Probe wurde nicht gefunden.');
   const safeName = name => typeof name === 'string' && name.trim() && !/[|\r\n]/.test(name) && name.length <= 160;
   if (!safeName(check.name) || !Number.isSafeInteger(check.value)) throw new Error('Die Probe enthält ungültige Werte.');
-  if (check.kind === 'attribute') return `/attributecheck ${check.name} | ${check.value}`;
+  if (check.kind === 'attribute') return `/attributecheck ${check.name} ${check.value}`;
   if (check.kind !== 'skill' || check.attributes?.length !== 3
       || check.attributes.some(x => !safeName(x.name) || !Number.isSafeInteger(x.value))) {
     throw new Error('Die Probenattribute sind nicht vollständig definiert.');
@@ -17,10 +17,15 @@ export function connectionStatus() {
   if (!module?.active) return { ready: false, message: 'Bitte „Ucurifunke – Proben“ ab Version 1.0.8 aktivieren.' };
   if (foundry.utils.isNewerVersion('1.0.8', module.version)) return { ready: false, message: 'Bitte „Ucurifunke – Proben“ auf mindestens Version 1.0.8 aktualisieren.' };
   const registry = foundry.applications.sidebar.tabs.ChatLog.CHAT_COMMANDS;
-  if (!registry?.[`${CHECKS_MODULE}.skillcheck`] || !registry?.[`${CHECKS_MODULE}.attributecheck`]) {
+  if (!hasCommand(registry, 'skillcheck') || !hasCommand(registry, 'attributecheck')) {
     return { ready: false, message: 'Die Ucurifunke-Würfelbefehle sind nicht verfügbar. Bitte die Welt neu laden.' };
   }
   return { ready: true, message: `Ucurifunke – Proben ${module.version} verbunden` };
+}
+
+function hasCommand(registry, name) {
+  return [registry?.[`${CHECKS_MODULE}.${name}`], registry?.[name]]
+    .some(command => typeof command?.fn === 'function');
 }
 
 export async function executeCheck(actor, check, token = null) {
