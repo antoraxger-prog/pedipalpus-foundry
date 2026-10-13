@@ -8,7 +8,7 @@ import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
 import { uiText, localizeSurface, localizeDialog } from './language.js';
 import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
 import { compareCharacters } from './import-diff.js';
-import { playFeedback, notifyFeedback } from './feedback.js';
+import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
 import { readCharacterFile, writeCharacterBundle } from './bundle.js';
 import { checkDisplayName } from './ork-talents.js';
 
@@ -40,6 +40,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.mode = 'full';
     this.fullPosition = null;
   }
+  get dialogClasses() { return ['pedipalpus-dialog',...(this.theme==='ork'?['pp-ork-dialog']:this.theme==='demonic'?['pp-demonic-dialog']:[])]; }
   get language() { return this.preferences.language === 'theme' ? this.theme === 'ork' ? 'ork' : 'standard' : this.preferences.language; }
   get effects() { return {...this.preferences, theme:this.theme, animations:{none:'off',subtle:'subtle',full:'lively'}[this.preferences.animations]}; }
   get actor() { return this.actorId ? game.actors.get(this.actorId) : null; }
@@ -91,6 +92,13 @@ export class PedipalpusApp extends ApplicationV2 {
   _replaceHTML(result, content) {
     this.element.dataset.ppTheme = this.theme;
     content.innerHTML = result;
+    if(this.audioElement!==content){
+      this.audioElement=content;
+      const prepare=()=>{prepareFeedback(this.effects);};
+      content.addEventListener('pointerdown',prepare,{passive:true});
+      content.addEventListener('keydown',prepare);
+    }
+    if(globalThis.navigator?.userActivation?.isActive)prepareFeedback(this.effects);
     if(!this.geometryObserver && globalThis.MutationObserver){
       const remember=()=>{clearTimeout(this.geometryTimer);this.geometryTimer=setTimeout(()=>this.rememberWindow().catch(error=>console.warn(MODULE_ID,error)),160);};
       this.geometryObserver=new MutationObserver(remember);this.geometryObserver.observe(this.element,{attributes:true,attributeFilter:['style']});
@@ -142,9 +150,11 @@ export class PedipalpusApp extends ApplicationV2 {
       if (event.key === 'ArrowDown') { event.preventDefault(); content.querySelector('.pp-check-row:not([hidden]) [data-action="roll"]:not([disabled])')?.focus(); }
     });
     const focus = content.querySelector('[name="focus"]');
+    let previousFocus=Number(focus?.value);
     focus?.addEventListener('input', () => {
       if (this.busy || this.referenceBusy) return;
       updateFocusView(content, withFocus(getCharacter(this.actor), Number(focus.value)));
+      if(Number(focus.value)!==previousFocus){previousFocus=Number(focus.value);this.sound('dial');}
     });
     focus?.addEventListener('change', () => {
       if (this.busy || this.referenceBusy) return;
@@ -374,7 +384,7 @@ export class PedipalpusApp extends ApplicationV2 {
       ${row('Ausgewähltem Token folgen',`<input name="followToken" type="checkbox" ${draft.followToken?'checked':''}>`)}
       <p>${t('Ohne Tokenfolgen bleibt der gewählte Charakter angeheftet. Mehrere Tokens werden nicht automatisch zugeordnet.')}</p>
       <h3>${t('Favoriten ordnen')}</h3><div class="pp-favorite-editor"></div></div>`;
-    const answer=await DialogV2.wait({window:{title:this.t('Einstellungen')},classes:['pedipalpus-dialog',...(this.theme==='ork'?['pp-ork-dialog']:[])],position:{width:470},modal:true,rejectClose:false,content,
+    const answer=await DialogV2.wait({window:{title:this.t('Einstellungen')},classes:this.dialogClasses,position:{width:470},modal:true,rejectClose:false,content,
       buttons:[{action:'save',label:this.t('Speichern'),callback:(_event,_button,dialog)=>{
         const root=dialog.element;
         return {...draft,density:root.querySelector('[name="density"]').value,language:root.querySelector('[name="language"]').value,
@@ -410,7 +420,7 @@ export class PedipalpusApp extends ApplicationV2 {
   async presetsDialog() {
     const e=escapeHTML,t=text=>e(this.t(text));
     const lines=this.preferences.presets.map(item=>`${item.label} | ${item.modifier}`).join('\n');
-    const answer=await DialogV2.wait({window:{title:this.t('Vorlagen')},classes:['pedipalpus-dialog'],modal:true,rejectClose:false,
+    const answer=await DialogV2.wait({window:{title:this.t('Vorlagen')},classes:this.dialogClasses,modal:true,rejectClose:false,
       content:`<p>${t('Eine Vorlage pro Zeile: Name | Zahl. Positive Zahlen erschweren, negative erleichtern.')}</p><label>${t('Vorlagen')}<textarea name="presets" rows="6">${e(lines)}</textarea></label>`,
       buttons:[{action:'save',label:this.t('Speichern'),callback:(_ev,_bt,dialog)=>{
         const entries=dialog.element.querySelector('[name="presets"]').value.split('\n').map(line=>line.trim()).filter(Boolean);
@@ -427,7 +437,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const c=check.combat;
     const body=c?`<p>${t('Fertigkeit')} ${c.skillValue} + ${t('Basis')} ${c.baseValue} + ${t('Fokus')} ${c.focusValue} + ${t('Waffenbonus')} ${c.weaponModifier} − BE ${c.mobilityPenalty} = <strong>${check.value}</strong></p>`
       : `<p>${(check.attributes || []).map(att=>`${e(att.name)} ${att.value}`).join(' · ')}</p><p>${t('Wert')}: <strong>${check.value}</strong></p>`;
-    await DialogV2.wait({window:{title:checkDisplayName(check,this.language)},classes:['pedipalpus-dialog'],modal:true,rejectClose:false,content:(this.language==='ork' && check.kind==='skill'?`<p class="pp-original-name">${e(check.name)}</p>`:'')+body,buttons:[{action:'close',label:this.t('Schließen')}]});
+    await DialogV2.wait({window:{title:checkDisplayName(check,this.language)},classes:this.dialogClasses,modal:true,rejectClose:false,content:(this.language==='ork' && check.kind==='skill'?`<p class="pp-original-name">${e(check.name)}</p>`:'')+body,buttons:[{action:'close',label:this.t('Schließen')}]});
   }
   async diagnosticDialog() {
     const data={foundry:game.version,module:game.modules.get(MODULE_ID)?.version,probes:game.modules.get('ucurifunke-checks')?.version,system:game.system.id,sourceVersion:getCharacter(this.actor)?.sourceVersion,connection:connectionStatus().message};
@@ -468,7 +478,7 @@ export class PedipalpusApp extends ApplicationV2 {
     let readSequence = 0;
     const answer = await DialogV2.wait({
       window: { title: this.t('Pedipalpus-Charakter importieren') }, position: { width: 550 },
-      classes: ['pedipalpus-dialog', ...(this.theme === 'ork' ? ['pp-ork-dialog'] : [])], content: renderImportOptions(actors, this.actorId, canCreate), modal:true, rejectClose: false,
+      classes: this.dialogClasses, content: renderImportOptions(actors, this.actorId, canCreate), modal:true, rejectClose: false,
       buttons: [{ action: 'import', label:this.t('Importieren'), icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
           if (!pending) { this.notify('warn', 'Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }
@@ -528,7 +538,7 @@ export class PedipalpusApp extends ApplicationV2 {
       const differences=compareCharacters(previous,answer.snapshot);
       if(differences.length){
         const e=escapeHTML,canKeepFocus=characterFocus(previous)!==null&&characterFocus(answer.snapshot)!==null;
-        const accepted=await DialogV2.wait({window:{title:this.t('Import vergleichen')},classes:['pedipalpus-dialog'],position:{width:600},modal:true,rejectClose:false,
+        const accepted=await DialogV2.wait({window:{title:this.t('Import vergleichen')},classes:this.dialogClasses,position:{width:600},modal:true,rejectClose:false,
           content:`<p>${e(this.t('Diese Änderungen werden übernommen:'))}</p><div class="pp-import-diff"><table><thead><tr><th>${e(this.t('Probe'))}</th><th>${e(this.t('Bisher'))}</th><th>${e(this.t('Neu'))}</th></tr></thead><tbody>${differences.slice(0,200).map(row=>`<tr><td>${e(row.label)}${row.type==='ambiguous'?` · ${e(this.t('Mehrdeutig'))}`:''}</td><td>${e(row.before)}</td><td>${e(row.after)}</td></tr>`).join('')}</tbody></table>${differences.length>200?`<p>${differences.length-200} ${e(this.t('weitere Änderungen.'))}</p>`:''}</div>${canKeepFocus?`<label><input type="checkbox" name="keepFocus">${e(this.t('Aktuellen Foundry-Fokus behalten'))}</label>`:''}`,
           buttons:[{action:'accept',label:this.t('Übernehmen'),callback:(_ev,_button,dialog)=>({keepFocus:dialog.element.querySelector('[name="keepFocus"]')?.checked})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}]});
         if(!accepted)return;
@@ -547,7 +557,7 @@ export class PedipalpusApp extends ApplicationV2 {
     if (!actor?.canUserModify(game.user,'update')) throw new Error('Bitte einen eigenen Foundry-Charakter auswählen.');
     let portrait = null;
     let sequence = 0;
-    const answer = await DialogV2.wait({window:{title:this.t('Charakterbild importieren')},classes:['pedipalpus-dialog',...(this.theme === 'ork' ? ['pp-ork-dialog'] : [])],position:{width:450},rejectClose:false,
+    const answer = await DialogV2.wait({window:{title:this.t('Charakterbild importieren')},classes:this.dialogClasses,position:{width:450},rejectClose:false,
       content:'<label>Bilddatei<input name="portraitFile" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><p class="pp-portrait-preview">Bild bis 10 MB auswählen. Das Bild wird für Charakter, Token-Vorlage und bearbeitbare verknüpfte Tokens übernommen.</p>',
       buttons:[{action:'image',label:this.t('Bild übernehmen'),disabled:true,callback:() => portrait},{action:'cancel',label:this.t('Abbrechen'),callback:() => null}],
       render:(_event,dialog) => {

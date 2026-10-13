@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.11.1
+# Pedipalpus – Proben · 0.12.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -30,7 +30,7 @@ Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benöti
 
 ## Kompakte Oberfläche
 
-Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell und Ork bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
+Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell, Ork und Dämonisch bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
 
 Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben sind ausschließlich im **Kampfbrett** über das gekreuzte Waffensymbol erreichbar. Sie erscheinen weder in der normalen Probenliste noch im Probenring. Der Fokusregler gehört ebenfalls zum Kampfbrett.
 
@@ -54,9 +54,17 @@ Foundrys Tastaturkonfiguration enthält frei belegbare Aktionen für Öffnen/Suc
 
 **Einstellungen → Soundeffekte** schaltet die persönlichen Klänge ein oder vollständig aus. Standardmäßig sind sie eingeschaltet, mit 25 % UI-Lautstärke und zusätzlich gedämpfter Wiedergabe. Die bisherige Voreinstellung wird beim Update einmal auf diesen leisen Standard umgestellt. Danach bleibt eine persönliche Deaktivierung gespeichert. Lautstärke 0 bleibt still. Die Vorschau **Rastklang anhören** spielt den kurzen metallischen Klick; bei 0 oder blockierter Wiedergabe gibt sie einen Hinweis. Alle Sounds entstehen lokal, ohne externe Dienste oder Übertragung an andere Spieler.
 
-Das Mausrad funktioniert über der Zahl und über **Erschwernis/Erleichterung**. Änderungen geben bei aktiviertem Sound einen kurzen metallischen Rastklang wie ein Safe-Drehknopf. Nur die Klangfolge wird bei schnellem Drehen begrenzt; jeder Mausradschritt ändert weiter den Wert. Weitere kurze Klänge bestätigen Fokus, Import und Favoriten. Es gibt keine Ergebnisfanfaren oder gesprochenen Kommentare.
+Das Mausrad funktioniert über der Zahl und über **Erschwernis/Erleichterung**. Änderungen spielen bei aktiviertem Sound zufällig einen von drei kurzen Ausschnitten aus der gewählten Gear-Click-Aufnahme. Auch beim Bewegen des Fokusreglers erklingt ein Klick. Die Ausschnitte werden einmal lokal geladen und wiederverwendet; für die Wiedergabe werden keine externen Dienste kontaktiert. Quelle und Lizenz stehen in [Audio-Credits](AUDIO-CREDITS.md). Nur die Klangfolge wird bei schnellem Drehen begrenzt; jeder Mausradschritt ändert weiter den Wert. Weitere kurze Klänge bestätigen Import und Favoriten. Es gibt keine Ergebnisfanfaren oder gesprochenen Kommentare.
 
 Animationen lassen sich auf Aus, Dezent oder Lebendig stellen. Gedrückte Knöpfe, gespeicherte Änderungen, Fokuswirkung und verbrauchter Modifikator erhalten kurze Rückmeldungen. Zahlen ändern sich sofort; Knöpfe wandern nicht. Reduzierte Bewegung wird berücksichtigt. „Probe ausgelöst“ bezeichnet die ausgeführte Aktion, nicht einen regeltechnischen Erfolg.
+
+## Glanz, Holz und dämonisches Design
+
+Beim Überfahren einer Fähigkeit läuft ein kurzer, dezenter Glanz über ihren Namen. Klickflächen und Schrift bleiben an derselben Position. Auch die Karten im Probenring reagieren auf das Überfahren. Der Glanz gehört zu **Animationen** und bleibt bei **Aus** oder reduzierter Bewegung statisch.
+
+Die Holztextur in Fantasy und Ork wird groß und durchgehend über den Fensterhintergrund gelegt, einschließlich der Titelleiste; kleine wiederholte Kacheln entfallen.
+
+Unter **Werkzeuge → Darstellung → Dämonisch** stehen schwarzer Marmor, dunkle Felder, warme Feuerkanten und ein glühender Bannkreis mit Pentagramm zur Wahl. Der Feuerkreis bewegt sich langsam, sein Licht flackert sanft. **Dezent** und **Lebendig** unterscheiden die Bewegung; **Aus** hält den Hintergrund an. Reduzierte Bewegung wird berücksichtigt. Das Design ist persönlich gespeichert; Daten und Probenregeln ändern sich nicht.
 
 ## Importvergleich und Austauschpakete
 

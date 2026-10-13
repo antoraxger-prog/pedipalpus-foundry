@@ -1,5 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Dämonisch':'Schwarz. Feuer.',
   'Zu den Proben wechseln':'Anderes Können zeigen',
   'Alle Kampfproben':'Alles hauen', 'Kampffavoriten':'Lieblingshauen', 'Zuletzt im Kampf':'Eben gehauen',
   'Kampfprobe suchen …':'Welches Hauen?', 'Kampfproben durchsuchen':'Hauen suchen',

@@ -3,6 +3,34 @@ const STATES = new Set(['pending', 'success', 'error', 'focus-changed', 'modifie
 const notices = new WeakMap();
 let audioContext;
 let lastDial = -Infinity;
+const sampleSets = new WeakMap();
+const gearFiles = [1,2,3].map(index=>new URL(`../assets/sounds/gear-click-${index}.wav`,import.meta.url).href);
+
+async function gearSamples(context) {
+  if (!sampleSets.has(context)) sampleSets.set(context,Promise.all(gearFiles.map(async url=>{
+    const response=await fetch(url);
+    if(!response.ok)throw new Error('Klickaufnahme fehlt.');
+    return context.decodeAudioData(await response.arrayBuffer());
+  })).catch(error=>{sampleSets.delete(context);throw error;}));
+  return sampleSets.get(context);
+}
+
+function contextForSound() {
+  const Constructor=globalThis.AudioContext || globalThis.webkitAudioContext;
+  if(!Constructor)return null;
+  if(!audioContext || audioContext.state==='closed'){audioContext=new Constructor();lastDial=-Infinity;}
+  return audioContext;
+}
+
+export async function prepareFeedback({sound=false,volume=.25}={}) {
+  if(!sound || !Number.isFinite(Number(volume)) || Number(volume)<=0)return false;
+  try {
+    const context=contextForSound();if(!context)return false;
+    if(context.state==='suspended')await context.resume();
+    if(context.state!=='running')return false;
+    await gearSamples(context);return true;
+  }catch{return false;}
+}
 
 function stateFor(event) {
   const value = String(event).replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase().replace(/[:\s]+/g, '-');
@@ -79,34 +107,33 @@ export async function playFeedback(event, { sound = false, volume = .25, soundSe
   const AudioContext = globalThis.AudioContext || globalThis.webkitAudioContext;
   if (!AudioContext) return false;
   try {
-    if (!audioContext || audioContext.state === 'closed') {
-      audioContext = new AudioContext();
-      lastDial = -Infinity;
-    }
-    const context = audioContext;
+    const context = contextForSound();
     if (context.state === 'suspended') await context.resume();
     if (context.state !== 'running') return false;
     const start = context.currentTime;
-    if (event === 'dial' && start - lastDial < 1 / 12) return false;
-    if (event === 'dial') lastDial = start;
+    const mechanical=['dial','focus','preview'].includes(event);
+    if (mechanical && event!=='preview' && start - lastDial < 1 / 12) return false;
+    if (mechanical && event!=='preview') lastDial = start;
+    if(mechanical){
+      const samples=await gearSamples(context);
+      if(event!=='preview' && context.currentTime-start>.2)return false;
+      const output=context.createGain(),source=context.createBufferSource();
+      output.gain.setValueAtTime(Math.min(numericVolume,1)*.28,context.currentTime);
+      output.connect(context.destination);
+      source.buffer=samples[Math.floor(Math.random()*samples.length)];source.connect(output);
+      source.onended=()=>{source.disconnect();output.disconnect();};source.start(context.currentTime);
+      return true;
+    }
     const output = context.createGain();
     output.gain.setValueAtTime(Math.min(numericVolume, 1) * .16, start);
     output.connect(context.destination);
     const ork = soundSet === 'ork' || (soundSet === 'theme' && theme === 'ork');
-    if (event === 'dial' || event === 'preview') {
-      click(context, output, start, .009, .75);
-      tone(context, output, start, 1700, .035, .6, 'sine', 1300);
-      tone(context, output, start, 2860, .045, .25);
-      tone(context, output, start + .008, 940, .045, .2);
-    } else if (event === 'error') {
+    if (event === 'error') {
       tone(context, output, start, ork ? 130 : 230, .12, .5, 'triangle', ork ? 90 : 170);
     } else if (event === 'roll') {
       click(context, output, start, .018, .4);
       tone(context, output, start, ork ? 170 : 340, .08, .5, 'triangle', ork ? 105 : 200);
       tone(context, output, start + .03, ork ? 380 : 860, .06, .2);
-    } else if (event === 'focus') {
-      click(context, output, start, .013, .25);
-      tone(context, output, start, ork ? 220 : 520, .06, .35, 'triangle');
     } else if (event === 'favorite') {
       tone(context, output, start, ork ? 320 : 960, .08, .45);
       tone(context, output, start + .02, ork ? 510 : 1440, .07, .2);

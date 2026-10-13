@@ -1,5 +1,5 @@
 import { MODULE_ID } from './data.js';
-export const THEMES = ['fantasy', 'dark', 'light', 'ork'];
+export const THEMES = ['fantasy', 'dark', 'light', 'ork', 'demonic'];
 const valid = value => THEMES.includes(value);
 export function registerDesignSettings() {
   game.settings.register(MODULE_ID, 'theme', {scope:'client', config:false, type:String, default:'fantasy'});

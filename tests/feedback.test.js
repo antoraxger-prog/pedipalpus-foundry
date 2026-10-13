@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { playFeedback, notifyFeedback } from '../scripts/feedback.js';
+import fs from 'node:fs';
+import { playFeedback, notifyFeedback, prepareFeedback } from '../scripts/feedback.js';
 
 function audioRuntime() {
   const contexts = [];
+  contexts.fetches=[];
+  globalThis.fetch=async url=>{contexts.fetches.push(url);const bytes=fs.readFileSync(new URL(url));return {ok:true,arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)};};
   class Node {
     constructor() {
       this.connections = [];
@@ -21,6 +24,7 @@ function audioRuntime() {
     createOscillator() { const node = new Node(); this.nodes.push(node); return node; }
     createBufferSource() { const node = new Node(); this.nodes.push(node); return node; }
     createBuffer(channels, length) { assert.equal(channels, 1); return { getChannelData: () => new Float32Array(length) }; }
+    async decodeAudioData(bytes) { return {duration:(bytes.byteLength-44)/96000,size:bytes.byteLength}; }
     async resume() { this.state = 'running'; }
   };
   globalThis.game = { socket: { emit() { throw new Error('Sound must stay local'); } } };
@@ -53,15 +57,42 @@ test('Metallic dial feedback is local, quiet and rate limited without limiting i
   const contexts = audioRuntime();
   assert.equal(await playFeedback('dial', { sound: true, volume: 50, theme: 'ork' }), true);
   const context = contexts[0];
-  assert.equal(context.nodes[0].level, .16);
+  assert.equal(context.nodes[0].level, .28);
   assert.deepEqual(context.nodes[0].connections, [context.destination]);
-  assert.ok(context.nodes.some(node => node.hz === 2860), 'metal resonance is present');
+  assert.equal(contexts.fetches.length,3);
+  assert.ok(context.nodes.some(node=>node.buffer?.duration>0 && node.buffer.duration<.1),'Short source sample is used');
   const before = context.nodes.length;
   for (let i = 0; i < 20; i++) assert.equal(await playFeedback('dial', { sound: true }), false);
   assert.equal(context.nodes.length, before);
   context.currentTime += .09;
   assert.equal(await playFeedback('dial', { sound: true }), true);
   context.state = 'closed';
+});
+
+test('All three real click samples are selected randomly, cached and primed without sound', async () => {
+  const contexts=audioRuntime(),random=Math.random;
+  try {
+    assert.equal(await prepareFeedback({sound:false}),false);
+    assert.equal(contexts.fetches.length,0);
+    assert.equal(await prepareFeedback({sound:true}),true);
+    const context=contexts[0];
+    assert.equal(context.nodes.length,0);
+    for(const value of [.05,.5,.95]){
+      Math.random=()=>value;context.currentTime+=.1;
+      assert.equal(await playFeedback('dial',{sound:true,volume:.25}),true);
+    }
+    const sizes=new Set(context.nodes.filter(node=>node.buffer).map(node=>node.buffer.size));
+    assert.equal(sizes.size,3);
+    assert.equal(contexts.fetches.length,3);
+    for(const url of contexts.fetches){
+      const bytes=fs.readFileSync(new URL(url));
+      assert.equal(bytes.toString('ascii',0,4),'RIFF');
+      assert.equal(bytes.toString('ascii',8,12),'WAVE');
+      assert.equal(bytes.readUInt16LE(22),1);
+      assert.equal(bytes.readUInt32LE(24),48000);
+    }
+    context.state='closed';
+  }finally{Math.random=random;}
 });
 
 test('Theme sounds differ while errors remain gentle and playback failure cannot interrupt an action', async () => {

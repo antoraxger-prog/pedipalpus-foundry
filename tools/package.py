@@ -6,10 +6,11 @@ root = Path(__file__).resolve().parents[1]
 manifest = json.loads((root / 'module.json').read_text(encoding='utf-8'))
 output = root.parent / 'artifacts' / f"pedipalpus-foundry-{manifest['version']}.zip"
 output.parent.mkdir(parents=True, exist_ok=True)
-files = [root / 'module.json', root / 'README.md']
+files = [root / 'module.json', root / 'README.md', root / 'AUDIO-CREDITS.md']
 files += sorted((root / 'scripts').glob('*.js'))
 files += sorted((root / 'styles').glob('*.css'))
 files += sorted((root / 'assets').glob('*.svg'))
+files += sorted((root / 'assets/sounds').glob('*.wav'))
 for relative in manifest['esmodules'] + manifest['styles']:
     assert (root / relative) in files, relative
 with ZipFile(output, 'w', ZIP_DEFLATED) as archive:
