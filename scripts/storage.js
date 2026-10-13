@@ -19,7 +19,7 @@ export function visibleActors() {
     .sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
-export async function saveCharacter(snapshot, actorId = null, portrait = null) {
+export async function saveCharacter(snapshot, actorId = null, portrait = null, warn) {
   if (!validSnapshot(snapshot)) throw new Error('Die importierten Charakterdaten sind unvollständig.');
   if (game.system.id !== 'worldbuilding') throw new Error('Diese erste Version unterstützt Simple Worldbuilding.');
   if (actorId) {
@@ -29,7 +29,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null) {
     // Das Flag besitzt ein festes Schema; Arrays werden vollständig ersetzt.
     // Andere Flags, Foundry-Werte, Besitzerrechte und die Actor-ID bleiben erhalten.
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
-    if (image) await applyPortrait(actor,image);
+    if (image) await applyPortrait(actor,image,warn);
     return actor;
   }
   if (!foundry.documents.Actor.canUserCreate(game.user)) throw new Error('Du darfst keine Charaktere anlegen. Dein Meister kann einen anlegen und dir Besitzerrechte geben.');

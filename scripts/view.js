@@ -1,5 +1,6 @@
 import { buildCommand } from './commands.js';
 import { characterFocus } from './combat.js';
+import { uiText } from './language.js';
 export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const e = escapeHTML;
 const number = value => Number.isSafeInteger(value) ? value.toLocaleString('de-DE') : '–';
@@ -28,25 +29,27 @@ export function rollableChecks(character) {
     && (check.kind === 'attribute' || check.kind === 'combat' && validCombat(check) || check.kind === 'skill' && Array.isArray(check.attributes) && check.attributes.length === 3
       && check.attributes.every(att => att && typeof att.name === 'string' && Number.isSafeInteger(att.value))));
 }
-const probe = check => check.kind === 'combat' ? `<span class="pp-single-probe" title="${e(`Fertigkeit ${check.combat.skillValue} + Basis ${check.combat.baseValue} + Fokus ${check.combat.focusValue} + Waffenbonus ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`)}">${{attack:'AT',parry:'PA',ranged:'FK'}[check.combat.type]} · 1W20</span>` : check.kind === 'attribute' ? '<span class="pp-single-probe">3W20</span>'
+const probe = (check, theme = 'fantasy') => check.kind === 'combat' ? `<span class="pp-single-probe" title="${e(`${uiText(theme,'Fertigkeit')} ${check.combat.skillValue} + ${uiText(theme,'Basis')} ${check.combat.baseValue} + ${uiText(theme,'Fokus')} ${check.combat.focusValue} + ${uiText(theme,'Waffenbonus')} ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`)}">${(theme === 'ork' ? {attack:'Hau',parry:'Block',ranged:'Weit'} : {attack:'AT',parry:'PA',ranged:'FK'})[check.combat.type]} · 1W20</span>` : check.kind === 'attribute' ? '<span class="pp-single-probe">3W20</span>'
   : `<span class="pp-trio">${check.attributes.map(att => `<span title="${e(att.name)}">${e(att.short || att.name)} <strong>${number(att.value)}</strong></span>`).join('')}</span>`;
 const signed = value => value > 0 ? `+${value}` : String(value);
 export function updateFocusView(content, character) {
+  const theme = content.querySelector('.pp-root')?.dataset.theme || 'fantasy';
+  const t = text => uiText(theme,text);
   const focus = characterFocus(character);
   const off = content.querySelector('[data-focus="off"]');
   const def = content.querySelector('[data-focus="def"]');
-  if (off) off.textContent = `OFF ${signed(focus)}`;
-  if (def) def.textContent = `DEF ${signed(-focus)}`;
-  content.querySelector('[name="focus"]')?.setAttribute('aria-valuetext', `OFF ${signed(focus)}, DEF ${signed(-focus)}`);
+  if (off) off.textContent = `${t('OFF')} ${signed(focus)}`;
+  if (def) def.textContent = `${t('DEF')} ${signed(-focus)}`;
+  content.querySelector('[name="focus"]')?.setAttribute('aria-valuetext', `${t('OFF')} ${signed(focus)}, ${t('DEF')} ${signed(-focus)}`);
   const checks = new Map(character.checks.map(check => [check.id, check]));
   content.querySelectorAll('.pp-check-row').forEach(row => {
     const check = checks.get(row.dataset.checkId);
     if (check?.kind !== 'combat' || check.id.startsWith('animals:')) return;
     row.querySelector('.pp-rating').textContent = number(check.value);
-    const rating = `${mastery(check).label} · Talentwert ${number(check.combat.skillValue)} · Probenwert ${number(check.value)}`;
+    const rating = `${t(mastery(check).label)} · ${t('Talentwert')} ${number(check.combat.skillValue)} · ${t('Probenwert')} ${number(check.value)}`;
     row.querySelector('.pp-rating').title = rating;
     row.querySelector('.pp-rating').setAttribute('aria-label', rating);
-    row.querySelector('.pp-single-probe').outerHTML = probe(check);
+    row.querySelector('.pp-single-probe').outerHTML = probe(check,theme);
   });
 }
 const rollButton = (check, disabled, reason, blind = false) => button('roll', `${blind ? '<span aria-hidden="true">?</span>' : ''}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 8v9l-10 5L2 17V8L12 2Zm0 0L7 10l5 12 5-12L12 2ZM2 8l5 2h10l5-2M2 17l5-7m15 7-5-7"/></svg>`,
@@ -54,7 +57,7 @@ const rollButton = (check, disabled, reason, blind = false) => button('roll', `$
 
 export function renderView({ actors, actor, character, status, canImport, token, canLinkToken = false, search = '', category = 'all', theme = 'fantasy', modifier = 0, modifierDirection = 1, busy = false }) {
   const options = actors.map(item => `<option value="${e(item.id)}" ${item.id === actor?.id ? 'selected' : ''}>${e(item.name)}${item.hasCharacter ? '' : ' · noch kein Import'}</option>`).join('');
-  const toolbar = `<div class="pp-toolbar"><label class="pp-picker">Charakter<select name="actor" aria-label="Foundry-Charakter"><option value="">Charakter auswählen …</option>${options}</select></label>${button('import', 'JSON importieren', `class="pp-import-button" ${canImport ? '' : 'disabled'}`)}${button('portrait', '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="8" cy="9" r="1.5"/><path d="m4 19 6-6 4 4 3-3 4 5"/></svg>', `class="pp-portrait-button" aria-label="Charakterbild importieren" title="Charakter- und Tokenbild importieren" ${actor?.isOwner ? '' : 'disabled'}`)}<label class="pp-theme">Darstellung<select name="theme" aria-label="Darstellung"><option value="fantasy" ${theme === 'fantasy' ? 'selected' : ''}>Fantasy</option><option value="dark" ${theme === 'dark' ? 'selected' : ''}>Dunkel</option><option value="light" ${theme === 'light' ? 'selected' : ''}>Hell</option></select></label></div>`;
+  const toolbar = `<div class="pp-toolbar"><label class="pp-picker">Charakter<select name="actor" aria-label="Foundry-Charakter"><option value="">Charakter auswählen …</option>${options}</select></label>${button('import', 'JSON importieren', `class="pp-import-button" ${canImport ? '' : 'disabled'}`)}${button('portrait', '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="8" cy="9" r="1.5"/><path d="m4 19 6-6 4 4 3-3 4 5"/></svg>', `class="pp-portrait-button" aria-label="Charakterbild importieren" title="Charakter- und Tokenbild importieren" ${actor?.isOwner ? '' : 'disabled'}`)}<label class="pp-theme">Darstellung<select name="theme" aria-label="Darstellung"><option value="fantasy" ${theme === 'fantasy' ? 'selected' : ''}>Fantasy</option><option value="ork" ${theme === 'ork' ? 'selected' : ''}>Ork</option><option value="dark" ${theme === 'dark' ? 'selected' : ''}>Dunkel</option><option value="light" ${theme === 'light' ? 'selected' : ''}>Hell</option></select></label></div>`;
   if (!character) return `<div class="pp-root" data-theme="${e(theme)}">${toolbar}<div class="pp-welcome"><i class="fa-solid fa-dice-d20" aria-hidden="true"></i><h2>Pedipalpus – Proben</h2><p>Charakterdatei importieren, eine Probe auswählen und würfeln.</p><p class="pp-hint">Einen vorhandenen Foundry-Charakter auswählen oder beim Import einen neuen anlegen.</p></div></div>`;
   const checks = rollableChecks(character);
   const available = new Set(checks.map(categoryOf));

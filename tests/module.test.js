@@ -10,6 +10,42 @@ import { renderView, rollableChecks, mastery } from '../scripts/view.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from '../scripts/portraits.js';
 import { characterFocus, withFocus } from '../scripts/combat.js';
 import { saveFocus } from '../scripts/storage.js';
+import { registerDesignSettings, savedDesign, initializeDesign, saveDesign } from '../scripts/design.js';
+import { uiText } from '../scripts/language.js';
+
+test('Design is saved per user, defaults to Fantasy and migrates the old browser choice only once', async () => {
+  runtime();
+  const configs=new Map(), values=new Map();
+  const key=(ns,k) => `${configs.get(ns+'.'+k)?.scope === 'user' ? game.user.id : 'client'}:${ns}.${k}`;
+  game.settings={register(ns,k,c){configs.set(ns+'.'+k,c);},get(ns,k){return values.has(key(ns,k)) ? values.get(key(ns,k)) : configs.get(ns+'.'+k)?.default;},async set(ns,k,v){values.set(key(ns,k),v);}};
+  registerDesignSettings();
+  assert.equal(savedDesign(),'fantasy');
+  await game.settings.set(MODULE_ID,'theme','dark');
+  await initializeDesign();
+  assert.equal(savedDesign(),'dark');
+  await saveDesign('ork');
+  assert.equal(savedDesign(),'ork');
+  game.user.id='another-player';
+  assert.equal(savedDesign(),'fantasy');
+  await initializeDesign();
+  await saveDesign('light');
+  game.user.id='player';
+  assert.equal(savedDesign(),'ork');
+  await assert.rejects(saveDesign('unknown'),/nicht verfügbar/);
+  assert.equal(savedDesign(),'ork');
+});
+
+test('Ork copy is presentation only; names, numbers and roll commands retain their original values', () => {
+  const data=normalizeCharacter(combatFixture());
+  assert.equal(uiText('ork','Erschwernis'),'Schwer. Aua.');
+  assert.equal(uiText('fantasy','Erschwernis'),'Erschwernis');
+  assert.equal(uiText('ork','Ucurifunke – Proben 1.0.14 verbunden'),'Ucurifunke 1.0.14 da. Würfeln geht.');
+  assert.equal(uiText('ork','Bild ausgewählt: Mein Bild.png'),'Gesicht da: Mein Bild.png');
+  const geo=data.checks.find(check=>check.name==='Geographie');
+  const html=renderView({actors:[],actor:{isOwner:true},character:data,status:{ready:true,message:'Verbunden'},canImport:true,theme:'ork'});
+  assert.ok(html.includes('value="ork" selected'));
+  assert.equal(buildCommand(geo),'/skillcheck Geographie | Klugheit 16 | Klugheit 16 | Intuition 14 | 8');
+});
 
 test('Focus updates attack and parry in opposite directions without changing ranged, animal or talent values', () => {
   const data = normalizeCharacter(combatFixture());

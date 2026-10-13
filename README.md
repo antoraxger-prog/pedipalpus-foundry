@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.8.0
+# Pedipalpus – Proben · 0.9.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -30,9 +30,13 @@ Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benöti
 
 ## Kompakte Oberfläche
 
-Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy ist die Standarddarstellung mit Holzrahmen und Pergament. Dunkel und Hell bleiben auswählbar; eine bereits gespeicherte Auswahl wird beibehalten.
+Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell und Ork bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
 
 Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben stehen als eigene Bereiche zur Verfügung.
+
+## Ork-Darstellung
+
+Unter **Darstellung → Ork** wird das Fenster zu einer groben Holz- und Lederoberfläche mit Knochen, Stoßzähnen und einfachen Beschriftungen. Beispielsweise: **Blatt holen**, **Was tun?**, **Schwer. Aua.**, **Kampf-Laune** und **Oberboss!**. Auch Importfenster, Hinweise und eigene Fehlermeldungen verwenden diese Sprache. Die Stärkeabstufungen bleiben sichtbar. Charakter-, Talent-, Attributs- und Waffennamen aus der Datei sowie Würfelbefehle und Chatkarten des Probenmoduls behalten ihre ursprüngliche Form. Beim Wechsel zu einer anderen Darstellung kehren die normalen Beschriftungen zurück.
 
 ## Talentstärken erkennen
 

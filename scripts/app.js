@@ -4,6 +4,8 @@ import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus } from
 import { renderView, renderImportOptions, updateFocusView } from './view.js';
 import { withFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from './portraits.js';
+import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
+import { uiText, localizeSurface, localizeDialog } from './language.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
 export class PedipalpusApp extends ApplicationV2 {
@@ -17,7 +19,8 @@ export class PedipalpusApp extends ApplicationV2 {
     this.actorId = null;
     this.search = '';
     this.category = 'all';
-    this.theme = game.settings.get(MODULE_ID, 'theme') || 'fantasy';
+    this.theme = savedDesign();
+    this.designSave = Promise.resolve();
     this.busy = false;
     this.modifier = 0;
     this.modifierDirection = 1;
@@ -30,6 +33,9 @@ export class PedipalpusApp extends ApplicationV2 {
       .find(token => token.actorId === this.actorId && token.actorLink) ?? null;
   }
   async open(actorId = null) {
+    await this.designSave;
+    try { await initializeDesign(); } catch (error) { console.error(MODULE_ID,error); this.notify('warn','Das Design konnte nicht gespeichert werden.'); }
+    this.theme = savedDesign();
     if (actorId && actorId !== this.actorId) { this.actorId = actorId; this.search = ''; this.category = 'all'; this.focusError = null; }
     else if (!this.actorId) {
       const controlled = canvas.tokens?.controlled?.[0]?.document;
@@ -54,6 +60,9 @@ export class PedipalpusApp extends ApplicationV2 {
   _replaceHTML(result, content) {
     this.element.dataset.ppTheme = this.theme;
     content.innerHTML = result;
+    const title = this.element.querySelector('.window-title');
+    if (title) title.textContent = 'Pedipalpus – Proben';
+    localizeSurface(this.element, this.theme, getCharacter(this.actor), this.actor, this.token);
     content.querySelector('[name="actor"]').addEventListener('change', async event => {
       this.actorId = event.target.value || null;
       this.search = '';
@@ -66,10 +75,12 @@ export class PedipalpusApp extends ApplicationV2 {
       this.filterChecks(content);
     });
     content.querySelector('[name="theme"]').addEventListener('change', event => {
-      this.theme = ['fantasy', 'light', 'dark'].includes(event.target.value) ? event.target.value : 'fantasy';
-      this.element.dataset.ppTheme = this.theme;
-      content.querySelector('.pp-root').dataset.theme = this.theme;
-      game.settings.set(MODULE_ID, 'theme', this.theme).catch(error => console.error(MODULE_ID, error));
+      this.theme = THEMES.includes(event.target.value) ? event.target.value : 'fantasy';
+      const theme = this.theme;
+      this.designSave = this.designSave.then(() => saveDesign(theme)).catch(error => {
+        console.error(MODULE_ID,error); this.notify('error','Das Design konnte nicht gespeichert werden.');
+      });
+      this.render({force:true}).catch(error => console.error(MODULE_ID,error));
     });
     content.querySelector('[name="category"]')?.addEventListener('change', event => {
       this.category = event.target.value;
@@ -89,7 +100,7 @@ export class PedipalpusApp extends ApplicationV2 {
         if (this.actorId === actor.id) this.focusError = null;
       }).catch(error => {
         if (this.actorId === actor.id) this.focusError = error;
-        ui.notifications.error(error.message || 'Der Fokus konnte nicht gespeichert werden.');
+        this.notify('error', error.message || 'Der Fokus konnte nicht gespeichert werden.');
         this.render({force:true}).catch(error => console.error(MODULE_ID,error));
       });
     });
@@ -115,13 +126,15 @@ export class PedipalpusApp extends ApplicationV2 {
     });
     this.filterChecks(content);
   }
+  t(text) { return uiText(this.theme,text); }
+  notify(level, text) { ui.notifications[level](this.t(text)); }
   updateModifier(content = this.element, updateValue = true) {
     const field = content.querySelector('[name="modifier"]');
     if (!field) return;
     if (this.modifier) this.modifierDirection = this.modifier < 0 ? -1 : 1;
     if (updateValue) field.value = Number.isSafeInteger(this.modifier) ? String(Math.abs(this.modifier)) : '';
     field.dataset.mode = this.modifier === 0 ? 'neutral' : this.modifierDirection < 0 ? 'relief' : 'difficulty';
-    const label = this.modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis';
+    const label = this.t(this.modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis');
     field.setAttribute('aria-label', label);
     const direction = content.querySelector('[name="modifierDirection"]');
     if (direction) direction.textContent = label;
@@ -163,7 +176,7 @@ export class PedipalpusApp extends ApplicationV2 {
       if (button.dataset.action === 'token') await this.linkSelectedToken();
     } catch (error) {
       console.error(MODULE_ID, error);
-      ui.notifications.error(error.message || 'Die Aktion konnte nicht ausgeführt werden.');
+      this.notify('error', error.message || 'Die Aktion konnte nicht ausgeführt werden.');
     } finally {
       this.busy = false; button.disabled = false;
       this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = false; });
@@ -181,15 +194,16 @@ export class PedipalpusApp extends ApplicationV2 {
     let portraitSequence = 0;
     let readSequence = 0;
     const answer = await DialogV2.wait({
-      window: { title: 'Pedipalpus-Charakter importieren' }, position: { width: 550 },
-      classes: ['pedipalpus-dialog'], content: renderImportOptions(actors, this.actorId, canCreate), rejectClose: false,
-      buttons: [{ action: 'import', label: 'Importieren', icon: 'fa-solid fa-file-import', disabled: true,
+      window: { title: this.t('Pedipalpus-Charakter importieren') }, position: { width: 550 },
+      classes: ['pedipalpus-dialog', ...(this.theme === 'ork' ? ['pp-ork-dialog'] : [])], content: renderImportOptions(actors, this.actorId, canCreate), rejectClose: false,
+      buttons: [{ action: 'import', label:this.t('Importieren'), icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
-          if (!pending) { ui.notifications.warn('Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }
+          if (!pending) { this.notify('warn', 'Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }
           if (portraitBusy || portraitError) throw new Error('Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.');
           return { snapshot: pending, portrait, actorId: dialog.element.querySelector('[name="destination"]').value || null };
-        } }, { action: 'cancel', label: 'Abbrechen', callback: () => null }],
+        } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => null }],
       render: (_event, dialog) => {
+        localizeDialog(dialog.element,this.theme);
         const input = dialog.element.querySelector('[name="characterFile"]');
         const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError; };
         const imageInput = dialog.element.querySelector('[name="portraitFile"]');
@@ -202,8 +216,8 @@ export class PedipalpusApp extends ApplicationV2 {
             const prepared = file ? await preparePortrait(file) : null;
             if (sequence !== portraitSequence) return;
             portrait = prepared;
-            preview.textContent = file ? `Bild ausgewählt: ${file.name}` : 'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.';
-          } catch (error) { if (sequence === portraitSequence) { portraitError = true; preview.textContent = error.message; } }
+            preview.textContent = this.t(file ? `Bild ausgewählt: ${file.name}` : 'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.');
+          } catch (error) { if (sequence === portraitSequence) { portraitError = true; preview.textContent = this.t(error.message); } }
           finally { if (sequence === portraitSequence) { portraitBusy = false; syncButton(); } }
         });
         input.addEventListener('change', async () => {
@@ -212,7 +226,7 @@ export class PedipalpusApp extends ApplicationV2 {
           const submit = dialog.element.querySelector('button[data-action="import"]');
           if (submit) submit.disabled = true;
           const preview = dialog.element.querySelector('.pp-import-preview');
-          preview.textContent = 'Datei wird gelesen …';
+          preview.textContent = this.t('Datei wird gelesen …');
           try {
             const file = input.files?.[0];
             if (!file) throw new Error('Bitte eine JSON-Datei auswählen.');
@@ -221,32 +235,33 @@ export class PedipalpusApp extends ApplicationV2 {
             if (sequence !== readSequence) return;
             pending = parsed;
             syncButton();
-            preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} Proben · Dateiversion ${parsed.sourceVersion}`;
+            preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} ${this.t('Proben')} · ${this.t('Dateiversion')} ${parsed.sourceVersion}`;
             dialog.element.querySelector('.pp-portrait-source').textContent = parsed.profile.portraitFileName
-              ? `Pedipalpus-Bild: CharacterPortraits/${parsed.profile.portraitFileName}. Diese separate Bilddatei unten auswählen.`
-              : 'Optional ein eigenes Charakterbild auswählen.';
-          } catch (error) { if (sequence === readSequence) preview.textContent = error.message; }
+              ? this.t(`Pedipalpus-Bild: CharacterPortraits/${parsed.profile.portraitFileName}. Diese separate Bilddatei unten auswählen.`)
+              : this.t('Optional ein Charakterbild auswählen.');
+          } catch (error) { if (sequence === readSequence) preview.textContent = this.t(error.message); }
         });
       }
     });
     if (!answer?.snapshot) return;
-    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait);
+    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message));
     this.actorId = actor.id;
     this.search = '';
     this.category = 'all';
     this.focusError = null;
     await this.render({ force: true });
-    ui.notifications.info(`${answer.snapshot.profile.name} wurde importiert.`);
+    this.notify('info', `${answer.snapshot.profile.name} wurde importiert.`);
   }
   async importPortrait() {
     const actor = this.actor;
     if (!actor?.canUserModify(game.user,'update')) throw new Error('Bitte einen eigenen Foundry-Charakter auswählen.');
     let portrait = null;
     let sequence = 0;
-    const answer = await DialogV2.wait({window:{title:'Charakterbild importieren'},position:{width:450},rejectClose:false,
+    const answer = await DialogV2.wait({window:{title:this.t('Charakterbild importieren')},classes:['pedipalpus-dialog',...(this.theme === 'ork' ? ['pp-ork-dialog'] : [])],position:{width:450},rejectClose:false,
       content:'<label>Bilddatei<input name="portraitFile" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><p class="pp-portrait-preview">Bild bis 10 MB auswählen. Das Bild wird für Charakter, Token-Vorlage und bearbeitbare verknüpfte Tokens übernommen.</p>',
-      buttons:[{action:'image',label:'Bild übernehmen',disabled:true,callback:() => portrait},{action:'cancel',label:'Abbrechen',callback:() => null}],
+      buttons:[{action:'image',label:this.t('Bild übernehmen'),disabled:true,callback:() => portrait},{action:'cancel',label:this.t('Abbrechen'),callback:() => null}],
       render:(_event,dialog) => {
+        localizeDialog(dialog.element,this.theme);
         dialog.element.querySelector('[name="portraitFile"]').addEventListener('change',async event => {
           const read = ++sequence;
           portrait = null;
@@ -255,13 +270,13 @@ export class PedipalpusApp extends ApplicationV2 {
             const image = await preparePortrait(event.target.files?.[0]);
             if (read !== sequence) return;
             portrait = image; submit.disabled = false;
-            dialog.element.querySelector('.pp-portrait-preview').textContent = `Bild ausgewählt: ${event.target.files[0].name}`;
-          } catch(error) { if (read === sequence) dialog.element.querySelector('.pp-portrait-preview').textContent = error.message; }
+            dialog.element.querySelector('.pp-portrait-preview').textContent = this.t(`Bild ausgewählt: ${event.target.files[0].name}`);
+          } catch(error) { if (read === sequence) dialog.element.querySelector('.pp-portrait-preview').textContent = this.t(error.message); }
         });
       }});
     if (!answer) return;
-    await applyPortrait(actor,await uploadPortrait(answer));
-    ui.notifications.info('Charakter- und Tokenbild übernommen.');
+    await applyPortrait(actor,await uploadPortrait(answer),message => this.notify('warn',message));
+    this.notify('info', 'Charakter- und Tokenbild übernommen.');
   }
   async linkSelectedToken() {
     const selected = canvas.tokens?.controlled ?? [];
@@ -269,12 +284,13 @@ export class PedipalpusApp extends ApplicationV2 {
     const token = selected[0].document;
     let accept = false;
     if (!token.actorLink && token.actorId && token.actorId === this.actorId) {
-      accept = await DialogV2.confirm({ window: { title: 'Gemeinsames Charakterblatt verwenden' },
-        content: '<p>Dieser Token verwendet bisher ein eigenes Blatt. Nach dem Verknüpfen verwendet er die gemeinsamen Werte des gewählten Foundry-Charakters. Verknüpfen?</p>', rejectClose: false });
+      accept = await DialogV2.confirm({ window: { title: this.t('Gemeinsames Charakterblatt verwenden') },
+        ...(this.theme === 'ork' ? {classes:['pedipalpus-dialog','pp-ork-dialog'],yes:{label:this.t('Ja')},no:{label:this.t('Nein')}} : {}),
+        content: `<p>${this.t('Dieser Token verwendet bisher ein eigenes Blatt. Nach dem Verknüpfen verwendet er die gemeinsamen Werte des gewählten Foundry-Charakters. Verknüpfen?')}</p>`, rejectClose: false });
       if (!accept) return;
     }
     await linkToken(this.actor, token, accept);
     await this.render({ force: true });
-    ui.notifications.info('Der Token verwendet jetzt das gemeinsame Charakterblatt.');
+    this.notify('info', 'Der Token verwendet jetzt das gemeinsame Charakterblatt.');
   }
 }

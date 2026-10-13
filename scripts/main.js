@@ -1,5 +1,6 @@
 import { MODULE_ID } from './data.js';
 import { PedipalpusApp } from './app.js';
+import { registerDesignSettings } from './design.js';
 let application;
 export function openPedipalpus(actorId = null) {
   application ??= new PedipalpusApp();
@@ -7,7 +8,7 @@ export function openPedipalpus(actorId = null) {
 }
 
 Hooks.once('init', () => {
-  game.settings.register(MODULE_ID, 'theme', { scope: 'client', config: false, type: String, default: 'fantasy' });
+  registerDesignSettings();
   game.settings.registerMenu(MODULE_ID, 'open', {
     name: 'Pedipalpus – Proben', label: 'Proben öffnen',
     hint: 'JSON-Datei importieren, einen Charakter auswählen und direkt würfeln.',
