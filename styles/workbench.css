@@ -15,6 +15,8 @@
 .pedipalpus-app .pp-value-medallion { display: inline-block; position: relative; min-width: 33px; text-align: center; }
 .pedipalpus-app .pp-value-medallion .pp-mastery-frame { display: none; pointer-events: none; position: absolute; width: 48px; height: 38px; left: 50%; top: 50%; transform: translate(-50%,-50%); z-index: 1; overflow: visible; }
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-mastery-frame, .pedipalpus-app .pp-root[data-theme="light"] .pp-mastery-frame { display: block; }
+.pedipalpus-app .pp-value-medallion[data-decoration="lesser"] .pp-mastery-frame { width: 39px; height: 32px; opacity: .65; filter: saturate(.65); }
+.pedipalpus-app .pp-check-row[data-grade="untrained"] .pp-value-medallion[data-decoration="lesser"] .pp-mastery-frame { opacity: .3; filter: grayscale(.75); }
 .pedipalpus-app .pp-tools { display: flex; gap: 4px; align-items: center; }
 .pedipalpus-app .pp-root button.pp-mode-button { width: 31px; min-width: 31px; min-height: 31px; padding: 4px; display: grid; place-items: center; font-size: 17px; }
 .pedipalpus-app .pp-mode-button .pp-category-icon { margin: 0; width: 18px; height: 18px; }

@@ -74,7 +74,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const actor = actors.find(actor => actor.id === this.actorId) ?? null;
     if (!actor) this.actorId = null;
     const current = getCharacter(actor);
-    if(this.mode==='full' && !['all','favorites','recent'].includes(this.category)){
+    if(this.mode==='full' && !['all','favorites'].includes(this.category)){
       const available=new Set(checksForView(current,'full').map(check=>['primary','secondary'].includes(check.id.split(':')[0])?'attributes':['Spells','Rituals'].includes(check.id.split(':')[0])?'magic':check.id.split(':')[0]));
       if(!available.has(this.category))this.category='all';
     }
@@ -214,7 +214,7 @@ export class PedipalpusApp extends ApplicationV2 {
     return {width,height,left:Math.max(0,Math.min(Number(position.left)||0,(globalThis.innerWidth||1280)-width)),top:Math.max(0,Math.min(Number(position.top)||0,(globalThis.innerHeight||800)-height))};
   }
   async rememberWindow() {
-    if (this.mode !== 'full') return;
+    if (this.mode === 'ring') return;
     const rect=this.element.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
     this.fullPosition={width:rect.width,height:rect.height,left:rect.left,top:rect.top};
@@ -224,13 +224,14 @@ export class PedipalpusApp extends ApplicationV2 {
   async close(options) { clearTimeout(this.geometryTimer);this.geometryObserver?.disconnect();this.sizeObserver?.disconnect();this.geometryObserver=null;this.sizeObserver=null;await this.rememberWindow();await this.preferenceSave.catch(()=>{});return super.close(options); }
   async setMode(mode,point=null) {
     if (!['full','battle','ring'].includes(mode)) return;
-    if (this.mode==='full') await this.rememberWindow();
+    const previousMode=this.mode;
+    if (previousMode!=='ring') await this.rememberWindow();
     this.mode=mode;
     if (mode !== 'full') this.administration=false;
     this.category=mode==='full'?this.preferences.category:'all';this.search='';
     await this.render({force:true});
-    if (mode==='full' && this.fullPosition) this.setPosition(this.safePosition(this.fullPosition));
-    else if (mode !== 'full') this.setPosition(this.safePosition({width:mode==='ring'?510:390,height:mode==='ring'?640:380,left:point?.x?point.x-255:80,top:point?.y?point.y-240:100}));
+    if (mode==='ring') this.setPosition(this.safePosition({width:510,height:640,left:point?.x?point.x-255:80,top:point?.y?point.y-240:100}));
+    else if (previousMode==='ring' && this.fullPosition) this.setPosition(this.safePosition(this.fullPosition));
   }
   updateModifier(content = this.element, updateValue = true) {
     const field = content.querySelector('[name="modifier"]');

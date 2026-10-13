@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.11.0
+# Pedipalpus – Proben · 0.11.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -42,9 +42,9 @@ Unter **Einstellungen** stehen Normal, Kompakt und Große Knöpfe, die Sprache, 
 
 ## Favoriten und schneller Zugriff
 
-Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** und **Zuletzt verwendet** stehen im Bereichsfilter. Bis zu sechs normale Favoriten erscheinen in der einklappbaren Schnellleiste. Kampffavoriten und zuletzt verwendete Kampfproben sind im Kampfbrett über den Bereichsfilter erreichbar; gespeicherte Einträge bleiben erhalten. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
+Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** stehen im Bereichsfilter. Bis zu sechs normale Favoriten erscheinen in der einklappbaren Schnellleiste. Kampffavoriten sind im Kampfbrett über den Bereichsfilter erreichbar; gespeicherte Einträge bleiben erhalten. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
 
-Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Ein Klick auf die Wertplakette zeigt die vorhandene Berechnung. Der Kopf enthält Knöpfe für ein kleineres **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Kampfbrett und normale Probenansicht teilen Charakter und nächsten Modifikator. Der gespeicherte Fokus gilt für Kampfproben und wird nur im Kampfbrett angezeigt.
+Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Ein Klick auf die Wertplakette zeigt die vorhandene Berechnung. Der Kopf enthält Knöpfe für das **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Kampfbrett und normale Probenansicht teilen Charakter, nächsten Modifikator sowie dieselbe Fenstergröße und Position. Der Schwert-und-Schild-Knopf wechselt die Ansicht innerhalb des vorhandenen Fensters. Der gespeicherte Fokus gilt für Kampfproben und wird nur im Kampfbrett angezeigt.
 
 Eine Probe am Namen auf Foundrys Makroleiste ziehen. Dafür werden Besitzerrechte und das Recht zum Erstellen von Makros benötigt. Das Makro liest die aktuellen Werte; ein Kampfmakro wechselt bei geöffnetem Fenster ins Kampfbrett, ein normales Makro von dort zurück zur Probenansicht; bei geöffnetem Würfelfenster verwendet es dessen nächsten Modifikator, sonst 0. Die öffentliche API ist `game.modules.get('pedipalpus-foundry').api.roll({actorId, reference, blind, modifier})`. Es werden keine Zahlen in Makros eingefroren.
 
@@ -74,7 +74,7 @@ Unter **Darstellung → Ork** wird das Fenster zu einer groben Holz- und Lederob
 
 ## Talentstärken erkennen
 
-Das Pergament wird mit höherem Gesamtwert des Talents schrittweise heller und feiner. Wert 0 oder darunter erscheint auf abgenutztem Pergament mit gestricheltem Wertfeld. Ab 10 hebt ein Goldrahmen mit Stern das Talent hervor. Der Hinweis am Wertfeld erklärt die Abstufung: 0 ungeübt, 1–3 Grundlagen, 4–6 geübt, 7–9 versiert und 10+ meisterlich. Diese Bezeichnungen dienen der Orientierung in der Oberfläche; sie ändern keine Regeln oder Würfelwerte. Attribute verwenden eine eigene Skala: 1 sehr schwach, 10 durchschnittlich und ab 20 meisterlich. Widerstands- und Reaktionsproben bleiben ohne Stärke-Einstufung.
+Das Pergament wird mit höherem Gesamtwert des Talents schrittweise heller und feiner. Wert 0 oder darunter erscheint auf abgenutztem Pergament mit gestricheltem Wertfeld. Unter 10 erscheint ein kleinerer, zurückhaltender Lorbeerkranz, bei 0 zusätzlich verblasst. Ab 10 hebt der große goldene Lorbeerkranz mit Stern das Talent hervor. Der Hinweis am Wertfeld erklärt die Abstufung: 0 ungeübt, 1–3 Grundlagen, 4–6 geübt, 7–9 versiert und 10+ meisterlich. Diese Bezeichnungen dienen der Orientierung in der Oberfläche; sie ändern keine Regeln oder Würfelwerte. Attribute verwenden eine eigene Skala: 1 sehr schwach, 10 durchschnittlich und ab 20 meisterlich. Widerstands- und Reaktionsproben bleiben ohne Stärke-Einstufung.
 
 Kampftalente verwenden dieselbe Skala. Maßgeblich ist der Wert der besten verwendeten Waffentechnik, bevor Basis, Fokus, Waffenbonus und Behinderung einfließen. Dieser Talentwert steht unter dem Waffennamen; die Spalte **Wert** zeigt weiterhin den fertigen AT-/PA-/FK-Probenwert. Tierangriffe haben fertige AT-/PA-Werte und erhalten keine Talentstufe.
 

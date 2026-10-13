@@ -125,7 +125,7 @@ export function validateWorkbench(value) {
   }
   return {
     actorId: actorKey(source.actorId) ? source.actorId : null,
-    category: typeof source.category === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(source.category) ? source.category : 'all',
+    category: typeof source.category === 'string' && source.category !== 'recent' && /^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(source.category) ? source.category : 'all',
     favorites: referencesByActor(source.favorites, 100), recent: referencesByActor(source.recent, 12),
     density: choices(source.density, ['normal', 'compact', 'comfortable'], 'normal'),
     language: choices(source.language, ['theme', 'standard', 'ork'], 'theme'),

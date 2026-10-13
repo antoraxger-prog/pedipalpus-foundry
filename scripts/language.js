@@ -1,5 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Zu den Proben wechseln':'Anderes Können zeigen',
   'Alle Kampfproben':'Alles hauen', 'Kampffavoriten':'Lieblingshauen', 'Zuletzt im Kampf':'Eben gehauen',
   'Kampfprobe suchen …':'Welches Hauen?', 'Kampfproben durchsuchen':'Hauen suchen',
   'Pedipalpus – Kampf':'Pedipalpus – Hauen',
@@ -9,7 +10,7 @@ const words = {
   'Favoriten':'Lieblingsdinge', 'Meine Favoriten':'Lieblingsdinge', 'Zuletzt verwendet':'Eben getan', 'Zuletzt benutzt':'Eben getan',
   'Schnellleiste':'Schnell tun', 'Hinweise':'Kurz erklärt', 'Berechnung ansehen':'Zahl erklären',
   'Aus Favoriten entfernen':'Nicht mehr Lieblingsding', 'Zu Favoriten hinzufügen':'Mein Lieblingsding',
-  'Kampfbrett öffnen':'Kleines Haubrett', 'Probenring öffnen':'Lieblingskreis holen',
+  'Kampfbrett öffnen':'Hauen zeigen', 'Probenring öffnen':'Lieblingskreis holen',
   'Vollständiges Fenster öffnen':'Alles zeigen', 'Probenring schließen':'Kreis weg',
   'Favoriten im vollständigen Fenster mit dem Stern auswählen.':'Erst Lieblingsdinge mit Stern merken. Dann Kreis.',
   'Darstellung der Liste':'Wie viele Dinge?', 'Normal':'Normal', 'Kompakt':'Eng zusammen', 'Große Knöpfe':'Große Knöpfe. Gut.',
