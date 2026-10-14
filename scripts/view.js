@@ -60,7 +60,7 @@ export function updateFocusView(content, character) {
     ratingField.closest('.pp-value-medallion')?.setAttribute('data-zero',String(check.value===0));
     const rating = `${t(mastery(check).label)} · ${t('Talentwert')} ${number(check.combat.skillValue)} · ${t('Probenwert')} ${number(check.value)}`;
     row.querySelector('.pp-rating').title = rating;
-    row.querySelector('.pp-rating').setAttribute('aria-label', rating);
+    row.querySelector('.pp-rating').setAttribute('aria-label', `${check.name} würfeln · ${rating}`);
     const probeField = row.querySelector('.pp-single-probe');
     if (probeField) probeField.outerHTML = probe(check,theme);
   });
@@ -142,6 +142,8 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   if(mode==='battle'){available.add('armors');if(character.equipment?.some(item=>item.id.startsWith('Animals:')))available.add('animals');}
   const disabled = busy || !status.ready || status.directReady === false || !actor?.isOwner;
   const disabledReason = !actor?.isOwner ? 'Zum Würfeln werden Besitzerrechte benötigt.' : status.message;
+  const rollDisabled = check => disabled || check.kind === 'combat' && status.combatReady === false;
+  const nameButton = (check,markup) => button('roll',markup,`class="pp-check-name" draggable="true" data-check="${e(check.id)}" data-blind="false" aria-label="${e(check.name)} durch Anklicken würfeln" title="${e(check.name)} würfeln" ${rollDisabled(check)?'disabled':''}`);
   const rankAttributes = check => {
     const rank = mastery(check);
     return `data-check-id="${e(check.id)}" data-ref-key="${e(keyOf(check))}" data-grade="${rank.grade}" data-scale="${rank.scale}" style="--pp-mastery:${rank.progress}" data-category="${e(categoryOf(check))}" data-search="${e(`${check.name} ${check.group || ''} ${checkDisplayName(check,'ork')}`.toLocaleLowerCase('de'))}" data-favorite="${isFavorite(check)}" data-recent="${isRecent(check)}" data-last="${lastCheckId === check.id}"`;
@@ -149,12 +151,12 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const favoriteButton = check => button('favorite', isFavorite(check) ? '★' : '☆', `class="pp-favorite-button" data-check="${e(check.id)}" aria-label="${e(check.name)} ${isFavorite(check) ? 'aus Favoriten entfernen' : 'zu Favoriten hinzufügen'}" title="${isFavorite(check) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}" aria-pressed="${isFavorite(check)}" ${frozen}`);
   const rating = check => {
     const rank = mastery(check);
-    const text = `${rank.label} · ${rank.scale === 'talents' && check.kind === 'combat' ? `Talentwert ${number(check.combat.skillValue)} · Probenwert` : 'Wert'} ${number(check.value)} · Berechnung ansehen`;
+    const text = `${rank.label} · ${rank.scale === 'talents' && check.kind === 'combat' ? `Talentwert ${number(check.combat.skillValue)} · Probenwert` : 'Wert'} ${number(check.value)} · Würfeln`;
     const decoration=rank.grade==='master'?'master':'plain';
-    return `<span class="pp-value-medallion" data-decoration="${decoration}" data-zero="${check.value===0}">${decoration!=='plain' ? masteryFrame : ''}${button('breakdown', number(check.value), `class="pp-rating" data-check="${e(check.id)}" title="${e(text)}" aria-label="${e(text)}" ${frozen}`)}</span>`;
+    return `<span class="pp-value-medallion" data-decoration="${decoration}" data-zero="${check.value===0}">${decoration!=='plain' ? masteryFrame : ''}${button('roll', number(check.value), `class="pp-rating" data-check="${e(check.id)}" data-blind="false" title="${e(text)}" aria-label="${e(check.name)} würfeln · ${e(text)}" ${rollDisabled(check)?'disabled':''}`)}</span>`;
   };
   const rolls = check => {
-    const rowDisabled = disabled || check.kind === 'combat' && status.combatReady === false;
+    const rowDisabled = rollDisabled(check);
     const reason = !disabled && rowDisabled ? 'Kampfproben benötigen Ucurifunke – Proben ab 1.0.14.' : disabledReason;
     return `<div class="pp-roll-buttons">${rollButton(check,rowDisabled,reason)}${rollButton(check,rowDisabled,reason,true)}</div>`;
   };
@@ -166,10 +168,10 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const presets = Array.isArray(preferences.presets) ? preferences.presets.filter(item=>item && typeof item.id==='string' && typeof item.label==='string' && Number.isSafeInteger(item.modifier)).slice(0,8) : [];
   const presetControl = presets.length ? `<div class="pp-preset-bar" aria-label="Modifikator-Vorlagen">${presets.map(item=>button('preset',e(item.label),`class="pp-preset-button" data-preset="${e(item.id)}" title="${e(item.label)} · ${item.modifier<0?'Erleichterung':'Erschwernis'} ${number(Math.abs(item.modifier))}" ${!actor?.isOwner || busy?'disabled':''}`)).join('')}</div>` : '';
   const favoriteChecks = allChecks.filter(isFavorite).sort((a,b)=>favoriteKeys.indexOf(keyOf(a))-favoriteKeys.indexOf(keyOf(b))).slice(0,6);
-  const quickbar = mode === 'full' && favoriteChecks.length ? `<details class="pp-quickbar" ${preferences.quickbar === false ? '' : 'open'}><summary>${categoryIcon('favorites')} Schnellleiste</summary><div class="pp-quick-grid">${favoriteChecks.map(check=>`<div class="pp-quick-check" data-quick-check="${e(check.id)}"><header><span title="${e(check.name)}">${label(check)}${original(check)}</span>${favoriteButton(check)}</header>${rolls(check)}</div>`).join('')}</div></details>` : '';
+  const quickbar = mode === 'full' && favoriteChecks.length ? `<details class="pp-quickbar" ${preferences.quickbar === false ? '' : 'open'}><summary>${categoryIcon('favorites')} Schnellleiste</summary><div class="pp-quick-grid">${favoriteChecks.map(check=>`<div class="pp-quick-check" data-quick-check="${e(check.id)}"><header>${nameButton(check,`${label(check)}${original(check)}`)}${favoriteButton(check)}</header>${rolls(check)}</div>`).join('')}</div></details>` : '';
   let list;
   if (mode === 'ring') {
-    list = `<div class="pp-check-list pp-ring-list"><div class="pp-ring" data-count="${checks.length}">${checks.length ? button('full','↗','class="pp-ring-center" aria-label="Vollständiges Fenster öffnen" title="Vollständiges Fenster öffnen"') : ''}${checks.map((check,index)=>`<section class="pp-check-row pp-ring-card" ${rankAttributes(check).replace(/style="[^"]*"/,'')} style="--pp-mastery:${mastery(check).progress};--pp-position:${index};--pp-x:${Math.round(Math.sin(index*2*Math.PI/checks.length)*155)}px;--pp-y:${Math.round(-Math.cos(index*2*Math.PI/checks.length)*112)}px"><header>${categoryIcon(categoryOf(check))}<span class="pp-check-name" draggable="true" data-check="${e(check.id)}" title="${e(check.name)}">${label(check)}${original(check)}</span>${favoriteButton(check)}</header><div class="pp-ring-values">${probe(check,probeTheme)}${rating(check)}</div>${rolls(check)}</section>`).join('')}</div><p class="pp-no-results" ${checks.length?'hidden':''}>Keine passende Probe gefunden.</p>${checks.length?'':'<p class="pp-ring-help">Favoriten im vollständigen Fenster mit dem Stern auswählen.</p>'}</div>`;
+    list = `<div class="pp-check-list pp-ring-list"><div class="pp-ring" data-count="${checks.length}">${checks.length ? button('full','↗','class="pp-ring-center" aria-label="Vollständiges Fenster öffnen" title="Vollständiges Fenster öffnen"') : ''}${checks.map((check,index)=>`<section class="pp-check-row pp-ring-card" ${rankAttributes(check).replace(/style="[^"]*"/,'')} style="--pp-mastery:${mastery(check).progress};--pp-position:${index};--pp-x:${Math.round(Math.sin(index*2*Math.PI/checks.length)*155)}px;--pp-y:${Math.round(-Math.cos(index*2*Math.PI/checks.length)*112)}px"><header>${categoryIcon(categoryOf(check))}${nameButton(check,`${label(check)}${original(check)}`)}${favoriteButton(check)}</header><div class="pp-ring-values">${probe(check,probeTheme)}${rating(check)}</div>${rolls(check)}</section>`).join('')}</div><p class="pp-no-results" ${checks.length?'hidden':''}>Keine passende Probe gefunden.</p>${checks.length?'':'<p class="pp-ring-help">Favoriten im vollständigen Fenster mit dem Stern auswählen.</p>'}</div>`;
   } else {
     const groups = new Map();
     checks.filter(check=>check.kind==='combat').forEach(check=>{ const key=weaponKey(check); if(!groups.has(key))groups.set(key,[]); groups.get(key).push(check); });
@@ -185,7 +187,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
       }
       const title = group ? actionLabel(check) : checkDisplayName(check,language);
       const subtitle = group ? '' : language === 'ork' && ['skill','attribute'].includes(check.kind) ? check.name : foundation;
-      return `${heading}<tr class="pp-check-row ${group?'pp-weapon-action':''}" ${rankAttributes(check)} ${group?`data-weapon-group="${e(group)}"`:''}><td class="pp-favorite-cell">${favoriteButton(check)}</td><td class="pp-name-cell"><span class="pp-check-name" draggable="true" data-check="${e(check.id)}">${group?'':categoryIcon(categoryOf(check))}${rank.grade==='master'?'<span class="pp-master-star" aria-hidden="true">✦</span> ':''}${e(title)}</span>${subtitle?`<small class="${language === 'ork' && ['skill','attribute'].includes(check.kind) ? 'pp-original-name' : ''}">${e(subtitle)}</small>`:''}</td><td>${probe(check,probeTheme)}</td><td class="pp-value">${rating(check)}</td><td>${rolls(check)}</td></tr>`;
+      return `${heading}<tr class="pp-check-row ${group?'pp-weapon-action':''}" ${rankAttributes(check)} ${group?`data-weapon-group="${e(group)}"`:''}><td class="pp-favorite-cell">${favoriteButton(check)}</td><td class="pp-name-cell">${nameButton(check,`${group?'':categoryIcon(categoryOf(check))}${rank.grade==='master'?'<span class="pp-master-star" aria-hidden="true">✦</span> ':''}${e(title)}`)}${subtitle?`<small class="${language === 'ork' && ['skill','attribute'].includes(check.kind) ? 'pp-original-name' : ''}">${e(subtitle)}</small>`:''}</td><td>${probe(check,probeTheme)}</td><td class="pp-value">${rating(check)}</td><td>${rolls(check)}</td></tr>`;
     }).join('');
     list=`<div class="pp-check-list"><table class="pp-table"><thead><tr><th scope="col" class="pp-favorite-cell"><span class="pp-sr-only">Favoriten</span></th><th scope="col">Probe</th><th scope="col">Attribute</th><th scope="col" class="pp-value">Wert</th><th scope="col"><span class="pp-sr-only">Würfeln</span></th></tr></thead><tbody>${rows}</tbody></table><p class="pp-no-results" hidden>Keine passende Probe gefunden.</p></div>`;
   }

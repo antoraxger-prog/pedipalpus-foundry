@@ -9,6 +9,19 @@ import {validateWorkbench} from '../scripts/workbench.js';
 import {companionKey,companionSnapshot,refreshCompanions,saveCompanion} from '../scripts/companions.js';
 import {validSnapshot} from '../scripts/data.js';
 import {readLiveSource,directoryCharacters} from '../scripts/import-source.js';
+import {checksForView,renderView} from '../scripts/view.js';
+
+test('Undead companions retain their own attack/parry and appear in battle even without attacks',()=>{
+ const raw=combatFixture();raw.Animals=[{Name:'Knochenträger',Species:'Untoter',InventoryId:'test-bone',CurrentLe:14,MaxLe:14,Attacks:[{Name:'Hieb',AttackValue:6,ParryValue:6}]}];
+ let character={...normalizeCharacter(raw),sourceJSON:JSON.stringify(raw)};
+ const checks=checksForView(character,'battle').filter(check=>check.id.startsWith('animals:'));
+ assert.equal(checks.length,2);assert.deepEqual(checks.map(check=>check.value),[6,6]);assert.ok(checks.every(check=>check.combat.focusValue===0&&check.combat.mobilityPenalty===0));
+ const render=data=>renderView({actor:{isOwner:true},character:data,status:{ready:true,combatReady:true},mode:'battle'});
+ assert.match(render(character),/Knochenträger/);
+ raw.Animals[0].Attacks=[];character={...normalizeCharacter(raw),sourceJSON:JSON.stringify(raw)};
+ assert.equal(checksForView(character,'battle').filter(check=>check.id.startsWith('animals:')).length,0);
+ assert.match(render(character),/value="animals"/);assert.match(render(character),/Knochenträger/);assert.match(render(character),/LE 14 \/ 14/);
+});
 
 function armorFixture(){const raw=combatFixture();raw.DerivedValues=Array.from({length:9},(_,i)=>({LongName:'Wert',TotalValue:i===8?20:0}));raw.Be=2;raw.Armors=[{Name:'Kette',Protection:5,MobilityPenalty:2,BaseMobilityPenalty:2,Weight:8,Quantity:1,OnPerson:true,IsEquiped:true},{Name:'Helm',Protection:2,MobilityPenalty:1,BaseMobilityPenalty:1,Weight:2,Quantity:1,OnPerson:false,IsEquiped:false}];return raw;}
 test('Armor changes preserve focus, update protection/BE and attacks, clear equipped when removed and export original states',()=>{

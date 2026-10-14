@@ -82,7 +82,7 @@
 /* Compact favorites and category markers. */
 .pedipalpus-app .pp-root .pp-quick-grid { grid-template-columns: repeat(auto-fill,minmax(min(100%,150px),150px)); justify-content: start; }
 .pedipalpus-app .pp-quick-check header { display: flex; align-items: center; gap: 3px; }
-.pedipalpus-app .pp-quick-check header > span { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 11px; }
+.pedipalpus-app .pp-quick-check header > .pp-check-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 11px; }
 .pedipalpus-app .pp-quick-check header .pp-favorite-button { flex: 0 0 26px; }
 .pedipalpus-app [data-category="BodySkills"] { --pp-category-color: #b2332f; }
 .pedipalpus-app [data-category="SocialSkills"] { --pp-category-color: #9853bb; }
@@ -270,3 +270,7 @@
 
 .pedipalpus-dialog.pp-dark-dialog { --pp-field:#20252b; --pp-border:#686f78; --pp-accent:#c5a76b; }
 .pedipalpus-dialog.pp-light-dialog { --pp-field:#fff; --pp-border:#9b9487; --pp-accent:#85612d; }
+
+.pedipalpus-app .pp-root button.pp-check-name,
+.pedipalpus-app .pp-root button.pp-check-name:hover:not(:disabled) { display:block; width:auto; max-width:100%; min-height:0; height:auto; margin:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; white-space:normal; text-align:left; cursor:pointer; }
+.pedipalpus-app .pp-root button.pp-check-name:disabled { cursor:default; }

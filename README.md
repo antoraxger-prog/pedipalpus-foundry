@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 1.0.0
+# Pedipalpus – Proben · 1.0.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -32,7 +32,7 @@ In der Welt **Pedipalpus – Proben** und **Ucurifunke – Proben** aktivieren. 
 2. Im Foundry-Charakterverzeichnis auf **Pedipalpus** klicken. Alternativ: **Einstellungen → Einstellungen konfigurieren → Pedipalpus – Proben → Proben öffnen**.
 3. **Werkzeuge** (Zahnrad) öffnen und **JSON importieren** wählen. Eine JSON-Datei oder ein Charakter-ZIP auswählen.
 4. Unter **In Foundry speichern als** einen bestehenden Charakter auswählen oder einen neuen anlegen.
-5. Einen Bereich auswählen oder über die Suche eine Probe finden. Das Würfelsymbol würfelt direkt; **durchgestrichenes Auge + Würfelsymbol** würfelt verdeckt. Das Ergebnis erscheint ohne weitere Modifikator-Abfrage im Chat.
+5. Einen Bereich auswählen oder über die Suche eine Probe finden. Ein Klick auf den Fähigkeitsnamen, den Probenwert oder das Würfelsymbol würfelt direkt; **durchgestrichenes Auge + Würfelsymbol** würfelt verdeckt. Das Ergebnis erscheint ohne weitere Modifikator-Abfrage im Chat.
 
 Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benötigen zusätzlich die entsprechende Foundry-Berechtigung. Beobachter können die Proben lesen.
 
@@ -52,7 +52,7 @@ Unter **Einstellungen** stehen Normal, Kompakt und Große Knöpfe, die Sprache, 
 
 Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** stehen im Bereichsfilter. Bis zu sechs normale Favoriten erscheinen in der einklappbaren Schnellleiste als höchstens 150 Pixel breite Karten. Mit dem Stern direkt in der Karte lässt sich ein Favorit entfernen. Kampffavoriten sind im Kampfbrett über den Bereichsfilter erreichbar; gespeicherte Einträge bleiben erhalten. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
 
-Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Ein Klick auf die Wertplakette zeigt die vorhandene Berechnung. Der Kopf enthält Knöpfe für das **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Kampfbrett und normale Probenansicht teilen Charakter, nächsten Modifikator sowie dieselbe Fenstergröße und Position. Der Schwert-und-Schild-Knopf wechselt die Ansicht innerhalb des vorhandenen Fensters. Der gespeicherte Fokus gilt für Kampfproben und wird nur im Kampfbrett angezeigt.
+Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Name und Wertplakette lösen denselben normalen Wurf wie der Würfelknopf aus; die Bestandteile stehen im Hinweis über AT/PA/FK. Auch Namen in Schnellleiste und Probenring sind anklickbar. Ziehen auf die Makroleiste löst keinen Wurf aus. Der Kopf enthält Knöpfe für das **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Kampfbrett und normale Probenansicht teilen Charakter, nächsten Modifikator sowie dieselbe Fenstergröße und Position. Der Schwert-und-Schild-Knopf wechselt die Ansicht innerhalb des vorhandenen Fensters. Der gespeicherte Fokus gilt für Kampfproben und wird nur im Kampfbrett angezeigt.
 
 Eine Probe am Namen auf Foundrys Makroleiste ziehen. Dafür werden Besitzerrechte und das Recht zum Erstellen von Makros benötigt. Das Makro liest die aktuellen Werte; ein Kampfmakro wechselt bei geöffnetem Fenster ins Kampfbrett, ein normales Makro von dort zurück zur Probenansicht; bei geöffnetem Würfelfenster verwendet es dessen nächsten Modifikator, sonst 0. Die öffentliche API ist `game.modules.get('pedipalpus-foundry').api.roll({actorId, reference, blind, modifier})`. Es werden keine Zahlen in Makros eingefroren.
 
@@ -171,3 +171,7 @@ Die Tierübersicht zeigt auch Begleiter ohne Angriffe. **Bild / Token** lädt ei
 ## Private Originalrahmen
 
 Die Originalrahmen werden separat importiert und sind nicht im öffentlichen Modul oder auf GitHub enthalten. Ein Spielleiter lädt das private Rahmen-ZIP einmal über **Werkzeuge → Einstellungen → Originalrahmen importieren** in die Welt. Das Paket enthält `concrete.png`, `concrete-mask.png`, `silver-thin.png`, `silver-thin-mask.png`, `undead.png` und `undead-mask.png`. Danach nutzen alle Benutzer die Rahmen aus den Weltdaten. **Concrete** ist Standard; **Silver, Thin** und **Undead** stehen unter Tokenrahmen zur Wahl. Ohne importiertes Rahmenpaket wird zunächst ein rundes Token ohne Originalring erstellt. **Token aktualisieren** erstellt aus dem vorhandenen Charakterportrait ein neues Tokenbild mit dem gewählten Rahmen. Für Tierportraits steht dieselbe Auswahl direkt am Tier zur Verfügung.
+
+## Begleiter ohne Angriffe
+
+Begleiter werden unter **Kampfbrett → Tierproben** angezeigt, auch wenn noch keine Angriffe gespeichert sind. Angriff und Parade lassen sich erst würfeln, wenn diese Werte in der Pedipalpus-Datei enthalten sind. Nach Änderungen in Pedipalpus speichern und den vorhandenen Foundry-Charakter über **Aktualisieren** oder einen erneuten JSON-Import aktualisieren; ein Modulupdate alleine verändert die importierten Charakterdaten nicht.

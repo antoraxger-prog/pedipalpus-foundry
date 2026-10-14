@@ -139,14 +139,16 @@ export class PedipalpusApp extends ApplicationV2 {
       this.filterChecks(content);
       if(this.mode==='full')this.persist({...this.preferences,category:this.category}).catch(error => this.notify('error',error.message));
     });
-    content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => this.onAction(button)));
+    content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => { if(!button.disabled && button.dataset.dragging!=='true')this.onAction(button); }));
     content.querySelectorAll('.pp-check-name').forEach(name => {
       name.draggable = true;
       name.addEventListener('dragstart',event => {
         const check = getCharacter(this.actor)?.checks.find(check => check.id === name.closest('[data-check-id]')?.dataset.checkId);
         if (!check || !this.actor?.isOwner) { event.preventDefault(); return; }
+        name.dataset.dragging='true';
         event.dataTransfer.setData('text/plain',JSON.stringify({type:'PedipalpusCheck',actorId:this.actorId,reference:checkReference(check)}));
       });
+      name.addEventListener('dragend',()=>setTimeout(()=>delete name.dataset.dragging,0));
     });
     content.addEventListener('keydown',event => {
       if (event.target.name !== 'search') return;
