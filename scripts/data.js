@@ -81,12 +81,12 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
   if (combat.some(check => check.reason)) warnings.push('Einige Kampfproben sind unvollständig. Bitte den Charakter in Pedipalpus speichern und erneut importieren.');
   for (const [key, group] of Object.entries(EQUIPMENT_GROUPS)) list(raw[key]).forEach((entry, i) => equipment.push({
     id: `${key}:${i}`, name: text(entry.Name), group, quantity: number(entry.Quantity) ?? 1,
-    weight: number(entry.Weight), carried: entry.OnPerson === true,
+    weight: number(entry.Weight), carried: entry.OnPerson !== false, equipped: entry.IsEquiped === true, carrierAnimalId: text(entry.CarrierAnimalId), basePenalty: number(entry.BaseMobilityPenalty),
     description: [text(entry.Description), text(entry.SpecialProperties)].filter(Boolean).join('\n\n'),
     damage: text(entry.Damage), armor: number(entry.Protection), technique: text(entry.UsedSkillsDisplay),
     attack: number(entry.AttackBonus), defense: number(entry.ParryBonus) ?? number(entry.DefenseBonus),
     ticks: number(entry.WeaponSpeed), material: text(entry.Material), penalty: number(entry.MobilityPenalty),
-    species: text(entry.Species), currentLE: number(entry.CurrentLe), maxLE: number(entry.MaxLe), capacity: number(entry.CarryCapacity)
+    inventoryId: text(entry.InventoryId), species: text(entry.Species), currentLE: number(entry.CurrentLe), maxLE: number(entry.MaxLe), capacity: number(entry.CarryCapacity)
   }));
   const detailGroups = {
     Advantages: 'Vorteile', Disadvantages: 'Nachteile', Languages: 'Sprachen', Scripts: 'Schriften',

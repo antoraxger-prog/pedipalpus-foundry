@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.13.0
+# Pedipalpus – Proben · 1.0.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -30,9 +30,9 @@ Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benöti
 
 ## Kompakte Oberfläche
 
-Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell, Ork, Dämonisch, Aristocrat, Krieger, Magie und Sneaky bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
+Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell, Ork, Dämonisch, Aristocrat, Krieger, Magie und Alchemy bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
 
-Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben sind ausschließlich im **Kampfbrett** über das gekreuzte Waffensymbol erreichbar. Sie erscheinen weder in der normalen Probenliste noch im Probenring. Der Fokusregler gehört ebenfalls zum Kampfbrett.
+Biografie, vollständiges Inventar, Charakter-Energien, AP-Anzeigen, Zustände und allgemeine Charakterbearbeitung sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben sind ausschließlich im **Kampfbrett** über das gekreuzte Waffensymbol erreichbar. Sie erscheinen weder in der normalen Probenliste noch im Probenring. Der Fokusregler gehört ebenfalls zum Kampfbrett.
 
 ## Spielansicht und Werkzeuge
 
@@ -62,7 +62,7 @@ Animationen lassen sich auf Aus, Dezent oder Lebendig stellen. Gedrückte Knöpf
 
 Lorbeerkränze erscheinen nur bei Fertigkeiten ab 10, Kampffertigkeiten ab Talentwert 20 und Attributen ab 20. Niedrigere Werte tragen keinen Kranz. Eine Wertplakette mit 0 zeigt Risse; Zahl und Würfelknöpfe bleiben lesbar und bedienbar.
 
-Körperliche Fertigkeiten sind am Symbol und linken Zeilenrand rot, soziale lila, Natur grün, akademische blau und handwerkliche braun markiert. Das Attributsymbol bleibt unverändert. In Orksprache tragen auch würfelbare Eigenschaften einfache Namen mit dem Original klein darunter. Designnamen Dämonisch, Aristocrat, Krieger, Magie und Sneaky bleiben unverändert.
+Körperliche Fertigkeiten sind am Symbol und linken Zeilenrand rot, soziale lila, Natur grün, akademische blau und handwerkliche braun markiert. Das Attributsymbol bleibt unverändert. In Orksprache tragen auch würfelbare Eigenschaften einfache Namen mit dem Original klein darunter. Designnamen Dämonisch, Aristocrat, Krieger, Magie und Alchemy bleiben unverändert.
 
 ## Glanz, Holz und besondere Designs
 
@@ -80,7 +80,7 @@ Vor einem erneuten Import mit tatsächlichen Unterschieden zeigt ein Vergleich �
 
 Ein Charakter-ZIP enthält genau eine gültige Pedipalpus-JSON und optional ein PNG/JPG/BMP/WebP-Bild; Ordner sind erlaubt. ZIP bis 17 MB, JSON bis 5 MB, Bild bis 10 MB. Programm-ZIPs oder Archive mit mehreren Charakteren werden abgelehnt. Ein zusätzlich gewähltes manuelles Bild hat Vorrang vor dem Paketbild.
 
-**Austauschpaket** exportiert die beim Import mitgeführte Original-JSON und ein erreichbares Portrait aus der Foundry-Welt. Alte Importe benötigen dafür einmalig einen erneuten Originalimport. Beim Export werden die drei Fokuswerte auf den aktuellen Foundry-Stand gesetzt und der Portraitdateiname passend zur beiliegenden Bilddatei gespeichert; alle anderen Originalfelder bleiben erhalten. Die ursprüngliche Windows-Datei wird nicht verändert. Das Paket kann in einer anderen Foundry-Welt importiert werden. Windows-Daten werden weiterhin bewusst über Dateien und den Ordner CharacterPortraits übernommen, nicht automatisch synchronisiert.
+**Austauschpaket** exportiert die beim Import mitgeführte JSON mit aktuellen Rüstungszuständen und ein erreichbares Portrait aus der Foundry-Welt. Alte Importe benötigen dafür einmalig einen erneuten Originalimport. Rüstungsänderungen werden in der exportierten JSON berücksichtigt. Beim Export werden die drei Fokuswerte auf den aktuellen Foundry-Stand gesetzt und der Portraitdateiname passend zur beiliegenden Bilddatei gespeichert; alle anderen Originalfelder bleiben erhalten. Die ursprüngliche Windows-Datei wird nicht verändert. Das Paket kann in einer anderen Foundry-Welt importiert werden. Windows-Daten werden weiterhin bewusst über Dateien und den Ordner CharacterPortraits übernommen, nicht automatisch synchronisiert.
 
 Eine gemeinsame Ergebnis-/Proben-Schnittstelle mit Ucurifunke und ein eigener Paketexport in der Windows-App benötigen weiterhin Abstimmung mit deren Entwickler. Das Modul verändert keine fremde Regelauswertung. Ergebnissiegel und Erfolgs-/Patzerklänge bleiben bis zu einer verlässlichen Ergebnisanbindung aus.
 
@@ -90,9 +90,9 @@ Unter **Darstellung → Ork** wird das Fenster zu einer groben Holz- und Lederob
 
 ## Talentstärken erkennen
 
-Das Pergament wird mit höherem Gesamtwert des Talents schrittweise heller und feiner. Wert 0 oder darunter erscheint auf abgenutztem Pergament mit gestricheltem Wertfeld. Unter 10 erscheint ein kleinerer, zurückhaltender Lorbeerkranz, bei 0 zusätzlich verblasst. Ab 10 hebt der große goldene Lorbeerkranz mit Stern das Talent hervor. Der Hinweis am Wertfeld erklärt die Abstufung: 0 ungeübt, 1–3 Grundlagen, 4–6 geübt, 7–9 versiert und 10+ meisterlich. Diese Bezeichnungen dienen der Orientierung in der Oberfläche; sie ändern keine Regeln oder Würfelwerte. Attribute verwenden eine eigene Skala: 1 sehr schwach, 10 durchschnittlich und ab 20 meisterlich. Widerstands- und Reaktionsproben bleiben ohne Stärke-Einstufung.
+Das Pergament wird mit höherem Gesamtwert des Talents schrittweise heller und feiner. Wert 0 erscheint mit einem gerissenen Wertfeld. Unter 10 erscheint kein Lorbeerkranz. Ab 10 hebt der goldene Lorbeerkranz mit Stern das Talent hervor. Der Hinweis am Wertfeld erklärt die Abstufung: 0 ungeübt, 1–3 Grundlagen, 4–6 geübt, 7–9 versiert und 10+ meisterlich. Diese Bezeichnungen dienen der Orientierung in der Oberfläche; sie ändern keine Regeln oder Würfelwerte. Attribute verwenden eine eigene Skala: 1 sehr schwach, 10 durchschnittlich und ab 20 meisterlich. Widerstands- und Reaktionsproben bleiben ohne Stärke-Einstufung.
 
-Kampftalente verwenden dieselbe Skala. Maßgeblich ist der Wert der besten verwendeten Waffentechnik, bevor Basis, Fokus, Waffenbonus und Behinderung einfließen. Dieser Talentwert steht unter dem Waffennamen; die Spalte **Wert** zeigt weiterhin den fertigen AT-/PA-/FK-Probenwert. Tierangriffe haben fertige AT-/PA-Werte und erhalten keine Talentstufe.
+Kampftalente tragen den Meisterkranz ab Talentwert 20. Maßgeblich ist der Wert der besten verwendeten Waffentechnik, bevor Basis, Fokus, Waffenbonus und Behinderung einfließen. Dieser Talentwert steht unter dem Waffennamen; die Spalte **Wert** zeigt weiterhin den fertigen AT-/PA-/FK-Probenwert. Tierangriffe haben fertige AT-/PA-Werte und erhalten keine Talentstufe.
 
 Auch in Dunkel und Hell bleiben ungeübte und meisterliche Talente durch Wertmarkierungen erkennbar. Die Oberflächen verwenden mitgelieferte Grafiken und lokale Schriften, ohne externe Bild- oder Schriftquellen.
 
@@ -100,7 +100,7 @@ Auch in Dunkel und Hell bleiben ungeübte und meisterliche Talente durch Wertmar
 
 **Nächste Probe** gilt für genau einen Wurf und wird danach auf 0 zurückgesetzt. Das Feld zeigt den Betrag ohne Vorzeichen: rot bei Erschwernis, grün bei Erleichterung, neutral bei 0. Die Bezeichnung daneben lässt sich anklicken, um zwischen beiden Richtungen zu wechseln.
 
-Mit dem Mausrad über der Zahl oder der Richtungsbezeichnung: **↑ schwerer · ↓ leichter**. Beim Scrollen durch 0 wechselt die Richtung automatisch. Der Wert lässt sich auch eintippen. Die Probenliste scrollt weiterhin, wenn sich der Zeiger außerhalb des Felds befindet.
+Die Hinweise **↑ schwerer** und **↓ leichter** lassen sich anklicken und ändern den Modifikator um +1 beziehungsweise −1. Auch über diesen Hinweisen funktioniert das Mausrad. Mit dem Mausrad über der Zahl oder der Richtungsbezeichnung: **↑ schwerer · ↓ leichter**. Beim Scrollen durch 0 wechselt die Richtung automatisch. Der Wert lässt sich auch eintippen. Die Probenliste scrollt weiterhin, wenn sich der Zeiger außerhalb des Felds befindet.
 
 Der zweite Knopf **durchgestrichenes Auge + Würfelsymbol** erzwingt einen verdeckten Wurf: Nur Spielleiter sehen das Ergebnis. Normale Würfe beachten den in Foundry eingestellten Chatmodus.
 
@@ -130,9 +130,9 @@ Im Kampfbrett den **Fokus** zwischen DEF (links) und OFF (rechts) einstellen, vo
 
 ## Charakter- und Tokenbilder
 
-Beim JSON-Import optional ein Bild auswählen oder anschließend den **Bildknopf** neben **JSON importieren** nutzen. Pedipalpus speichert das Bild separat unter `CharacterPortraits`; die JSON enthält nur `PortraitFileName`. Dieser Ordner kann im Browser nicht automatisch geöffnet werden, deshalb muss die Bilddatei zusätzlich ausgewählt werden.
+Pedipalpus speichert das Bild separat unter `CharacterPortraits`; die JSON enthält nur `PortraitFileName`. Beim Import **Pedipalpus-Ordner auswählen** und den Ordner mit `SavedCharacters` und `CharacterPortraits` freigeben. Nach der Charakterauswahl findet das Modul das zugehörige Bild automatisch. Alternativ JSON und Bild gemeinsam auswählen, ein Charakter-ZIP importieren oder ein manuelles Bild hinzufügen. Das Modul liest ausschließlich ausgewählte bzw. ausdrücklich freigegebene Dateien.
 
-PNG, JPG/JPEG, BMP und WebP bis 10 MB werden unterstützt. BMP wird für Foundry in PNG umgewandelt. Das Bild wird als Charakterportrait, als Bild der Token-Vorlage und für bestehende verknüpfte Tokens übernommen, die der Benutzer bearbeiten darf. Unverknüpfte Tokens und Tokens anderer Charaktere behalten ihre Bilder. Ohne Bildauswahl bleiben sämtliche bestehenden Bilder erhalten. Die Übernahme benötigt Foundry-Uploadrechte; fehlende Tokenrechte werden gemeldet. Die Bilder werden im Datenordner der Welt gespeichert und gehören nicht zum Modul-Release.
+PNG, JPG/JPEG, BMP und WebP bis 10 MB werden unterstützt. BMP wird für Foundry in PNG umgewandelt. Das vollständige Bild bleibt als Charakterportrait erhalten. Für die Token-Vorlage entsteht ein separates rundes PNG mit transparentem Außenbereich und dem ausgewählten Rahmen. Bearbeitbare verknüpfte Tokens erhalten dieses Tokenbild. Unverknüpfte Tokens und Tokens anderer Charaktere behalten ihre Bilder. Ohne Bildauswahl bleiben sämtliche bestehenden Bilder erhalten. Die Übernahme benötigt Foundry-Uploadrechte; fehlende Tokenrechte werden gemeldet. Die Bilder werden im Datenordner der Welt gespeichert und gehören nicht zum Modul-Release.
 
 ## Werte aktualisieren
 
@@ -146,6 +146,20 @@ Vorhandene Importe aus früheren Modulversionen bleiben verwendbar; für die bis
 game.modules.get('pedipalpus-foundry').api.open();
 ```
 
-## Krieger, Magie und Sneaky
+## Krieger, Magie und Alchemy
 
-**Krieger** zeigt schwere Metallplatten mit Nieten, Lederriemen, Schwertklingen und Schild. **Magie** verwendet dunkles Violett/Blau, rotierende Runenkreise, arkanes Licht und funkelnde Partikel. **Sneaky** basiert auf schwarzem Leder mit wenigen giftgrünen Akzenten, Messern und einem schwach leuchtenden Giftfläschchen. Alle Designs werden persönlich gespeichert und beachten Animationen Aus sowie reduzierte Bewegung.
+**Krieger** zeigt schwere Metallplatten mit Nieten, Lederriemen, Schwertklingen und Schild. **Magie** verwendet dunkles Violett/Blau, rotierende Runenkreise, arkanes Licht und funkelnde Partikel. **Alchemy** basiert auf schwarzem Leder mit wenigen giftgrünen Akzenten und einer animierten Flasche mit aufsteigenden Säurebläschen. Die Messer wurden entfernt. Alle Designs werden persönlich gespeichert und beachten Animationen Aus sowie reduzierte Bewegung.
+
+## Aktualisieren von der letzten Quelle
+
+**Aktualisieren** neben **JSON importieren** liest die zuletzt freigegebene Datei erneut und zeigt vor der Übernahme den Importvergleich. Dafür beim Import **Datei auswählen** oder **Pedipalpus-Ordner auswählen** verwenden. Unterstützte Browser speichern die Dateifreigabe pro Foundry-Benutzer, Welt und Charakter im jeweiligen Browser; Zugriffe bleiben lesend. Nach einem Browserneustart kann die Freigabe erneut abgefragt werden. Bei fehlendem Zugriff, einer verschobenen Datei oder Browsern ohne dauerhaften Dateizugriff öffnet sich die Importauswahl erneut. Es wird kein alter Dateistand als Aktualisierung ausgegeben.
+
+## Rüstungen und Tierbegleiter im Kampfbrett
+
+Im Bereichsfilter des Kampfbretts stehen **Rüstungen** und **Tierproben**. Rüstungen zeigen RS, Basis-BE sowie die aus Pedipalpus übernommenen Zustände **Dabei** und **Angelegt**. Besitzer können beide Häkchen ändern. Ablegen entfernt auch Angelegt; eine bei einem Tier gelagerte Rüstung kann nicht am Charakter angelegt werden. Rüstschutz, Last/Überlastung und Behinderung folgen den gespeicherten Pedipalpus-Feldern; Kampfwürfe verwenden die aktualisierte BE. Bei fehlender Basis-BE ist zuerst ein neuer Pedipalpus-Speicherstand nötig. Änderungen werden in Foundry und im Austauschpaket gespeichert; die Windows-Datei bleibt unberührt. Checkboxen passen sich dem gewählten Design an.
+
+Die Tierübersicht zeigt auch Begleiter ohne Angriffe. **Bild / Token** lädt ein Tierportrait hoch und erstellt einen eigenen, verknüpften Foundry-Charakter mit dessen Tierproben und dem ausgewählten Rahmen. Den Eintrag aus dem Charakterverzeichnis auf die Szene ziehen. Ein späterer Bild-/Rahmenwechsel aktualisiert denselben Eintrag. Stabile Pedipalpus-Tierkennungen bzw. eindeutige Namen verhindern eine falsche Zuordnung; ein erneuter Eltern-Import aktualisiert die Tierproben und behält Portrait/Tokenbild. Entfernte oder mehrdeutige Begleiter behalten ihren Eintrag, haben aber keine veralteten Proben. Erstellung benötigt die Foundry-Berechtigung zum Anlegen von Charakteren.
+
+## Private Originalrahmen
+
+Die Originalrahmen werden separat importiert und sind nicht im öffentlichen Modul oder auf GitHub enthalten. Ein Spielleiter lädt das private Rahmen-ZIP einmal über **Werkzeuge → Einstellungen → Originalrahmen importieren** in die Welt. Das Paket enthält `concrete.png`, `concrete-mask.png`, `silver-thin.png`, `silver-thin-mask.png`, `undead.png` und `undead-mask.png`. Danach nutzen alle Benutzer die Rahmen aus den Weltdaten. **Concrete** ist Standard; **Silver, Thin** und **Undead** stehen unter Tokenrahmen zur Wahl. Ohne importiertes Rahmenpaket wird zunächst ein rundes Token ohne Originalring erstellt. **Token aktualisieren** erstellt aus dem vorhandenen Charakterportrait ein neues Tokenbild mit dem gewählten Rahmen. Für Tierportraits steht dieselbe Auswahl direkt am Tier zur Verfügung.

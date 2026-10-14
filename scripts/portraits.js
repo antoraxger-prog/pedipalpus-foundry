@@ -44,14 +44,14 @@ export async function uploadPortrait(prepared) {
   return result.path;
 }
 
-export async function applyPortrait(actor, path, warn = message => ui.notifications.warn(message)) {
+export async function applyPortrait(actor, path, warn = message => ui.notifications.warn(message), tokenPath = path) {
   if (!actor?.canUserModify(game.user,'update')) throw new Error('Zum Bildimport benötigst du Besitzerrechte auf diesem Charakter.');
-  await actor.update({img:path,'prototypeToken.texture.src':path});
+  await actor.update({img:path,'prototypeToken.texture.src':tokenPath});
   let skipped = 0;
   for (const scene of game.scenes?.contents ?? []) for (const token of scene.tokens?.contents ?? []) {
     if (token.actorId !== actor.id || !token.actorLink) continue;
     if (!token.canUserModify(game.user,'update')) { skipped++; continue; }
-    try { await token.update({'texture.src':path}); } catch { skipped++; }
+    try { await token.update({'texture.src':tokenPath}); } catch { skipped++; }
   }
   if (skipped) warn(`Bild übernommen. ${skipped} verknüpfte Tokens konnten mangels Bearbeitungsrecht oder wegen eines Fehlers nicht aktualisiert werden.`);
 }

@@ -1,6 +1,7 @@
+import { rememberImportSource,importSource,directoryCharacters,readLiveSource } from './import-source.js';
 import { parseCharacter, MODULE_ID } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
-import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus } from './storage.js';
+import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState } from './storage.js';
 import { renderView, renderImportOptions, updateFocusView, escapeHTML, checksForView } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from './portraits.js';
@@ -9,7 +10,10 @@ import { uiText, localizeSurface, localizeDialog } from './language.js';
 import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
-import { readCharacterFile, writeCharacterBundle } from './bundle.js';
+import { companionEntries,companionKey,companionActor,saveCompanion,refreshCompanions } from './companions.js';
+import { characterFiles, readCharacterWithPortrait } from './character-folder.js';
+import { TOKEN_STYLES, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames } from './tokens.js';
+import { writeCharacterBundle } from './bundle.js';
 import { checkDisplayName } from './ork-talents.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
@@ -40,7 +44,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.mode = 'full';
     this.fullPosition = null;
   }
-  get dialogClasses() { const design={ork:'pp-ork-dialog',demonic:'pp-demonic-dialog',aristocrat:'pp-aristocrat-dialog',warrior:'pp-warrior-dialog',arcane:'pp-arcane-dialog',sneaky:'pp-sneaky-dialog'}[this.theme];return ['pedipalpus-dialog',...(design?[design]:[])]; }
+  get dialogClasses() { const design={dark:'pp-dark-dialog',light:'pp-light-dialog',ork:'pp-ork-dialog',demonic:'pp-demonic-dialog',aristocrat:'pp-aristocrat-dialog',warrior:'pp-warrior-dialog',arcane:'pp-arcane-dialog',sneaky:'pp-sneaky-dialog'}[this.theme];return ['pedipalpus-dialog',...(design?[design]:[])]; }
   get language() { return this.preferences.language === 'theme' ? this.theme === 'ork' ? 'ork' : 'standard' : this.preferences.language; }
   get effects() { return {...this.preferences, theme:this.theme, animations:{none:'off',subtle:'subtle',full:'lively'}[this.preferences.animations]}; }
   get actor() { return this.actorId ? game.actors.get(this.actorId) : null; }
@@ -194,6 +198,8 @@ export class PedipalpusApp extends ApplicationV2 {
       this.updateModifier(content);
       this.sound('dial');
     };
+    content.querySelector('.pp-wheel-hint')?.addEventListener('wheel',wheel,{passive:false});
+    content.querySelectorAll('[data-modifier-step]').forEach(step=>step.addEventListener('click',()=>{if(modifier.disabled || this.busy || this.referenceBusy)return;const value=(Number.isSafeInteger(this.modifier)?this.modifier:0)+Number(step.dataset.modifierStep);if(!Number.isSafeInteger(value))return;this.modifier=value;this.updateModifier(content);this.sound('dial');}));
     modifier?.addEventListener('wheel',wheel,{passive:false});
     content.querySelector('[name="modifierDirection"]')?.addEventListener('wheel',wheel,{passive:false});
     content.querySelector('[name="modifierDirection"]')?.addEventListener('click', () => {
@@ -202,6 +208,7 @@ export class PedipalpusApp extends ApplicationV2 {
       this.updateModifier(content);
       this.sound('dial');
     });
+    content.querySelectorAll('[data-armor]').forEach(field=>field.addEventListener('change',async()=>{if(this.busy||this.referenceBusy)return;this.busy=true;field.disabled=true;try{await saveArmorState(this.actor,field.dataset.armor,field.dataset.armorField,field.checked);}catch(error){this.notify('error',error.message);}finally{this.busy=false;await this.render({force:true});}}));
     this.filterChecks(content);
   }
   t(text) { return uiText(this.language === 'ork' ? 'ork' : 'fantasy',text); }
@@ -256,6 +263,10 @@ export class PedipalpusApp extends ApplicationV2 {
   }
   filterChecks(content = this.element) {
     const query = this.search.trim().toLocaleLowerCase('de');
+    const armorView=this.mode==='battle'&&this.category==='armors'&&!query;
+    content.querySelector('.pp-check-list')?.toggleAttribute('hidden',armorView);
+    content.querySelector('.pp-focus')?.toggleAttribute('hidden',armorView);
+    content.querySelectorAll('[data-inventory]').forEach(panel=>{panel.hidden=this.mode!=='battle'||(panel.dataset.inventory==='armors'?!armorView:this.category!=='animals'||Boolean(query));});
     let count = 0;
     const scales = new Set();
     content.querySelectorAll('.pp-check-row').forEach(row => {
@@ -287,7 +298,9 @@ export class PedipalpusApp extends ApplicationV2 {
     try {
       await this.focusSave;
       if (this.focusError && button.dataset.action === 'roll') throw this.focusError;
+      if (button.dataset.action === 'refresh') await this.refreshCharacter();
       if (button.dataset.action === 'import') await this.importCharacter();
+      if (button.dataset.action === 'animal-portrait') await this.importAnimalPortrait(button);
       if (button.dataset.action === 'portrait') await this.importPortrait();
       if (button.dataset.action === 'administration') { this.administration=!this.administration;await this.render({force:true});if(this.administration&&this.preferences.animations!=='none')this.element.querySelector('.pp-administration')?.classList.add('pp-tools-opening'); }
       if (button.dataset.action === 'preferences') await this.preferencesDialog();
@@ -342,12 +355,16 @@ export class PedipalpusApp extends ApplicationV2 {
         if (field.dataset.action==='roll') { const status=connectionStatus(),check=getCharacter(this.actor)?.checks.find(check=>check.id===field.dataset.check);field.disabled=!this.actor?.isOwner || !status.ready || status.directReady===false || check?.kind==='combat' && status.combatReady===false; }
         if (field.dataset.action==='import') field.disabled=!(visibleActors().some(actor=>actor.canUserModify(game.user,'update')) || foundry.documents.Actor.canUserCreate(game.user));
         if (field.dataset.action==='portrait') field.disabled=!this.actor?.isOwner;
+        if (field.dataset.action==='animal-portrait') field.disabled=!this.actor?.isOwner||!field.dataset.animalKey;
+        if (field.dataset.action==='refresh') field.disabled=!this.actor?.isOwner||!getCharacter(this.actor)?.sourceJSON;
         if (field.dataset.action==='preset') field.disabled=!this.actor?.isOwner;
         if (field.dataset.action==='export') field.disabled=!this.actor?.isOwner || !getCharacter(this.actor)?.sourceJSON;
         if (field.dataset.action==='diagnostic') field.disabled=false;
       });
       this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = !this.actor?.isOwner; });
       this.element.querySelectorAll('[name="focus"]').forEach(field => { field.disabled = !this.actor?.isOwner; });
+      this.element.querySelectorAll('[data-modifier-step]').forEach(field=>{field.disabled=!this.actor?.isOwner;});
+      this.element.querySelectorAll('[data-armor]').forEach(field=>{field.disabled=!this.actor?.isOwner||!getCharacter(this.actor)?.sourceJSON||field.dataset.armorField==='equipped'&&field.dataset.armorLocked==='true';});
     }
   }
   async rollReference(actorId, reference, {blind=false,modifier}={}) {
@@ -379,6 +396,9 @@ export class PedipalpusApp extends ApplicationV2 {
       ${row('Animationen',select('animations',[['none','Aus'],['subtle','Dezent'],['full','Lebendig']]))}
       ${row('Soundeffekte',`<input name="sound" type="checkbox" ${draft.sound?'checked':''}>`)}
       ${row('Lautstärke',`<span><input name="volume" type="range" min="0" max="1" step="0.05" value="${draft.volume}"><output data-volume>${Math.round(draft.volume*100)}%</output></span>`)}
+      ${row('Tokenrahmen',select('tokenFrame',TOKEN_STYLES))}
+      <button type="button" data-token-refresh>${t('Token aktualisieren')}</button>
+      ${game.user.isGM?`<label>${t('Originalrahmen importieren')}<input name="tokenFramesZip" type="file" accept=".zip"></label>`:''}<p data-frame-status role="status"></p>
       ${row('Klangset',select('soundSet',[['theme','Passend zum Design'],['fantasy','Fantasy'],['ork','Ork'],['dark','Neutral']]))}
       <button type="button" data-sound-preview>${t('Rastklang anhören')}</button><p data-sound-status role="status" hidden></p>
       ${row('Ausgewähltem Token folgen',`<input name="followToken" type="checkbox" ${draft.followToken?'checked':''}>`)}
@@ -388,11 +408,14 @@ export class PedipalpusApp extends ApplicationV2 {
       buttons:[{action:'save',label:this.t('Speichern'),callback:(_event,_button,dialog)=>{
         const root=dialog.element;
         return {...draft,density:root.querySelector('[name="density"]').value,language:root.querySelector('[name="language"]').value,
-          animations:root.querySelector('[name="animations"]').value,sound:root.querySelector('[name="sound"]').checked,
+          tokenFrame:root.querySelector('[name="tokenFrame"]').value,animations:root.querySelector('[name="animations"]').value,sound:root.querySelector('[name="sound"]').checked,
           volume:Number(root.querySelector('[name="volume"]').value),soundSet:root.querySelector('[name="soundSet"]').value,
           followToken:root.querySelector('[name="followToken"]').checked};
       }},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
       render:(_event,dialog)=>{
+        const frameStatus=dialog.element.querySelector('[data-frame-status]');
+        dialog.element.querySelector('[name="tokenFramesZip"]')?.addEventListener('change',async event=>{const field=event.target;field.disabled=true;try{await importTokenFrames(field.files?.[0]);frameStatus.textContent=this.t('Originalrahmen importiert.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{field.disabled=false;}});
+        dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,actor.img,message=>this.notify('warn',message),await uploadPortrait(framed.token));frameStatus.textContent=this.t('Rundes Token erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
         const host=dialog.element.querySelector('.pp-favorite-editor');
         const update=()=>{host.innerHTML=(draft.favorites[this.actorId] || []).map((ref,index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`;};
         update();
@@ -469,6 +492,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const canCreate = foundry.documents.Actor.canUserCreate(game.user);
     if (!actors.length && !canCreate) throw new Error('Für den Import benötigst du Besitzerrechte auf einem Foundry-Charakter.');
     let pending = null;
+    let pendingSource=null;
     let portrait = null;
     let portraitManual = null;
     let portraitPackaged = null;
@@ -478,12 +502,12 @@ export class PedipalpusApp extends ApplicationV2 {
     let readSequence = 0;
     const answer = await DialogV2.wait({
       window: { title: this.t('Pedipalpus-Charakter importieren') }, position: { width: 550 },
-      classes: this.dialogClasses, content: renderImportOptions(actors, this.actorId, canCreate), modal:true, rejectClose: false,
+      classes: this.dialogClasses, content: renderImportOptions(actors, this.actorId, canCreate, this.preferences.tokenFrame), modal:true, rejectClose: false,
       buttons: [{ action: 'import', label:this.t('Importieren'), icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
           if (!pending) { this.notify('warn', 'Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }
           if (portraitBusy || portraitError) throw new Error('Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.');
-          return { snapshot: pending, portrait, actorId: dialog.element.querySelector('[name="destination"]').value || null };
+          return { snapshot: pending, portrait, source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
         } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => null }],
       render: (_event, dialog) => {
         localizeDialog(dialog.element,this.theme);
@@ -503,9 +527,9 @@ export class PedipalpusApp extends ApplicationV2 {
           } catch (error) { if (sequence === portraitSequence) { portraitError = true; preview.textContent = this.t(error.message); } }
           finally { if (sequence === portraitSequence) { portraitBusy = false; syncButton(); } }
         });
-        input.addEventListener('change', async () => {
+        const readFile=async (file,source=null,live=null) => {
           const sequence = ++readSequence;
-          pending = null;
+          pending = null;pendingSource=null;
           portraitPackaged = null; portrait = portraitManual;
           dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(portrait ? `Bild ausgewählt: ${portrait.file.name}` : 'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.');
           const submit = dialog.element.querySelector('button[data-action="import"]');
@@ -513,25 +537,39 @@ export class PedipalpusApp extends ApplicationV2 {
           const preview = dialog.element.querySelector('.pp-import-preview');
           preview.textContent = this.t('Datei wird gelesen …');
           try {
-            const file = input.files?.[0];
             if (!file) throw new Error('Bitte eine JSON-Datei auswählen.');
-            const imported=await readCharacterFile(file);
+            const imported=live??await readCharacterWithPortrait(file,Array.from(new Set([...(this.characterFolderFiles??[]),...Array.from(input.files??[])])));
             const parsed = parseCharacter(imported.json);
             parsed.sourceJSON=imported.json;
             const packagedPortrait=imported.portrait?await preparePortrait(imported.portrait):null;
             if (sequence !== readSequence) return;
             portraitPackaged=packagedPortrait;portrait=portraitManual || portraitPackaged;
             if(portrait && !portraitBusy && !portraitError)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${portrait.file.name}`);
-            pending = parsed;
+            pending = parsed;pendingSource=source??{fileName:file.name};
             syncButton();
             preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} ${this.t('Proben')} · ${this.t('Dateiversion')} ${parsed.sourceVersion}`;
             dialog.element.querySelector('.pp-portrait-source').textContent = parsed.profile.portraitFileName
-              ? this.t(`Pedipalpus-Bild: CharacterPortraits/${parsed.profile.portraitFileName}. Diese separate Bilddatei unten auswählen.`)
+              ? this.t(packagedPortrait?'Pedipalpus-Bild automatisch gefunden.':`Pedipalpus-Bild: CharacterPortraits/${parsed.profile.portraitFileName}. Den Pedipalpus-Ordner auswählen oder das Bild unten hinzufügen.`)
               : this.t('Optional ein Charakterbild auswählen.');
           } catch (error) { if (sequence === readSequence) preview.textContent = this.t(error.message); }
+        };
+        input.addEventListener('change',()=>{const files=Array.from(input.files??[]).filter(file=>/\.(json|zip)$/i.test(file.name));if(files.length!==1){pending=null;syncButton();dialog.element.querySelector('.pp-import-preview').textContent=this.t('Bitte genau einen Charakter auswählen.');return;}readFile(files[0]);});
+        dialog.element.querySelector('[data-pick-character]').addEventListener('click',async()=>{try{pending=null;pendingSource=null;syncButton();const [handle]=await globalThis.showOpenFilePicker({multiple:false,types:[{description:'Pedipalpus-Charakter',accept:{'application/json':['.json'],'application/zip':['.zip']}}]});const source={fileHandle:handle,directoryHandle:this.characterFolderHandle??null,fileName:handle.name};await readFile(await handle.getFile(),source,await readLiveSource(source));}catch(error){if(error.name!=='AbortError')dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);}});
+        const folderChoice=dialog.element.querySelector('[name="folderCharacter"]');
+        dialog.element.querySelector('[name="characterFolder"]').addEventListener('change',event=>{
+          pending=null;folderHandles=null;syncButton();this.characterFolderFiles=Array.from(event.target.files??[]);
+          try{const files=characterFiles(this.characterFolderFiles);folderChoice.innerHTML='<option value="">Charakter auswählen …</option>'+files.map((file,index)=>`<option value="${index}">${escapeHTML(file.name.replace(/\.json$/i,''))}</option>`).join('');folderChoice.parentElement.hidden=files.length===0;if(files.length===1){folderChoice.value='0';readFile(files[0]);}else dialog.element.querySelector('.pp-import-preview').textContent=this.t(files.length?'Bitte einen Charakter aus dem Ordner auswählen.':'Im Ordner wurden keine Charakterdateien gefunden.');}
+          catch(error){dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);}
         });
+        let folderHandles=null;
+        dialog.element.querySelector('[data-pick-folder]').addEventListener('click',async()=>{try{this.characterFolderHandle=await globalThis.showDirectoryPicker({mode:'read'});folderHandles=await directoryCharacters(this.characterFolderHandle);pending=null;syncButton();folderChoice.innerHTML='<option value="">Charakter auswählen …</option>'+folderHandles.map((handle,index)=>`<option value="${index}">${escapeHTML(handle.name.replace(/\.json$/i,''))}</option>`).join('');folderChoice.parentElement.hidden=folderHandles.length===0;if(folderHandles.length===1){folderChoice.value='0';await readHandle(0);}else dialog.element.querySelector('.pp-import-preview').textContent=this.t(folderHandles.length?'Bitte einen Charakter aus dem Ordner auswählen.':'Im Ordner wurden keine Charakterdateien gefunden.');}catch(error){if(error.name!=='AbortError')dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);}});
+        const readHandle=async index=>{const handle=folderHandles[index],source={fileHandle:handle,directoryHandle:this.characterFolderHandle,fileName:handle.name};await readFile(await handle.getFile(),source,await readLiveSource(source));};
+        folderChoice.addEventListener('change',()=>{if(folderChoice.value==='')return;if(folderHandles){readHandle(Number(folderChoice.value)).catch(error=>{dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);});return;}const file=characterFiles(this.characterFolderFiles)[Number(folderChoice.value)];if(file)readFile(file);});
       }
     });
+    return this.acceptImport(answer);
+  }
+  async acceptImport(answer) {
     if (!answer?.snapshot) return;
     const previous=getCharacter(game.actors.get(answer.actorId));
     if(previous){
@@ -545,12 +583,23 @@ export class PedipalpusApp extends ApplicationV2 {
         if(accepted.keepFocus)answer.snapshot=withFocus(answer.snapshot,characterFocus(previous));
       }
     }
+    if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame);
     const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message));
+    await refreshCompanions(actor,message=>this.notify('warn',message));
     this.selectActor(actor.id);
     await this.persist({...this.preferences,actorId:actor.id,category:'all'});
     await this.render({ force: true });
     this.notify('info', `${answer.snapshot.profile.name} wurde importiert.`);
     this.feedback('saved','Charakter importiert.');this.sound('import');
+    if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame});
+    return actor;
+  }
+  async refreshCharacter() {
+    const actor=this.actor;if(!actor?.isOwner)throw new Error('Zum Aktualisieren werden Besitzerrechte benötigt.');
+    const source=await importSource(actor.id);if(!source?.fileHandle)return this.importCharacter();
+    let imported;try{imported=await readLiveSource(source);}catch(error){this.notify('warn',this.t(error.message||'Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.'));return this.importCharacter();}
+    const snapshot=parseCharacter(imported.json);snapshot.sourceJSON=imported.json;
+    return this.acceptImport({snapshot,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:source.tokenFrame??this.preferences.tokenFrame,source});
   }
   async importPortrait() {
     const actor = this.actor;
@@ -575,8 +624,23 @@ export class PedipalpusApp extends ApplicationV2 {
         });
       }});
     if (!answer) return;
-    await applyPortrait(actor,await uploadPortrait(answer),message => this.notify('warn',message));
+    const framed=await prepareTokenPortrait(answer,this.preferences.tokenFrame);
+    await applyPortrait(actor,await uploadPortrait(framed),message => this.notify('warn',message),await uploadPortrait(framed.token));
     this.notify('info', 'Charakter- und Tokenbild übernommen.');
+  }
+  async importAnimalPortrait(button) {
+    const source=this.actor,index=Number(button.dataset.animal),character=getCharacter(source),key=companionKey(character,index);
+    if(button.dataset.animalKey!==key)throw new Error('Das Tier wurde inzwischen geändert. Bitte erneut auswählen.');
+    const animal=companionEntries(character)[index],existing=companionActor(source.id,key),selected=existing?.getFlag(MODULE_ID,'companion')?.tokenStyle||this.preferences.tokenFrame;
+    let portrait=null,sequence=0;
+    const answer=await DialogV2.wait({window:{title:`${animal.Name} · ${this.t('Bild / Token')}`},classes:this.dialogClasses,position:{width:450},modal:true,rejectClose:false,
+      content:`<label>${escapeHTML(this.t('Tierbild'))}<input type="file" name="portraitFile" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><label>${escapeHTML(this.t('Tokenrahmen'))}<select name="tokenFrame">${TOKEN_STYLES.map(([style,label])=>`<option value="${style}" ${style===selected?'selected':''}>${label}</option>`).join('')}</select></label><p class="pp-portrait-preview">${escapeHTML(this.t(existing?'Vorhandenes Tierbild wird verwendet.':'Bitte ein Tierbild auswählen.'))}</p>`,
+      buttons:[{action:'animal-image',label:this.t('Tier-Token erstellen'),disabled:!existing,callback:(_event,_button,dialog)=>({portrait,style:dialog.element.querySelector('[name="tokenFrame"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      render:(_event,dialog)=>{dialog.element.querySelector('[name="portraitFile"]').addEventListener('change',async event=>{const read=++sequence,submit=dialog.element.querySelector('[data-action="animal-image"]');portrait=null;submit.disabled=true;try{const prepared=await preparePortrait(event.target.files?.[0]);if(read!==sequence)return;portrait=prepared;submit.disabled=false;dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${prepared.file.name}`);}catch(error){if(read===sequence)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(error.message);}});}});
+    if(!answer)return;
+    const framed=answer.portrait?await prepareTokenPortrait(answer.portrait,answer.style):await tokenFromActor(existing,answer.style);
+    await saveCompanion(source,index,key,framed,message=>this.notify('warn',message));
+    this.notify('info',`${animal.Name}: ${this.t('Tier-Token erstellt. Aus dem Charakterverzeichnis auf die Karte ziehen.')}`);
   }
   async linkSelectedToken() {
     const selected = canvas.tokens?.controlled ?? [];

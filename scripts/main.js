@@ -1,3 +1,4 @@
+import { registerTokenSettings } from './tokens.js';
 import { MODULE_ID } from './data.js';
 import { PedipalpusApp } from './app.js';
 import { registerDesignSettings } from './design.js';
@@ -39,7 +40,7 @@ async function createRollMacro(data,slot){
 }
 
 Hooks.once('init', () => {
-  registerDesignSettings();
+  registerDesignSettings();registerTokenSettings();
   registerWorkbenchSettings();
   game.settings.registerMenu(MODULE_ID, 'open', {
     name: 'Pedipalpus – Proben', label: 'Proben öffnen',

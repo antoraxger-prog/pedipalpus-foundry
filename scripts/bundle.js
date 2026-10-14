@@ -223,3 +223,13 @@ export async function writeCharacterBundle(json, portrait = null) {
   if (result.size > MAX_BUNDLE_SIZE) fail('Das Charakter-ZIP ist größer als 17 MB.');
   return result;
 }
+
+export async function readFramePackage(file) {
+ if(!file||file.size<=0||file.size>MAX_BUNDLE_SIZE)fail('Bitte ein Tokenrahmen-ZIP bis 17 MB auswählen.');
+ const entries=parseDirectory(new Uint8Array(await file.arrayBuffer())).filter(entry=>!entry.directory);
+ const expected=['concrete','silver-thin','undead'].flatMap(style=>[`${style}.png`,`${style}-mask.png`]);
+ if(entries.length!==6||entries.some(entry=>!expected.includes(entry.name)))fail('Das Rahmenpaket muss Concrete, Silver Thin und Undead mit jeweils einem Rahmen und einer Maske enthalten.');
+ const frames={};
+ for(const entry of entries){if(entry.length>2*1024*1024)fail('Ein Tokenrahmen ist größer als 2 MB.');const bytes=await unpack(entry);checkImage(bytes,'png');const mask=entry.name.endsWith('-mask.png'),style=entry.name.replace(/(?:-mask)?\.png$/,'');frames[style]??={};frames[style][mask?'mask':'overlay']=new File([bytes],entry.name,{type:'image/png'});}
+ return frames;
+}

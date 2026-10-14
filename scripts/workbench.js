@@ -11,7 +11,7 @@ const choices = (value, options, fallback) => options.includes(value) ? value : 
 export const DEFAULT_WORKBENCH = Object.freeze({
   actorId: null, category: 'all', favorites: Object.freeze({}), recent: Object.freeze({}),
   density: 'normal', language: 'theme', animations: 'subtle', sound: true, volume: 0.25, soundVersion: 1,
-  soundSet: 'theme', presets: Object.freeze([]), followToken: false
+  soundSet: 'theme', tokenFrame:'concrete', presets: Object.freeze([]), followToken: false
 });
 
 function canonicalReference(value) {
@@ -132,6 +132,7 @@ export function validateWorkbench(value) {
     animations: choices(source.animations, ['none', 'subtle', 'full'], 'subtle'),
     soundVersion: 1, sound: source.soundVersion === 1 ? source.sound !== false : true, volume: typeof source.volume === 'number' && Number.isFinite(source.volume) ? Math.max(0, Math.min(1, source.volume)) : 0.25,
     soundSet: choices(source.soundSet, ['theme', 'fantasy', 'ork', 'dark', 'light', 'dice'], 'theme'),
+    tokenFrame:choices(source.tokenFrame,['concrete','silver-thin','undead'],'concrete'),
     presets, followToken: source.followToken === true
   };
 }

@@ -1,4 +1,5 @@
 import { checkReference, referenceKey } from './workbench.js';
+import { armorItems } from './equipment.js';
 import { characterFocus } from './combat.js';
 
 const printable = value => value === null || value === undefined ? '–' : value;
@@ -37,6 +38,13 @@ export function compareCharacters(previous, next) {
     if (attributes(oldCheck) !== attributes(newCheck)) add(`${label} · Probenattribute`, attributes(oldCheck) || null, attributes(newCheck) || null);
     if (calculation(oldCheck) !== calculation(newCheck)) add(`${label} · Berechnung`, calculation(oldCheck) || null, calculation(newCheck) || null);
     if ((oldCheck.reason ?? '') !== (newCheck.reason ?? '')) add(`${label} · Verfügbarkeit`, oldCheck.reason || 'Vollständig', newCheck.reason || 'Vollständig');
+  }
+  const oldArmor=armorItems(previous),newArmor=armorItems(next);
+  const state=item=>item?`RS ${item.armor??'–'} · BE ${item.basePenalty??item.penalty??'–'} · Dabei ${item.carried?'ja':'nein'} · Angelegt ${item.equipped?'ja':'nein'}`:null;
+  for(const name of new Set([...oldArmor,...newArmor].map(item=>item.name))){
+    const before=oldArmor.filter(item=>item.name===name),after=newArmor.filter(item=>item.name===name);
+    if(before.length>1||after.length>1){add(`${name} · Rüstung`,`${before.length} Einträge`,`${after.length} Einträge`,'ambiguous');continue;}
+    if(state(before[0])!==state(after[0]))add(`${name} · Rüstung`,state(before[0]),state(after[0]));
   }
   return rows;
 }
