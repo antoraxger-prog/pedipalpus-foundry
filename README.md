@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 0.12.0
+# Pedipalpus – Proben · 0.13.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -24,25 +24,25 @@ In der Welt **Pedipalpus – Proben** und **Ucurifunke – Proben** aktivieren. 
 2. Im Foundry-Charakterverzeichnis auf **Pedipalpus** klicken. Alternativ: **Einstellungen → Einstellungen konfigurieren → Pedipalpus – Proben → Proben öffnen**.
 3. **Werkzeuge** (Zahnrad) öffnen und **JSON importieren** wählen. Eine JSON-Datei oder ein Charakter-ZIP auswählen.
 4. Unter **In Foundry speichern als** einen bestehenden Charakter auswählen oder einen neuen anlegen.
-5. Einen Bereich auswählen oder über die Suche eine Probe finden. Das Würfelsymbol würfelt direkt; **? + Würfelsymbol** würfelt verdeckt. Das Ergebnis erscheint ohne weitere Modifikator-Abfrage im Chat.
+5. Einen Bereich auswählen oder über die Suche eine Probe finden. Das Würfelsymbol würfelt direkt; **durchgestrichenes Auge + Würfelsymbol** würfelt verdeckt. Das Ergebnis erscheint ohne weitere Modifikator-Abfrage im Chat.
 
 Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benötigen zusätzlich die entsprechende Foundry-Berechtigung. Beobachter können die Proben lesen.
 
 ## Kompakte Oberfläche
 
-Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell, Ork und Dämonisch bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
+Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell, Ork, Dämonisch, Aristocrat, Krieger, Magie und Sneaky bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
 
 Biografie, Inventar, Energien, AP-Anzeigen, Zustände und Bearbeitungsfelder sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben sind ausschließlich im **Kampfbrett** über das gekreuzte Waffensymbol erreichbar. Sie erscheinen weder in der normalen Probenliste noch im Probenring. Der Fokusregler gehört ebenfalls zum Kampfbrett.
 
 ## Spielansicht und Werkzeuge
 
-Der Kopf zeigt Portrait und Charakter; Auswahl und Knöpfe stehen auf einer Höhe. Import, Bildwechsel, Darstellung, Einstellungen, Vorlagen, Austauschpaket und Versionsinformationen liegen unter **Werkzeuge**. Die Probenliste erhält dadurch mehr Platz. Zusätzliche Sprecherzeile, Modifikatorüberschrift und die untere Hinweisleiste entfallen. Würfe erzeugen keinen zusätzlichen Bestätigungstext im Fenster; Fehler bleiben gemeldet. Die letzte Figur, der Bereich sowie Fenstergröße und Position werden wiederhergestellt. Fenstergröße und Position sind pro Benutzer im jeweiligen Browser gespeichert und werden auf den sichtbaren Bildschirm begrenzt.
+Der Kopf zeigt Portrait und Charakter; Auswahl und Knöpfe stehen auf einer Höhe. Import, Bildwechsel, Darstellung, Einstellungen, Austauschpaket und Versionsinformationen liegen unter **Werkzeuge**. Die Probenliste erhält dadurch mehr Platz. Zusätzliche Sprecherzeile, Modifikatorüberschrift und die untere Hinweisleiste entfallen. Würfe erzeugen keinen zusätzlichen Bestätigungstext im Fenster; Fehler bleiben gemeldet. Die letzte Figur, der Bereich sowie Fenstergröße und Position werden wiederhergestellt. Fenstergröße und Position sind pro Benutzer im jeweiligen Browser gespeichert und werden auf den sichtbaren Bildschirm begrenzt.
 
 Unter **Einstellungen** stehen Normal, Kompakt und Große Knöpfe, die Sprache, Animationen und Klänge zur Wahl. Sprache lässt sich unabhängig vom Design auf Normal oder Ork stellen. **Ausgewähltem Token folgen** ist optional; ohne diese Option bleibt der ausgewählte Charakter fest. Bei mehreren ausgewählten Tokens findet kein automatischer Wechsel statt. Beim Charakterwechsel werden Erschwernis und Erleichterung zurückgesetzt.
 
 ## Favoriten und schneller Zugriff
 
-Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** stehen im Bereichsfilter. Bis zu sechs normale Favoriten erscheinen in der einklappbaren Schnellleiste. Kampffavoriten sind im Kampfbrett über den Bereichsfilter erreichbar; gespeicherte Einträge bleiben erhalten. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
+Der Stern an einer Probe speichert sie persönlich für den jeweiligen Charakter. **Meine Favoriten** stehen im Bereichsfilter. Bis zu sechs normale Favoriten erscheinen in der einklappbaren Schnellleiste als höchstens 150 Pixel breite Karten. Mit dem Stern direkt in der Karte lässt sich ein Favorit entfernen. Kampffavoriten sind im Kampfbrett über den Bereichsfilter erreichbar; gespeicherte Einträge bleiben erhalten. Unter **Einstellungen → Favoriten ordnen** lassen sich Reihenfolge und Einträge ändern. Favoriten und Makros werden über Typ, Herkunft und Namen dem aktuellen Import zugeordnet; geänderte Arrayreihenfolgen verwenden keine fremden Proben. Bei entfernten oder mehrfach gleich benannten Proben wird nicht automatisch geraten.
 
 Waffen stehen in einem gemeinsamen Block mit Talentwert und getrennten AT-/PA-Aktionen. Ein Klick auf die Wertplakette zeigt die vorhandene Berechnung. Der Kopf enthält Knöpfe für das **Kampfbrett**, den **Probenring** mit sechs Favoriten und die Rückkehr zur vollständigen Ansicht. Kampfbrett und normale Probenansicht teilen Charakter, nächsten Modifikator sowie dieselbe Fenstergröße und Position. Der Schwert-und-Schild-Knopf wechselt die Ansicht innerhalb des vorhandenen Fensters. Der gespeicherte Fokus gilt für Kampfproben und wird nur im Kampfbrett angezeigt.
 
@@ -58,13 +58,21 @@ Das Mausrad funktioniert über der Zahl und über **Erschwernis/Erleichterung**.
 
 Animationen lassen sich auf Aus, Dezent oder Lebendig stellen. Gedrückte Knöpfe, gespeicherte Änderungen, Fokuswirkung und verbrauchter Modifikator erhalten kurze Rückmeldungen. Zahlen ändern sich sofort; Knöpfe wandern nicht. Reduzierte Bewegung wird berücksichtigt. „Probe ausgelöst“ bezeichnet die ausgeführte Aktion, nicht einen regeltechnischen Erfolg.
 
-## Glanz, Holz und dämonisches Design
+## Wertmarkierungen und Kategorien
 
-Beim Überfahren einer Fähigkeit läuft ein kurzer, dezenter Glanz über ihren Namen. Klickflächen und Schrift bleiben an derselben Position. Auch die Karten im Probenring reagieren auf das Überfahren. Der Glanz gehört zu **Animationen** und bleibt bei **Aus** oder reduzierter Bewegung statisch.
+Lorbeerkränze erscheinen nur bei Fertigkeiten ab 10, Kampffertigkeiten ab Talentwert 20 und Attributen ab 20. Niedrigere Werte tragen keinen Kranz. Eine Wertplakette mit 0 zeigt Risse; Zahl und Würfelknöpfe bleiben lesbar und bedienbar.
+
+Körperliche Fertigkeiten sind am Symbol und linken Zeilenrand rot, soziale lila, Natur grün, akademische blau und handwerkliche braun markiert. Das Attributsymbol bleibt unverändert. In Orksprache tragen auch würfelbare Eigenschaften einfache Namen mit dem Original klein darunter. Designnamen Dämonisch, Aristocrat, Krieger, Magie und Sneaky bleiben unverändert.
+
+## Glanz, Holz und besondere Designs
+
+Beim Überfahren einer Fähigkeit läuft ein kurzer, dezenter Glanz über die gesamte Zeile. Klickflächen und Schrift bleiben an derselben Position. Auch die Karten im Probenring reagieren auf das Überfahren. Der Glanz gehört zu **Animationen** und bleibt bei **Aus** oder reduzierter Bewegung statisch.
 
 Die Holztextur in Fantasy und Ork wird groß und durchgehend über den Fensterhintergrund gelegt, einschließlich der Titelleiste; kleine wiederholte Kacheln entfallen.
 
 Unter **Werkzeuge → Darstellung → Dämonisch** stehen schwarzer Marmor, dunkle Felder, warme Feuerkanten und ein glühender Bannkreis mit Pentagramm zur Wahl. Der Feuerkreis bewegt sich langsam, sein Licht flackert sanft. **Dezent** und **Lebendig** unterscheiden die Bewegung; **Aus** hält den Hintergrund an. Reduzierte Bewegung wird berücksichtigt. Das Design ist persönlich gespeichert; Daten und Probenregeln ändern sich nicht.
+
+**Aristocrat** kombiniert hellen Marmor mit großzügigen Gold-/Silberrahmen, einer Krone, facettierten Rubinen, Saphiren und Smaragden. Edelsteine funkeln und Metallverzierungen schimmern. Die vorhandenen Einstellungen Dezent, Lebendig und Aus sowie reduzierte Bewegung gelten auch hier.
 
 ## Importvergleich und Austauschpakete
 
@@ -94,7 +102,7 @@ Auch in Dunkel und Hell bleiben ungeübte und meisterliche Talente durch Wertmar
 
 Mit dem Mausrad über der Zahl oder der Richtungsbezeichnung: **↑ schwerer · ↓ leichter**. Beim Scrollen durch 0 wechselt die Richtung automatisch. Der Wert lässt sich auch eintippen. Die Probenliste scrollt weiterhin, wenn sich der Zeiger außerhalb des Felds befindet.
 
-Der zweite Knopf **? + Würfelsymbol** erzwingt einen verdeckten Wurf: Nur Spielleiter sehen das Ergebnis. Normale Würfe beachten den in Foundry eingestellten Chatmodus.
+Der zweite Knopf **durchgestrichenes Auge + Würfelsymbol** erzwingt einen verdeckten Wurf: Nur Spielleiter sehen das Ergebnis. Normale Würfe beachten den in Foundry eingestellten Chatmodus.
 
 Die Auswertung übernimmt weiterhin Ucurifunke – Proben. Der Direktwurf ersetzt ausschließlich dessen Modifikator-Abfrage für den ausgewählten Wurf; andere Dialoge und manuelle Chatbefehle bleiben verfügbar. Geprüft sind die veröffentlichten Versionen 1.0.8 und 1.0.14. Bei einer neueren Version ist zuerst die Direktwurf-Anbindung zu aktualisieren; bis dahin bleiben Direktwürfe gesperrt.
 
@@ -137,3 +145,7 @@ Vorhandene Importe aus früheren Modulversionen bleiben verwendbar; für die bis
 ```js
 game.modules.get('pedipalpus-foundry').api.open();
 ```
+
+## Krieger, Magie und Sneaky
+
+**Krieger** zeigt schwere Metallplatten mit Nieten, Lederriemen, Schwertklingen und Schild. **Magie** verwendet dunkles Violett/Blau, rotierende Runenkreise, arkanes Licht und funkelnde Partikel. **Sneaky** basiert auf schwarzem Leder mit wenigen giftgrünen Akzenten, Messern und einem schwach leuchtenden Giftfläschchen. Alle Designs werden persönlich gespeichert und beachten Animationen Aus sowie reduzierte Bewegung.

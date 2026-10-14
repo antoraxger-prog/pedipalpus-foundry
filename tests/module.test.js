@@ -417,7 +417,7 @@ test('Talent and attribute mastery use independent scales without changing impor
   assert.notEqual(mastery({ ...primary, value: 19 }).grade, 'master');
   assert.equal(mastery({ ...primary, value: 20 }).grade, 'master');
   assert.equal(mastery(character.checks.find(check => check.id.startsWith('secondary:'))).grade, 'attribute');
-  assert.equal(mastery(combatCheck('attack', {skillValue:10,baseValue:0,focusValue:-4})).grade, 'master');
+  assert.equal(mastery(combatCheck('attack', {skillValue:10,baseValue:0,focusValue:-4})).grade, 'adept');
   assert.equal(mastery(combatCheck('parry', {skillValue:0,baseValue:15,focusValue:5})).grade, 'untrained');
   assert.equal(mastery({...combatCheck('attack', {skillValue:20}),id:'animals:0:0:attack'}).grade, 'attribute');
   const html = renderView({actors:[], actor:{isOwner:true}, character, status:{ready:true,message:'Verbunden'}, canImport:true});
@@ -522,4 +522,21 @@ test('Portrait upload checks bytes, owner/upload permission and world folder; sa
   assert.equal(uploadCount,1);
   game.world.id = '../unsafe';
   await assert.rejects(uploadPortrait(prepared),/Welt/);
+});
+
+test('Master frames follow talent 10, combat talent 20 and attribute 20; zero values stay readable and rollable',()=>{
+ const data=normalizeCharacter(combatFixture());
+ const skill=data.checks.find(c=>c.id.startsWith('AcademicSkills:'));
+ const att=data.checks.find(c=>c.kind==='attribute');
+ const fight=data.checks.find(c=>c.kind==='combat'&&!c.id.startsWith('animals:'));
+ const checks=[{...skill,id:'AcademicSkills:low',value:9},{...skill,id:'AcademicSkills:high',value:10},{...fight,id:'combat:low:attack',value:fight.value+19-fight.combat.skillValue,combat:{...fight.combat,skillValue:19}},{...fight,id:'combat:high:attack',value:fight.value+20-fight.combat.skillValue,combat:{...fight.combat,skillValue:20}},{...att,id:'primary:zero',value:0},{...att,id:'primary:high',value:20}];
+ const args={actor:{isOwner:true},character:{...data,checks},status:{ready:true},theme:'aristocrat'};
+ const full=renderView(args),battle=renderView({...args,mode:'battle'});
+ assert.equal((full.match(/class="pp-mastery-frame"/g)||[]).length,2);
+ assert.equal((battle.match(/class="pp-mastery-frame"/g)||[]).length,1);
+ assert.match(full,/data-zero="true"/);assert.doesNotMatch(full,/data-decoration="lesser"/);
+ assert.match(full,/class="pp-blind-eye"/);assert.doesNotMatch(full,/<span aria-hidden="true">\?<\/span>/);
+ assert.equal(mastery({...fight,combat:{...fight.combat,skillValue:19}}).grade,'adept');
+ assert.equal(mastery({...fight,combat:{...fight.combat,skillValue:20}}).grade,'master');
+ assert.match(full,/pp-aristocrat-ornaments/);
 });

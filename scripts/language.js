@@ -1,6 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
-  'Dämonisch':'Schwarz. Feuer.',
+  'Dämonisch':'Dämonisch', 'Aristocrat':'Aristocrat',
   'Zu den Proben wechseln':'Anderes Können zeigen',
   'Alle Kampfproben':'Alles hauen', 'Kampffavoriten':'Lieblingshauen', 'Zuletzt im Kampf':'Eben gehauen',
   'Kampfprobe suchen …':'Welches Hauen?', 'Kampfproben durchsuchen':'Hauen suchen',
@@ -140,7 +140,7 @@ function copyText(element, theme) {
 export function localizeSurface(root, theme, character = null, actor = null, token = null) {
   if (theme !== 'ork') return;
   const t = text => uiText(theme,text);
-  root.querySelectorAll('.window-title, .pp-picker, .pp-theme, .pp-filters label, .pp-modifier label, .pp-wheel-hint span, .pp-focus > span, .pp-table thead th, .pp-sr-only, .pp-no-results, .pp-rank-legend span, .pp-status, .pp-hint, .pp-warning, .pp-search-scope, .pp-welcome h2, .pp-welcome p, .pp-ring-help, .pp-quickbar summary, .pp-details summary, [data-action="import"], [data-action="token"], [data-action="preferences"], [data-action="presets"], [data-action="export"], [data-action="diagnostic"], [name="modifierDirection"], [name="theme"] option, [name="category"] option, [name="actor"] option[value=""]').forEach(element => copyText(element,theme));
+  root.querySelectorAll('.window-title, .pp-picker, .pp-theme, .pp-filters label, .pp-modifier label, .pp-wheel-hint span, .pp-focus > span, .pp-table thead th, .pp-sr-only, .pp-no-results, .pp-rank-legend span, .pp-status, .pp-hint, .pp-warning, .pp-search-scope, .pp-welcome h2, .pp-welcome p, .pp-ring-help, .pp-quickbar summary, .pp-details summary, [data-action="import"], [data-action="token"], [data-action="preferences"], [data-action="presets"], [data-action="export"], [data-action="diagnostic"], [name="modifierDirection"], [name="category"] option, [name="actor"] option[value=""]').forEach(element => copyText(element,theme));
   root.querySelectorAll('[data-action="administration"], [data-action="battle"], [data-action="ring"], [data-action="full"], [data-action="favorite"]').forEach(button=>{
     if(button.title)button.title=t(button.title);
     if(['administration','battle','ring','full'].includes(button.dataset.action))button.setAttribute('aria-label',button.title);
@@ -189,7 +189,7 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
       row.querySelector('.pp-single-probe').title = `${t('Fertigkeit')} ${check.combat.skillValue} + ${t('Basis')} ${check.combat.baseValue} + ${t('Fokus')} ${check.combat.focusValue} + ${t('Waffenbonus')} ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`;
       row.querySelector('.pp-single-probe').textContent = `${{attack:'Hau',parry:'Block',ranged:'Weit'}[check.combat.type]} · 1W20`;
     } else if (!check.foundation && ['primary','secondary','Spells','Rituals','Miracles'].includes(check.id.split(':')[0])) {
-      if(row.querySelector('small'))row.querySelector('small').textContent = t(check.group);
+      const subtitle=row.querySelector('small:not(.pp-original-name)');if(subtitle)subtitle.textContent = t(check.group);
     }
   });
   root.querySelectorAll('.pp-weapon-header').forEach(header=>{

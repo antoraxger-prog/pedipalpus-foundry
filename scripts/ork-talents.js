@@ -47,6 +47,8 @@ const names = {
   'Armatrutz Eisenhaut':'Haut wird hart', 'Flim Flam Funkel':'Licht machen', 'Somigravis Tiefer Schlaf':'Du schläfst jetzt',
   'Wundsegen':'Gott macht Aua weg', 'Heilungssegen':'Gott macht gesund', 'Schutzsegen':'Gott passt auf'
 };
+const attributes = {Mut:'Keine Angst',Klugheit:'Kopf weiß',Intuition:'Bauch weiß',Charisma:'Leute mögen dich',Fingerfertigkeit:'Finger können',Gewandtheit:'Körper flink',Konstitution:'Viel aushalten',Körperkraft:'Muskeln stark','Geistige Magieresistenz':'Kopf stoppt Zauber','Körperliche Magieresistenz':'Körper stoppt Zauber',Reaktionsvermögen:'Schnell reagieren',Initiative:'Schnell dran',Ausweichen:'Weg vom Hau','Selbstbeherrschung':'Ruhig bleiben'};
+
 const labels = new Map(Object.entries(names).map(([name,label])=>[name.normalize('NFC').toLocaleLowerCase('de'),label]));
 
 export function orkTalentName(name) {
@@ -57,5 +59,7 @@ export function orkTalentName(name) {
 }
 
 export function checkDisplayName(check, language) {
-  return language === 'ork' && check?.kind === 'skill' ? orkTalentName(check.name) : check?.name || '';
+  if(language !== 'ork')return check?.name || '';
+  if(check?.kind === 'attribute' || check?.id?.startsWith('secondary:'))return attributes[check.name] || 'Körper kann';
+  return check?.kind === 'skill' ? orkTalentName(check.name) : check?.name || '';
 }

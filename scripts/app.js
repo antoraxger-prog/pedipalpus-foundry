@@ -40,7 +40,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.mode = 'full';
     this.fullPosition = null;
   }
-  get dialogClasses() { return ['pedipalpus-dialog',...(this.theme==='ork'?['pp-ork-dialog']:this.theme==='demonic'?['pp-demonic-dialog']:[])]; }
+  get dialogClasses() { const design={ork:'pp-ork-dialog',demonic:'pp-demonic-dialog',aristocrat:'pp-aristocrat-dialog',warrior:'pp-warrior-dialog',arcane:'pp-arcane-dialog',sneaky:'pp-sneaky-dialog'}[this.theme];return ['pedipalpus-dialog',...(design?[design]:[])]; }
   get language() { return this.preferences.language === 'theme' ? this.theme === 'ork' ? 'ork' : 'standard' : this.preferences.language; }
   get effects() { return {...this.preferences, theme:this.theme, animations:{none:'off',subtle:'subtle',full:'lively'}[this.preferences.animations]}; }
   get actor() { return this.actorId ? game.actors.get(this.actorId) : null; }
