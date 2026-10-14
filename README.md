@@ -2,6 +2,14 @@
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
+## Pedipalpus als Grundlage
+
+Dieses Modul ergänzt die Windows-App **Pedipalpus von [Tschuangtse](https://github.com/Tschuangtse)**. Zum Spielen wird eine dort erstellte und gespeicherte Charakterdatei benötigt. Charaktererstellung und Steigerungen erfolgen in Pedipalpus; dieses Modul bringt die importierten Proben nach Foundry.
+
+- [Pedipalpus – unser Fork des Originalprojekts von Tschuangtse](https://github.com/antoraxger-prog/Pedipalpus)
+
+Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erreichbar. Dieses Foundry-Modul enthält die Windows-App nicht; bereits importierte Charaktere bleiben auch ohne laufende Windows-App verwendbar.
+
 ## Voraussetzungen
 
 - Foundry VTT 14
