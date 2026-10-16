@@ -1,3 +1,4 @@
+import { retinueEntries,isCompanionCheck } from './retinue.js';
 const list = value => Array.isArray(value) ? value.filter(x => x && typeof x === 'object') : [];
 const text = value => typeof value === 'string' ? value.trim() : '';
 const integer = value => Number.isSafeInteger(value) ? value : null;
@@ -7,7 +8,7 @@ const comparable = value => text(value).replace(/[äöüÄÖÜß]/g, c => ({ä:'
 const validFocus = value => Number.isSafeInteger(value) && value >= -4 && value <= 4;
 export function characterFocus(character) {
   if (validFocus(character?.combat?.offDefOffset)) return character.combat.offDefOffset;
-  const checks = (character?.checks ?? []).filter(check => check.kind === 'combat' && !check.id?.startsWith('animals:') && check.combat?.type !== 'ranged');
+  const checks = (character?.checks ?? []).filter(check => check.kind === 'combat' && !isCompanionCheck(check) && check.combat?.type !== 'ranged');
   const values = checks.map(check => check.combat.type === 'attack' ? check.combat.focusValue : -check.combat.focusValue);
   return values.length && values.every(value => validFocus(value) && value === values[0]) ? values[0] : null;
 }
@@ -17,7 +18,7 @@ export function withFocus(character, focus) {
   if (characterFocus(character) === null) throw new Error('Der gespeicherte Fokus ist unvollständig. Bitte die Charakterdatei erneut importieren.');
   return {...character, combat: {...character.combat, offDefOffset: focus, offOffset: focus, defOffset: -focus},
     checks: character.checks.map(check => {
-      if (check.kind !== 'combat' || check.id?.startsWith('animals:') || check.combat.type === 'ranged') return check;
+      if (check.kind !== 'combat' || isCompanionCheck(check) || check.combat.type === 'ranged') return check;
       const combat = {...check.combat, focusValue: check.combat.type === 'attack' ? focus : -focus};
       return {...check, combat, value: check.reason ? check.value : combat.skillValue + combat.baseValue + combat.focusValue + combat.weaponModifier - combat.mobilityPenalty};
     })};
@@ -55,9 +56,10 @@ export function combatChecks(raw) {
       }
     });
   }
-  list(raw.Animals).forEach((animal,i) => list(animal.Attacks).forEach((attack,j) => {
-    for (const type of ['attack','parry']) add(`animals:${i}:${j}:${type}`,`${text(animal.Name) || 'Tier'} – ${text(attack.Name) || 'Tierangriff'}`,
-      text(attack.Name) || 'Tierangriff',type,integer(attack[type === 'attack' ? 'AttackValue' : 'ParryValue']),0,0,0,0,{animalName:text(animal.Name)});
+  retinueEntries(raw).forEach(animal => list(animal.Attacks).forEach((attack,j) => {
+    const i=animal._index,group=animal._group;
+    for (const type of attack.IsRanged===true?['ranged']:['attack','parry']) add(`${group}:${i}:${j}:${type}`,`${text(animal.Name) || 'Tier'} – ${text(attack.Name) || 'Tierangriff'}`,
+      text(attack.Name) || 'Tierangriff',type,integer(attack[type === 'parry' ? 'ParryValue' : 'AttackValue']),0,0,0,0,{...(group==='animals'?{animalName:text(animal.Name)}:{}),companionName:text(animal.Name),companionGroup:group,companionIndex:i,companionId:text(animal.InventoryId),ranges:text(attack.Ranges)});
   }));
   return checks;
 }

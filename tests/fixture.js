@@ -27,3 +27,12 @@ export function combatFixture() {
   return raw;
 }
 
+
+export function retinueFixture(){
+ const raw=combatFixture();
+ const values={MU:11,KL:12,IN:13,CH:14,FF:15,GE:16,KO:17,KK:18,MentalMagicResistance:4,PhysicalMagicResistance:5,CurrentLe:14,MaxLe:20};
+ raw.Animals=[{...values,Name:'Skelett',Species:'Träger',InventoryId:'old-skeleton',Attacks:[{Name:'Hieb',AttackValue:6,ParryValue:6}]}];
+ raw.Demons=[{...values,Name:'Testdämon',Domain:'Testdomäne',InventoryId:'demon-1',AstralEnergy:30,CurrentAstralEnergy:22,Attacks:[{Name:'Klaue',AttackValue:18,ParryValue:12},{Name:'Feuer',AttackValue:19,IsRanged:true}],MundaneAbilities:[{Name:'Überreden',Value:12}],MagicalAbilities:[{Name:'Illusion',Value:16,FirstAttribute:'KL',SecondAttribute:'KL',ThirdAttribute:'IN'}]}];
+ raw.Undead=[{...values,Name:'Wache',Species:'Skelett',InventoryId:'undead-1',Classification:'Niederer Untoter',Attacks:[{Name:'Bogen',AttackValue:8,IsRanged:true}],MundaneAbilities:[{Name:'Wachen',Value:4,FirstAttribute:'MU',SecondAttribute:'IN',ThirdAttribute:'IN'}],MagicalAbilities:[]}];
+ return raw;
+}

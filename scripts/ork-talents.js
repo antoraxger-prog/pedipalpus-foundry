@@ -60,6 +60,10 @@ export function orkTalentName(name) {
 
 export function checkDisplayName(check, language) {
   if(language !== 'ork')return check?.name || '';
+  if(check?.companionGroup&&check?.kind!=='combat'){
+    const name=(check.name??'').slice((check.companionName??'').length+3);
+    return `${check.companionName} – ${attributes[name]??orkTalentName(name)}`;
+  }
   if(check?.kind === 'attribute' || check?.id?.startsWith('secondary:'))return attributes[check.name] || 'Körper kann';
   return check?.kind === 'skill' ? orkTalentName(check.name) : check?.name || '';
 }

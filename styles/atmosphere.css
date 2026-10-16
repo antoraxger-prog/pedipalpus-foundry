@@ -274,3 +274,10 @@
 .pedipalpus-app .pp-root button.pp-check-name,
 .pedipalpus-app .pp-root button.pp-check-name:hover:not(:disabled) { display:block; width:auto; max-width:100%; min-height:0; height:auto; margin:0; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; white-space:normal; text-align:left; cursor:pointer; }
 .pedipalpus-app .pp-root button.pp-check-name:disabled { cursor:default; }
+
+.pedipalpus-app .pp-companion-overviews { max-height:145px; overflow:auto; flex:0 0 auto; min-height:0; }
+.pedipalpus-app .pp-companion-overviews .pp-animal-overview { margin:0; padding:3px 6px; max-height:none; overflow:visible; }
+.pedipalpus-app .pp-companion-overviews h3 { margin:0; font-size:11px; color:var(--pp-muted); }
+.pedipalpus-app .pp-companion-overviews [data-companion-card] { display:flex; flex-wrap:wrap; gap:4px 8px; }
+.pedipalpus-app .pp-companion-overviews [data-companion-card] strong { flex:1 1 100px; }
+.pedipalpus-app .pp-companion-overviews [data-companion-card] span { font-size:10px; }

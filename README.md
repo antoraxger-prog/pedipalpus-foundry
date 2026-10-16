@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 1.0.1
+# Pedipalpus – Proben · 1.1.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -14,7 +14,7 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 
 - Foundry VTT 14
 - Simple Worldbuilding
-- Ucurifunke – Proben 1.0.14 für Kampf- und Tierproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+- Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
 
 ## Installation und Updates
 
@@ -40,7 +40,7 @@ Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benöti
 
 Das Fenster startet mit 540 × 520 Pixeln und kann vergrößert werden. Die Probenliste scrollt im Fenster. Angezeigt werden nur vollständig definierte Attributs-, Widerstands-, Reaktions-, Fertigkeits-, Freizeit-, Zauber-, Ritual- und Wunderproben. Bereiche ohne Proben werden ausgeblendet. Die Suche durchsucht alle Bereiche. Fantasy mit Holzrahmen und Pergament ist der Standard für neue Benutzer. Dunkel, Hell, Ork, Dämonisch, Aristocrat, Krieger, Magie und Alchemy bleiben auswählbar. Die zuletzt gewählte Darstellung wird pro Foundry-Benutzer in der Welt gespeichert und beim nächsten Öffnen sowie auf anderen Geräten wieder verwendet. Beim ersten Öffnen nach dem Update wird die bisherige Browserauswahl einmalig für diesen Benutzer übernommen; andere Benutzer erhalten Fantasy, bis sie selbst eine Darstellung auswählen.
 
-Biografie, vollständiges Inventar, Charakter-Energien, AP-Anzeigen, Zustände und allgemeine Charakterbearbeitung sind nicht Bestandteil des Würfelfensters. Kampf- und Tierproben sind ausschließlich im **Kampfbrett** über das gekreuzte Waffensymbol erreichbar. Sie erscheinen weder in der normalen Probenliste noch im Probenring. Der Fokusregler gehört ebenfalls zum Kampfbrett.
+Biografie, vollständiges Inventar, Charakter-Energien, AP-Anzeigen, Zustände und allgemeine Charakterbearbeitung sind nicht Bestandteil des Würfelfensters. Kampf- und Gefolgsproben sind ausschließlich im **Kampfbrett** über das gekreuzte Waffensymbol erreichbar. Sie erscheinen weder in der normalen Probenliste noch im Probenring. Der Fokusregler gehört ebenfalls zum Kampfbrett.
 
 ## Spielansicht und Werkzeuge
 
@@ -88,7 +88,7 @@ Vor einem erneuten Import mit tatsächlichen Unterschieden zeigt ein Vergleich �
 
 Ein Charakter-ZIP enthält genau eine gültige Pedipalpus-JSON und optional ein PNG/JPG/BMP/WebP-Bild; Ordner sind erlaubt. ZIP bis 17 MB, JSON bis 5 MB, Bild bis 10 MB. Programm-ZIPs oder Archive mit mehreren Charakteren werden abgelehnt. Ein zusätzlich gewähltes manuelles Bild hat Vorrang vor dem Paketbild.
 
-**Austauschpaket** exportiert die beim Import mitgeführte JSON mit aktuellen Rüstungszuständen und ein erreichbares Portrait aus der Foundry-Welt. Alte Importe benötigen dafür einmalig einen erneuten Originalimport. Rüstungsänderungen werden in der exportierten JSON berücksichtigt. Beim Export werden die drei Fokuswerte auf den aktuellen Foundry-Stand gesetzt und der Portraitdateiname passend zur beiliegenden Bilddatei gespeichert; alle anderen Originalfelder bleiben erhalten. Die ursprüngliche Windows-Datei wird nicht verändert. Das Paket kann in einer anderen Foundry-Welt importiert werden. Windows-Daten werden weiterhin bewusst über Dateien und den Ordner CharacterPortraits übernommen, nicht automatisch synchronisiert.
+**Austauschpaket** exportiert die beim Import mitgeführte JSON mit aktuellen Rüstungszuständen und ein erreichbares Portrait aus der Foundry-Welt. Alte Importe benötigen dafür einmalig einen erneuten Originalimport. Rüstungsänderungen und ausgewählte Gefolgs-Probenattribute werden in der exportierten JSON berücksichtigt. Beim Export werden die drei Fokuswerte auf den aktuellen Foundry-Stand gesetzt und der Portraitdateiname passend zur beiliegenden Bilddatei gespeichert; alle übrigen Originalfelder bleiben erhalten. Die ursprüngliche Windows-Datei wird nicht verändert. Das Paket kann in einer anderen Foundry-Welt importiert werden. Windows-Daten werden weiterhin bewusst über Dateien und den Ordner CharacterPortraits übernommen, nicht automatisch synchronisiert.
 
 Eine gemeinsame Ergebnis-/Proben-Schnittstelle mit Ucurifunke und ein eigener Paketexport in der Windows-App benötigen weiterhin Abstimmung mit deren Entwickler. Das Modul verändert keine fremde Regelauswertung. Ergebnissiegel und Erfolgs-/Patzerklänge bleiben bis zu einer verlässlichen Ergebnisanbindung aus.
 
@@ -100,7 +100,7 @@ Unter **Darstellung → Ork** wird das Fenster zu einer groben Holz- und Lederob
 
 Das Pergament wird mit höherem Gesamtwert des Talents schrittweise heller und feiner. Wert 0 erscheint mit einem gerissenen Wertfeld. Unter 10 erscheint kein Lorbeerkranz. Ab 10 hebt der goldene Lorbeerkranz mit Stern das Talent hervor. Der Hinweis am Wertfeld erklärt die Abstufung: 0 ungeübt, 1–3 Grundlagen, 4–6 geübt, 7–9 versiert und 10+ meisterlich. Diese Bezeichnungen dienen der Orientierung in der Oberfläche; sie ändern keine Regeln oder Würfelwerte. Attribute verwenden eine eigene Skala: 1 sehr schwach, 10 durchschnittlich und ab 20 meisterlich. Widerstands- und Reaktionsproben bleiben ohne Stärke-Einstufung.
 
-Kampftalente tragen den Meisterkranz ab Talentwert 20. Maßgeblich ist der Wert der besten verwendeten Waffentechnik, bevor Basis, Fokus, Waffenbonus und Behinderung einfließen. Dieser Talentwert steht unter dem Waffennamen; die Spalte **Wert** zeigt weiterhin den fertigen AT-/PA-/FK-Probenwert. Tierangriffe haben fertige AT-/PA-Werte und erhalten keine Talentstufe.
+Kampftalente tragen den Meisterkranz ab Talentwert 20. Maßgeblich ist der Wert der besten verwendeten Waffentechnik, bevor Basis, Fokus, Waffenbonus und Behinderung einfließen. Dieser Talentwert steht unter dem Waffennamen; die Spalte **Wert** zeigt weiterhin den fertigen AT-/PA-/FK-Probenwert. Gefolgsangriffe haben fertige AT-/PA-/FK-Werte und erhalten keine Talentstufe.
 
 Auch in Dunkel und Hell bleiben ungeübte und meisterliche Talente durch Wertmarkierungen erkennbar. Die Oberflächen verwenden mitgelieferte Grafiken und lokale Schriften, ohne externe Bild- oder Schriftquellen.
 
@@ -122,19 +122,21 @@ Ist genau ein anderer oder nicht verknüpfter Token ausgewählt, erscheint **Aus
 
 Ohne passenden Token verwendet der Wurf den gewählten Foundry-Charakter als Sprecher.
 
-## Kampf und Tierproben
+## Kampf und Gefolgsproben
 
 Unter **Kampf** stehen Angriff und Parade für Nahkampfwaffen, Schilde und Parierwaffen sowie Fernkampfangriffe. Die beste erlaubte Waffentechnik wird wie in Pedipalpus ausgewählt; bei Gleichstand bleibt die Reihenfolge der Waffe erhalten. Der Wert enthält Fertigkeit, Basis, Fokus, Waffenbonus und wirksame Behinderung. Nahkampf verwendet `max(0, BE − Waffentoleranz)`, Fernkampf `max(0, BE − 2)`. Der Hinweis über **AT / PA / FK** zeigt die Bestandteile. Situative Modifikatoren werden über **Nächste Probe** eingestellt.
 
-Unter **Tierproben** stehen die gespeicherten Angriffe und Paraden der Tiere. Ihre AT-/PA-Werte sind bereits fertig berechnet; Charakterbasis, Fokus und Behinderung werden nicht noch einmal addiert. Schaden und Sonderfolgen werden nicht automatisch abgewickelt.
+Unter **Tierproben**, **Dämonen** und **Untote** stehen die jeweiligen eigenen Attribute, geistige/körperliche Magieresistenz sowie gespeicherte Angriffe, Paraden und Fernkampfangriffe. Bei Fernkampfangriffen erscheint ausschließlich FK, keine erfundene Parade. Fertige AT-/PA-/FK-Werte werden ohne Charakterbasis, Fokus oder Behinderung übernommen. Schaden, Sonderfolgen und Beschwörungskosten werden nicht automatisch abgewickelt.
 
-Für diese Bereiche nach dem Update die Charakterdatei erneut importieren. Fehlen Pflichtwerte, erscheint ein Hinweis; es werden keine Ersatzwerte erfunden. Die Dateiversion bleibt 17, auch wenn neuere Dateien Portraits und Tierangriffe enthalten.
+Profane und magische Fähigkeiten der Wesen verwenden ihren gespeicherten Probenwert. Vor dem Wurf lassen sich drei eigene Attribute auswählen; doppelte Attribute sind erlaubt. Die zuletzt gewählten Attribute bleiben pro Wesen und Fähigkeit gespeichert, auch bei einem erneuten Import ohne vorgegebene Attribute. Neue Vorgaben aus Pedipalpus haben Vorrang. Ein optionaler Probenname gilt nur für diesen Wurf. Abbrechen verbraucht den nächsten Modifikator nicht. Dasselbe gilt für verdeckte Würfe und Makros bei geschlossenem Fenster.
+
+Vorhandene Importe mit gespeicherter Original-JSON werden beim Öffnen für das neue Gefolgeformat ergänzt. Alte Tiere bleiben Tiere; ein dort eingetragenes Skelett wird nicht automatisch in eine andere Liste verschoben. Fehlen Pflichtwerte, werden keine Ersatzwerte erfunden. Neue oder in Pedipalpus geänderte Wesen benötigen **Aktualisieren** oder einen erneuten Import in denselben Foundry-Charakter. Die Dateiversion bleibt 17; Dämonen und Untote sind zusätzliche optionale Listen.
 
 Die Auswertung erfolgt über Ucurifunke – Proben 1.0.14. Dessen Kampfregeln unterscheiden sich in Randfällen vom neuen lokalen Pedipalpus-Würfelmodus: Die lokale Qualitätsdeckelung bei Netto-Erleichterung und die automatische Erfolgs-/Misserfolgsregel für natürliche 1/20 sind in Foundrys veröffentlichtem Modul noch nicht vollständig gleich umgesetzt. Für eine einheitliche Auswertung muss das Probenmodul entsprechend aktualisiert werden.
 
 ## Kampffokus
 
-Im Kampfbrett den **Fokus** zwischen DEF (links) und OFF (rechts) einstellen, von −4 bis +4 wie in Pedipalpus. Angriff und Parade ändern sich sofort gegensinnig; Fernkampf, Tierproben und Talentstärken bleiben gleich. Der Fokus wird am Foundry-Charakter gespeichert und gilt bis zur nächsten Änderung. Besitzer dürfen ihn ändern, Beobachter können ihn sehen. Vorhandene Kampfimporte ab 0.7.0 sind direkt nutzbar. Ein neuer JSON-Import übernimmt wieder den Fokus aus der importierten Datei. Die lokale Windows-Datei wird nicht verändert.
+Im Kampfbrett den **Fokus** zwischen DEF (links) und OFF (rechts) einstellen, von −4 bis +4 wie in Pedipalpus. Angriff und Parade ändern sich sofort gegensinnig; Fernkampf, sämtliche Gefolgsproben und Talentstärken bleiben gleich. Der Fokus wird am Foundry-Charakter gespeichert und gilt bis zur nächsten Änderung. Besitzer dürfen ihn ändern, Beobachter können ihn sehen. Vorhandene Kampfimporte ab 0.7.0 sind direkt nutzbar. Ein neuer JSON-Import übernimmt wieder den Fokus aus der importierten Datei. Die lokale Windows-Datei wird nicht verändert.
 
 ## Charakter- und Tokenbilder
 
@@ -146,7 +148,7 @@ PNG, JPG/JPEG, BMP und WebP bis 10 MB werden unterstützt. BMP wird für Foundry
 
 Werte in Pedipalpus ändern, speichern und die JSON-Datei erneut **in denselben Foundry-Charakter** importieren. Bilder, Besitzerrechte und Token-Verknüpfungen bleiben erhalten. Es gibt keine automatische Synchronisierung mit der Windows-App oder den Foundry-Ressourcenfeldern.
 
-Vorhandene Importe aus früheren Modulversionen bleiben verwendbar; für die bisherigen Talent- und Attributsproben ist kein erneuter Import erforderlich. Neue Kampf- und Tierproben benötigen einen erneuten Import. Ein erneuter Import ersetzt auch Änderungen aus der früheren Bearbeitungsoberfläche. Die Speicherdateiversion 17 ist geprüft; andere Versionen erfordern einen Wertevergleich.
+Vorhandene Importe aus früheren Modulversionen bleiben verwendbar; für die bisherigen Talent- und Attributsproben ist kein erneuter Import erforderlich. Neu in Pedipalpus gespeicherte Kampf- und Gefolgsdaten benötigen Aktualisieren oder einen erneuten Import; bereits mitgeführte Originaldaten bleiben erhalten. Ein erneuter Import ersetzt auch Änderungen aus der früheren Bearbeitungsoberfläche. Die Speicherdateiversion 17 ist geprüft; andere Versionen erfordern einen Wertevergleich.
 
 ## Optionales Makro
 
@@ -162,16 +164,16 @@ game.modules.get('pedipalpus-foundry').api.open();
 
 **Aktualisieren** neben **JSON importieren** liest die zuletzt freigegebene Datei erneut und zeigt vor der Übernahme den Importvergleich. Dafür beim Import **Datei auswählen** oder **Pedipalpus-Ordner auswählen** verwenden. Unterstützte Browser speichern die Dateifreigabe pro Foundry-Benutzer, Welt und Charakter im jeweiligen Browser; Zugriffe bleiben lesend. Nach einem Browserneustart kann die Freigabe erneut abgefragt werden. Bei fehlendem Zugriff, einer verschobenen Datei oder Browsern ohne dauerhaften Dateizugriff öffnet sich die Importauswahl erneut. Es wird kein alter Dateistand als Aktualisierung ausgegeben.
 
-## Rüstungen und Tierbegleiter im Kampfbrett
+## Rüstungen und Gefolge im Kampfbrett
 
-Im Bereichsfilter des Kampfbretts stehen **Rüstungen** und **Tierproben**. Rüstungen zeigen RS, Basis-BE sowie die aus Pedipalpus übernommenen Zustände **Dabei** und **Angelegt**. Besitzer können beide Häkchen ändern. Ablegen entfernt auch Angelegt; eine bei einem Tier gelagerte Rüstung kann nicht am Charakter angelegt werden. Rüstschutz, Last/Überlastung und Behinderung folgen den gespeicherten Pedipalpus-Feldern; Kampfwürfe verwenden die aktualisierte BE. Bei fehlender Basis-BE ist zuerst ein neuer Pedipalpus-Speicherstand nötig. Änderungen werden in Foundry und im Austauschpaket gespeichert; die Windows-Datei bleibt unberührt. Checkboxen passen sich dem gewählten Design an.
+Im Bereichsfilter des Kampfbretts stehen **Rüstungen**, **Tierproben**, **Dämonen** und **Untote**. Rüstungen zeigen RS, Basis-BE sowie die aus Pedipalpus übernommenen Zustände **Dabei** und **Angelegt**. Besitzer können beide Häkchen ändern. Ablegen entfernt auch Angelegt; eine bei einem Tier gelagerte Rüstung kann nicht am Charakter angelegt werden. Rüstschutz, Last/Überlastung und Behinderung folgen den gespeicherten Pedipalpus-Feldern; Kampfwürfe verwenden die aktualisierte BE. Bei fehlender Basis-BE ist zuerst ein neuer Pedipalpus-Speicherstand nötig. Änderungen werden in Foundry und im Austauschpaket gespeichert; die Windows-Datei bleibt unberührt. Checkboxen passen sich dem gewählten Design an.
 
-Die Tierübersicht zeigt auch Begleiter ohne Angriffe. **Bild / Token** lädt ein Tierportrait hoch und erstellt einen eigenen, verknüpften Foundry-Charakter mit dessen Tierproben und dem ausgewählten Rahmen. Den Eintrag aus dem Charakterverzeichnis auf die Szene ziehen. Ein späterer Bild-/Rahmenwechsel aktualisiert denselben Eintrag. Stabile Pedipalpus-Tierkennungen bzw. eindeutige Namen verhindern eine falsche Zuordnung; ein erneuter Eltern-Import aktualisiert die Tierproben und behält Portrait/Tokenbild. Entfernte oder mehrdeutige Begleiter behalten ihren Eintrag, haben aber keine veralteten Proben. Erstellung benötigt die Foundry-Berechtigung zum Anlegen von Charakteren.
+Die drei Gefolgsübersichten zeigen auch Wesen ohne Angriffe, mit gespeicherter LE und gegebenenfalls AE. **Bild / Token** lädt ein Portrait hoch und erstellt einen eigenen, verknüpften Foundry-Charakter mit allen eigenen Gefolgsproben und dem ausgewählten Rahmen. Den Eintrag aus dem Charakterverzeichnis auf die Szene ziehen. Ein späterer Bild-/Rahmenwechsel aktualisiert denselben Eintrag. Stabile Pedipalpus-Gefolgskennungen bzw. eindeutige Namen verhindern eine falsche Zuordnung; ein erneuter Eltern-Import aktualisiert die Gefolgsproben und behält Portrait/Tokenbild. Entfernte oder mehrdeutige Begleiter behalten ihren Eintrag, haben aber keine veralteten Proben. Erstellung benötigt die Foundry-Berechtigung zum Anlegen von Charakteren.
 
 ## Private Originalrahmen
 
-Die Originalrahmen werden separat importiert und sind nicht im öffentlichen Modul oder auf GitHub enthalten. Ein Spielleiter lädt das private Rahmen-ZIP einmal über **Werkzeuge → Einstellungen → Originalrahmen importieren** in die Welt. Das Paket enthält `concrete.png`, `concrete-mask.png`, `silver-thin.png`, `silver-thin-mask.png`, `undead.png` und `undead-mask.png`. Danach nutzen alle Benutzer die Rahmen aus den Weltdaten. **Concrete** ist Standard; **Silver, Thin** und **Undead** stehen unter Tokenrahmen zur Wahl. Ohne importiertes Rahmenpaket wird zunächst ein rundes Token ohne Originalring erstellt. **Token aktualisieren** erstellt aus dem vorhandenen Charakterportrait ein neues Tokenbild mit dem gewählten Rahmen. Für Tierportraits steht dieselbe Auswahl direkt am Tier zur Verfügung.
+Die Originalrahmen werden separat importiert und sind nicht im öffentlichen Modul oder auf GitHub enthalten. Ein Spielleiter lädt das private Rahmen-ZIP einmal über **Werkzeuge → Einstellungen → Originalrahmen importieren** in die Welt. Das Paket enthält `concrete.png`, `concrete-mask.png`, `silver-thin.png`, `silver-thin-mask.png`, `undead.png` und `undead-mask.png`. Danach nutzen alle Benutzer die Rahmen aus den Weltdaten. **Concrete** ist Standard; **Silver, Thin** und **Undead** stehen unter Tokenrahmen zur Wahl. Ohne importiertes Rahmenpaket wird zunächst ein rundes Token ohne Originalring erstellt. **Token aktualisieren** erstellt aus dem vorhandenen Charakterportrait ein neues Tokenbild mit dem gewählten Rahmen. Für Tier-, Dämonen- und Untotenportraits steht dieselbe Auswahl direkt am Wesen zur Verfügung.
 
 ## Begleiter ohne Angriffe
 
-Begleiter werden unter **Kampfbrett → Tierproben** angezeigt, auch wenn noch keine Angriffe gespeichert sind. Angriff und Parade lassen sich erst würfeln, wenn diese Werte in der Pedipalpus-Datei enthalten sind. Nach Änderungen in Pedipalpus speichern und den vorhandenen Foundry-Charakter über **Aktualisieren** oder einen erneuten JSON-Import aktualisieren; ein Modulupdate alleine verändert die importierten Charakterdaten nicht.
+Begleiter werden im Kampfbrett unter **Tierproben**, **Dämonen** bzw. **Untote** angezeigt, auch wenn noch keine Angriffe gespeichert sind. Eigene gespeicherte Attribute und Fähigkeiten bleiben unabhängig davon würfelbar. Angriff und Parade lassen sich erst würfeln, wenn diese Werte in der Pedipalpus-Datei enthalten sind. Nach Änderungen in Pedipalpus speichern und den vorhandenen Foundry-Charakter über **Aktualisieren** oder einen erneuten JSON-Import aktualisieren; ein Modulupdate alleine verändert die importierten Charakterdaten nicht.

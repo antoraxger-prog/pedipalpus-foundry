@@ -10,6 +10,7 @@ import { uiText, localizeSurface, localizeDialog } from './language.js';
 import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
+import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices } from './retinue.js';
 import { companionEntries,companionKey,companionActor,saveCompanion,refreshCompanions } from './companions.js';
 import { characterFiles, readCharacterWithPortrait } from './character-folder.js';
 import { TOKEN_STYLES, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames } from './tokens.js';
@@ -78,6 +79,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const actors = visibleActors();
     const actor = actors.find(actor => actor.id === this.actorId) ?? null;
     if (!actor) this.actorId = null;
+    if(actor?.getFlag(MODULE_ID,'companion')?.sourceActorId)this.mode='battle';
     const current = getCharacter(actor);
     if(this.mode==='full' && !['all','favorites'].includes(this.category)){
       const available=new Set(checksForView(current,'full').map(check=>['primary','secondary'].includes(check.id.split(':')[0])?'attributes':['Spells','Rituals'].includes(check.id.split(':')[0])?'magic':check.id.split(':')[0]));
@@ -172,7 +174,7 @@ export class PedipalpusApp extends ApplicationV2 {
         const checks=getCharacter(actor)?.checks || [];
         this.element.querySelectorAll('.pp-check-row').forEach(row=>{
           const check=checks.find(check=>check.id===row.dataset.checkId);
-          if(check?.kind==='combat'&&!check.id.startsWith('animals:')&&check.combat.type!=='ranged'){
+          if(check?.kind==='combat'&&!isCompanionCheck(check)&&check.combat.type!=='ranged'){
             const rating=row.querySelector('.pp-rating');rating?.classList.add('pp-changed-value');setTimeout(()=>rating?.classList.remove('pp-changed-value'),320);
           }
         });
@@ -268,7 +270,14 @@ export class PedipalpusApp extends ApplicationV2 {
     const armorView=this.mode==='battle'&&this.category==='armors'&&!query;
     content.querySelector('.pp-check-list')?.toggleAttribute('hidden',armorView);
     content.querySelector('.pp-focus')?.toggleAttribute('hidden',armorView);
-    content.querySelectorAll('[data-inventory]').forEach(panel=>{panel.hidden=this.mode!=='battle'||(panel.dataset.inventory==='armors'?!armorView:this.category!=='animals'||Boolean(query));});
+    let visibleMembers=0;
+    content.querySelectorAll('[data-inventory]').forEach(panel=>{
+      if(panel.dataset.inventory==='armors'){panel.hidden=!armorView;return;}
+      const permitted=this.mode==='battle'&&(query||this.category==='all'||this.category===panel.dataset.inventory);
+      let shown=0;panel.querySelectorAll('[data-companion-card]').forEach(card=>{card.hidden=!permitted||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)shown++;});
+      panel.hidden=!shown;visibleMembers+=shown;
+    });
+    const overviews=content.querySelector('.pp-companion-overviews');if(overviews)overviews.hidden=!visibleMembers;
     let count = 0;
     const scales = new Set();
     content.querySelectorAll('.pp-check-row').forEach(row => {
@@ -283,7 +292,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const scope = content.querySelector('.pp-search-scope');
     if (scope) scope.hidden = !query;
     const empty = content.querySelector('.pp-no-results');
-    if (empty) empty.hidden = count > 0;
+    if (empty) empty.hidden = count > 0 || visibleMembers > 0;
     const focus = content.querySelector('.pp-focus');
     if (focus) focus.hidden = !Array.from(content.querySelectorAll('.pp-check-row')).some(row => !row.hidden && row.dataset.category === 'combat');
     content.querySelectorAll('.pp-rank-legend').forEach(legend => { legend.hidden = !scales.has(legend.dataset.scale); });
@@ -330,15 +339,16 @@ export class PedipalpusApp extends ApplicationV2 {
       if (button.dataset.action === 'diagnostic') await this.diagnosticDialog();
       if (button.dataset.action === 'roll') {
         this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"], [name="focus"]').forEach(field => { field.disabled = true; });
-        const check = reference ? resolveCheck(getCharacter(actor),reference) : getCharacter(actor)?.checks.find(check => check.id === button.dataset.check);
+        let check = reference ? resolveCheck(getCharacter(actor),reference) : getCharacter(actor)?.checks.find(check => check.id === button.dataset.check);
         if (!reference && (!check || !clickedCheck || referenceKey(checkReference(check))!==referenceKey(checkReference(clickedCheck)))) throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
+        if(check.companionAbility){check=await this.configureCompanionAbility(actor,check);if(!check)return;}
         this.feedback('rollPending','');
         pendingTimer=setTimeout(()=>button.setAttribute?.('aria-busy','true'),180);
         await executeCheck(actor, check, token, { modifier: this.modifier, blind: button.dataset.blind === 'true' });
         this.modifier = 0;
         this.modifierDirection = 1;
         this.updateModifier();
-        await this.persist(recordRecent(this.preferences,actor.id,check));
+        await this.persist(recordRecent(this.preferences,actor.id,clickedCheck??check));
         const recent=new Set((this.preferences.recent[actor.id] || []).flatMap(ref=>{try{return [resolveCheck(getCharacter(actor),ref).id];}catch{return [];}}));
         this.element.querySelectorAll('.pp-check-row').forEach(row=>{row.dataset.recent=String(recent.has(row.dataset.checkId));row.dataset.last=String(row.dataset.checkId===check.id);});
         this.feedback('modifierConsumed','');this.sound('roll');
@@ -383,8 +393,8 @@ export class PedipalpusApp extends ApplicationV2 {
     }
     await this.persist({...this.preferences,actorId});
     if (this.rendered) await this.render({force:true});
-    if(check.kind==='combat' && this.mode!=='battle')await this.setMode('battle');
-    else if(check.kind!=='combat' && this.mode==='battle')await this.setMode('full');
+    if((check.kind==='combat'||isCompanionCheck(check)) && this.mode!=='battle')await this.setMode('battle');
+    else if(check.kind!=='combat' && !isCompanionCheck(check) && this.mode==='battle')await this.setMode('full');
     await this.onAction({dataset:{action:'roll',check:check.id,blind:String(blind)},disabled:false},{reserved:true,reference});
     } finally { this.referenceBusy=false; }
   }
@@ -574,6 +584,7 @@ export class PedipalpusApp extends ApplicationV2 {
   async acceptImport(answer) {
     if (!answer?.snapshot) return;
     const previous=getCharacter(game.actors.get(answer.actorId));
+    answer.snapshot=retainCompanionChoices(previous,answer.snapshot);
     if(previous){
       const differences=compareCharacters(previous,answer.snapshot);
       if(differences.length){
@@ -602,6 +613,29 @@ export class PedipalpusApp extends ApplicationV2 {
     let imported;try{imported=await readLiveSource(source);}catch(error){this.notify('warn',this.t(error.message||'Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.'));return this.importCharacter();}
     const snapshot=parseCharacter(imported.json);snapshot.sourceJSON=imported.json;
     return this.acceptImport({snapshot,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:source.tokenFrame??this.preferences.tokenFrame,source});
+  }
+  async configureCompanionAbility(actor,check){
+    const character=getCharacter(actor),member=companionEntries(character).find(member=>member._group===check.companionGroup&&member._index===check.companionIndex);
+    if(!member)throw new Error('Dieses Gefolgsmitglied ist nicht mehr vorhanden.');
+    const attrs=memberAttributes(member),e=escapeHTML,keys=check.companionAbility.keys??[];
+    const answer=await DialogV2.wait({window:{title:this.t('Gefolgsprobe')},classes:this.dialogClasses,position:{width:460},modal:true,rejectClose:false,
+      content:`<p>${e(member.Name)} · ${e(check.companionAbility.name)} · PW ${e(check.value)}</p>${[0,1,2].map(index=>`<label>${index+1}. Attribut<select name="companionAttribute${index}"><option value="">Attribut auswählen …</option>${attrs.map(attr=>`<option value="${attr.short}" ${keys[index]===attr.short?'selected':''}>${e(attr.name)} ${e(attr.value)}</option>`).join('')}</select></label>`).join('')}<label>Probenname<input name="companionCheckName" maxlength="100" value="${e(check.companionAbility.name)}"></label>`,
+      buttons:[{action:'companion-check',label:this.t('Würfeln'),disabled:keys.length!==3,callback:(_event,_button,dialog)=>({keys:[0,1,2].map(index=>dialog.element.querySelector(`[name="companionAttribute${index}"]`).value),name:dialog.element.querySelector('[name="companionCheckName"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      render:(_event,dialog)=>{
+        localizeDialog(dialog.element,this.theme);
+        const update=()=>{dialog.element.querySelector('[data-action="companion-check"]').disabled=Array.from(dialog.element.querySelectorAll('select')).some(field=>!field.value);};
+        dialog.element.querySelectorAll('select').forEach(field=>field.addEventListener('change',update));update();
+      }});
+    if(!answer)return null;
+    if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+    const fresh=getCharacter(actor),now=fresh?.checks.find(entry=>entry.id===check.id);
+    if(!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
+    const label=answer.name.trim()||check.companionAbility.name;
+    if(/[|\r\n]/.test(label)||`${member.Name} – ${label}`.length>160)throw new Error('Der Probenname ist zu lang oder enthält ungültige Zeichen.');
+    const updated=withCompanionAttributes(fresh,check.id,answer.keys);
+    await actor.setFlag(MODULE_ID,'character',updated);
+    const selected=updated.checks.find(entry=>entry.id===check.id);
+    return {...selected,name:`${member.Name} – ${label}`};
   }
   async importPortrait() {
     const actor = this.actor;
@@ -632,17 +666,17 @@ export class PedipalpusApp extends ApplicationV2 {
   }
   async importAnimalPortrait(button) {
     const source=this.actor,index=Number(button.dataset.animal),character=getCharacter(source),key=companionKey(character,index);
-    if(button.dataset.animalKey!==key)throw new Error('Das Tier wurde inzwischen geändert. Bitte erneut auswählen.');
-    const animal=companionEntries(character)[index],existing=companionActor(source.id,key),selected=existing?.getFlag(MODULE_ID,'companion')?.tokenStyle||this.preferences.tokenFrame;
+    if(button.dataset.animalKey!==key)throw new Error('Das Gefolgsmitglied wurde inzwischen geändert. Bitte erneut auswählen.');
+    const animal=companionEntries(character)[index],existing=source.getFlag(MODULE_ID,'companion')?.sourceActorId?source:companionActor(source.id,key),selected=existing?.getFlag(MODULE_ID,'companion')?.tokenStyle||this.preferences.tokenFrame;
     let portrait=null,sequence=0;
     const answer=await DialogV2.wait({window:{title:`${animal.Name} · ${this.t('Bild / Token')}`},classes:this.dialogClasses,position:{width:450},modal:true,rejectClose:false,
-      content:`<label>${escapeHTML(this.t('Tierbild'))}<input type="file" name="portraitFile" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><label>${escapeHTML(this.t('Tokenrahmen'))}<select name="tokenFrame">${TOKEN_STYLES.map(([style,label])=>`<option value="${style}" ${style===selected?'selected':''}>${label}</option>`).join('')}</select></label><p class="pp-portrait-preview">${escapeHTML(this.t(existing?'Vorhandenes Tierbild wird verwendet.':'Bitte ein Tierbild auswählen.'))}</p>`,
-      buttons:[{action:'animal-image',label:this.t('Tier-Token erstellen'),disabled:!existing,callback:(_event,_button,dialog)=>({portrait,style:dialog.element.querySelector('[name="tokenFrame"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      content:`<label>${escapeHTML(this.t('Bild'))}<input type="file" name="portraitFile" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><label>${escapeHTML(this.t('Tokenrahmen'))}<select name="tokenFrame">${TOKEN_STYLES.map(([style,label])=>`<option value="${style}" ${style===selected?'selected':''}>${label}</option>`).join('')}</select></label><p class="pp-portrait-preview">${escapeHTML(this.t(existing?'Vorhandenes Bild wird verwendet.':'Bitte ein Bild auswählen.'))}</p>`,
+      buttons:[{action:'animal-image',label:this.t('Token erstellen'),disabled:!existing,callback:(_event,_button,dialog)=>({portrait,style:dialog.element.querySelector('[name="tokenFrame"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
       render:(_event,dialog)=>{dialog.element.querySelector('[name="portraitFile"]').addEventListener('change',async event=>{const read=++sequence,submit=dialog.element.querySelector('[data-action="animal-image"]');portrait=null;submit.disabled=true;try{const prepared=await preparePortrait(event.target.files?.[0]);if(read!==sequence)return;portrait=prepared;submit.disabled=false;dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${prepared.file.name}`);}catch(error){if(read===sequence)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(error.message);}});}});
     if(!answer)return;
     const framed=answer.portrait?await prepareTokenPortrait(answer.portrait,answer.style):await tokenFromActor(existing,answer.style);
     await saveCompanion(source,index,key,framed,message=>this.notify('warn',message));
-    this.notify('info',`${animal.Name}: ${this.t('Tier-Token erstellt. Aus dem Charakterverzeichnis auf die Karte ziehen.')}`);
+    this.notify('info',`${animal.Name}: ${this.t('Token erstellt. Aus dem Charakterverzeichnis auf die Karte ziehen.')}`);
   }
   async linkSelectedToken() {
     const selected = canvas.tokens?.controlled ?? [];

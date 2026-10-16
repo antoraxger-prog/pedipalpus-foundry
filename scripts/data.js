@@ -1,3 +1,4 @@
+import { retinueEntries,companionProbes } from './retinue.js';
 import { combatChecks } from './combat.js';
 export const MODULE_ID = 'pedipalpus-foundry';
 export const FLAG = 'character';
@@ -12,7 +13,7 @@ const COMPLEX_GROUPS = {
 const SIMPLE_GROUPS = { HobbySkills: 'Hobbys', Spells: 'Zauber', Rituals: 'Rituale', Miracles: 'Wunder' };
 const EQUIPMENT_GROUPS = {
   MeleeWeapons: 'Nahkampfwaffen', RangedWeapons: 'Fernkampfwaffen', ParryWeapons: 'Parierwaffen',
-  Ammunitions: 'Munition', Armors: 'Rüstungen', GeneralItems: 'Gegenstände', Animals: 'Tiere'
+  Ammunitions: 'Munition', Armors: 'Rüstungen', GeneralItems: 'Gegenstände', Animals: 'Tiere', Demons:'Dämonen', Undead:'Untote'
 };
 export const text = value => typeof value === 'string' ? value : '';
 const list = value => Array.isArray(value) ? value.filter(x => x && typeof x === 'object' && !Array.isArray(x)) : [];
@@ -77,7 +78,7 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
   }
   const equipment = [];
   const combat = combatChecks(raw);
-  checks.push(...combat);
+  checks.push(...combat,...companionProbes(raw));
   if (combat.some(check => check.reason)) warnings.push('Einige Kampfproben sind unvollständig. Bitte den Charakter in Pedipalpus speichern und erneut importieren.');
   for (const [key, group] of Object.entries(EQUIPMENT_GROUPS)) list(raw[key]).forEach((entry, i) => equipment.push({
     id: `${key}:${i}`, name: text(entry.Name), group, quantity: number(entry.Quantity) ?? 1,
@@ -104,7 +105,7 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
       weight: number(raw.CarriedWeight), capacity: number(raw.TotalCarryCapacity), notes: text(raw.Notes),
       willpower: number(raw.WillpowerAvailable), willpowerTotal: number(raw.WillpowerTotal), attributeAP: number(raw.AttributeAPAvailable), attributeAPTotal: number(raw.AttributeAPGrantedFromProgression),
       freeAP: number(raw.FreeAPTotal), freeAPSpent: number(raw.FreeAPSpend), gpRace: number(raw.GpForRace), gpAdvantages: number(raw.GpForAdvantages), gpDisadvantages: number(raw.GpForDisadvantages) },
-    attributes, checks, equipment, details, warnings,
+    attributes, checks, equipment, details, warnings, retinue:retinueEntries(raw), retinueSchemaVersion:1,
     secondary: list(raw.SecondaryAttributes).map(attribute).filter(Boolean),
     journal: list(raw.Notes).map(entry => ({ title: text(entry.Title), description: text(entry.Description), date: text(entry.Date) })),
     conditions: { simple: list(raw.SimpleConditions).map(entry => ({ name: text(entry.Name), active: entry.IsActive === true })),

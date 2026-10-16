@@ -29,17 +29,19 @@ function canonicalReference(value) {
       ref.animalName = text(value.animalName);
     }
   }
+  if(typeof value.companionId==='string' && text(value.companionId))ref.companionId=safeText(value.companionId,160);
   return ref;
 }
 
 export function checkReference(check) {
   if (!check || typeof check !== 'object') throw new Error('Die Probe wurde nicht gefunden.');
   const parts = typeof check.id === 'string' ? check.id.split(':') : [];
-  const animals = parts[0] === 'animals' || typeof check.animalName === 'string';
+  const animals = parts[0] === 'animals' && check.kind==='combat' || typeof check.animalName === 'string';
   const category = animals ? 'animals' : check.kind === 'combat'
-    ? parts[0] === 'combat' && parts[1] ? parts[1] : text(check.category) || 'combat'
+    ? parts[0] === 'combat' && parts[1] ? parts[1] : ['demons','undead'].includes(parts[0])?parts[0]:text(check.category) || 'combat'
     : text(check.category) || parts[0] || check.kind;
   return canonicalReference({ kind: check.kind, category, name: check.name,
+    ...(!(animals&&check.kind==='combat') && check.companionId?{companionId:check.companionId}:{}),
     ...(check.kind === 'combat' ? { combatType: check.combat?.type, weaponName: check.combat?.weaponName,
       ...(animals ? { animalName: check.animalName ?? '' } : {}) } : {}) });
 }
@@ -47,7 +49,7 @@ export function checkReference(check) {
 export function referenceKey(reference) {
   const ref = canonicalReference(reference);
   return JSON.stringify([ref.kind, ref.category, ref.name.toLocaleLowerCase('de'),
-    ref.combatType ?? '', ref.weaponName?.toLocaleLowerCase('de') ?? '', ref.animalName?.toLocaleLowerCase('de') ?? '']);
+    ref.combatType ?? '', ref.weaponName?.toLocaleLowerCase('de') ?? '', ref.animalName?.toLocaleLowerCase('de') ?? '',...(ref.companionId?[ref.companionId]:[])]);
 }
 
 export function resolveCheck(character, reference) {
@@ -66,7 +68,7 @@ export function groupWeaponChecks(checks) {
     if (check?.kind !== 'combat') continue;
     let ref;
     try { ref = checkReference(check); } catch { continue; }
-    const key = JSON.stringify([ref.category, ref.weaponName.toLocaleLowerCase('de'), ref.animalName?.toLocaleLowerCase('de') ?? '']);
+    const key = JSON.stringify([ref.category, ref.weaponName.toLocaleLowerCase('de'), ref.animalName?.toLocaleLowerCase('de') ?? '',...(ref.companionId?[ref.companionId]:[])]);
     if (!buckets.has(key)) buckets.set(key, { name: ref.weaponName, checks: [] });
     buckets.get(key).checks.push(check);
   }
@@ -80,7 +82,7 @@ export function groupWeaponChecks(checks) {
     }
     const instances = new Map();
     bucket.checks.forEach((check, index) => {
-      const match = /^(combat:[^:]+:\d+|animals:\d+:\d+):(attack|parry|ranged)$/.exec(check.id ?? '');
+      const match = /^(combat:[^:]+:\d+|(?:animals|demons|undead):\d+:\d+):(attack|parry|ranged)$/.exec(check.id ?? '');
       const instance = match?.[1] ?? `unpaired:${index}`;
       if (!instances.has(instance)) instances.set(instance, []);
       instances.get(instance).push(check);

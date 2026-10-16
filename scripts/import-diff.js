@@ -1,6 +1,7 @@
 import { checkReference, referenceKey } from './workbench.js';
 import { armorItems } from './equipment.js';
 import { characterFocus } from './combat.js';
+import { readCompanions } from './retinue.js';
 
 const printable = value => value === null || value === undefined ? '–' : value;
 const attributes = check => (check.attributes ?? []).map(att => `${att.name}: ${printable(att.value)}`).join(' · ');
@@ -45,6 +46,14 @@ export function compareCharacters(previous, next) {
     const before=oldArmor.filter(item=>item.name===name),after=newArmor.filter(item=>item.name===name);
     if(before.length>1||after.length>1){add(`${name} · Rüstung`,`${before.length} Einträge`,`${after.length} Einträge`,'ambiguous');continue;}
     if(state(before[0])!==state(after[0]))add(`${name} · Rüstung`,state(before[0]),state(after[0]));
+  }
+  const oldMembers=readCompanions(previous),newMembers=readCompanions(next);
+  const identity=member=>String(member.InventoryId??'')||JSON.stringify([member._group,member.Name,member.Species??member.Domain??'']);
+  const memberState=member=>member?`${({animals:'Tier',demons:'Dämon',undead:'Untoter'})[member._group]??'Gefolge'} · ${member.Name} · ${member.Species??member.Domain??''} · LE ${member.CurrentLe??'–'}/${member.MaxLe??'–'} · AE ${member.CurrentAstralEnergy??'–'}/${member.AstralEnergy??'–'} · Bindung ${member.BindingLoad??'–'} · Dienste ${member.CurrentServiceVolume??'–'}`:null;
+  for(const id of new Set([...oldMembers,...newMembers].map(identity))){
+    const before=oldMembers.filter(member=>identity(member)===id),after=newMembers.filter(member=>identity(member)===id),label=`${after[0]?.Name??before[0]?.Name} · Gefolge`;
+    if(before.length>1||after.length>1){add(label,`${before.length} Einträge`,`${after.length} Einträge`,'ambiguous');continue;}
+    if(memberState(before[0])!==memberState(after[0]))add(label,memberState(before[0]),memberState(after[0]),!before.length?'added':!after.length?'removed':'changed');
   }
   return rows;
 }

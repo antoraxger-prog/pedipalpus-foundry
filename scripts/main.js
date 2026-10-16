@@ -19,10 +19,13 @@ export async function rollPedipalpus({actorId,reference,blind=false,modifier}={}
   if(macroBusy)throw new Error('Bitte die laufende Aktion abwarten.');
   macroBusy=true;
   try{
-    const actor=game.actors.get(actorId),check=resolveCheck(getCharacter(actor),reference);
+    const actor=game.actors.get(actorId),original=resolveCheck(getCharacter(actor),reference);
+    if(!actor?.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+    let check=original;
+    if(check.companionAbility){application??=new PedipalpusApp();check=await application.configureCompanionAbility(actor,check);if(!check)return;}
     const token=canvas.tokens?.controlled?.map(placeable=>placeable.document).find(token=>token.actorId===actorId&&token.actorLink) || null;
     await executeCheck(actor,check,token,{modifier:modifier??0,blind});
-    const prefs=recordRecent(loadWorkbench(),actorId,check);
+    const prefs=recordRecent(loadWorkbench(),actorId,original);
     await saveWorkbench(prefs);
     playFeedback('roll',{...prefs,theme:game.settings.get(MODULE_ID,'design')||'fantasy'}).catch(error=>console.warn(MODULE_ID,error));
   }finally{macroBusy=false;}

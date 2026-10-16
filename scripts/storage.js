@@ -1,11 +1,21 @@
-import { MODULE_ID, FLAG, validSnapshot } from './data.js';
+import { MODULE_ID, FLAG, validSnapshot,normalizeCharacter } from './data.js';
 import { uploadPortrait, applyPortrait } from './portraits.js';
 import { withArmorState } from './equipment.js';
+import { isCompanionCheck } from './retinue.js';
 import { withFocus } from './combat.js';
 
 export const getCharacter = actor => {
   const value = actor?.getFlag(MODULE_ID, FLAG);
-  return validSnapshot(value) ? value : null;
+  if(!validSnapshot(value))return null;
+  if(!value.retinueSchemaVersion && value.sourceJSON){
+    try{
+      const imported=normalizeCharacter(JSON.parse(value.sourceJSON.replace(/^\uFEFF/,'')),value.importedAt);
+      return {...value,retinue:imported.retinue,retinueSchemaVersion:1,
+        checks:[...value.checks.filter(check=>!isCompanionCheck(check)),...imported.checks.filter(isCompanionCheck)],
+        equipment:[...value.equipment.filter(item=>! /^(Animals|Demons|Undead):/.test(item.id??'')),...imported.equipment.filter(item=>/^(Animals|Demons|Undead):/.test(item.id??''))]};
+    }catch{}
+  }
+  return value;
 };
 
 export async function saveFocus(actor, focus) {

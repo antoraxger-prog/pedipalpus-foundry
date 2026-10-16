@@ -1,6 +1,7 @@
+import { COMPANION_GROUPS,isCompanionCheck } from './retinue.js';
 import { buildCommand } from './commands.js';
 import { TOKEN_STYLES, savedFrames } from './tokens.js';
-import { companionKey } from './companions.js';
+import { companionKey,companionEntries } from './companions.js';
 import { armorItems } from './equipment.js';
 import { characterFocus } from './combat.js';
 import { uiText } from './language.js';
@@ -9,21 +10,21 @@ export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => 
 const e = escapeHTML;
 const number = value => Number.isSafeInteger(value) ? value.toLocaleString('de-DE') : '–';
 export function mastery(check) {
-  const combatTalent = check.kind === 'combat' && !check.id?.startsWith('animals:');
+  const combatTalent = check.kind === 'combat' && !isCompanionCheck(check);
   const value = combatTalent ? check.combat?.skillValue : check.value;
   if (check.kind === 'attribute') return {
     grade: value <= 1 ? 'untrained' : value < 8 ? 'novice' : value <= 12 ? 'trained' : value < 20 ? 'adept' : 'master',
     label: value <= 1 ? 'Sehr schwach' : value < 8 ? 'Schwach' : value <= 12 ? 'Durchschnittlich' : value < 20 ? 'Stark' : 'Meisterlich',
     progress: Math.max(0, Math.min(19, value - 1)) / 19, scale: 'attributes'
   };
-  if (!Number.isSafeInteger(value) || !combatTalent && check.kind !== 'skill' || check.id?.startsWith('secondary:')) return { grade: 'attribute', label: check.kind === 'combat' ? 'Kampfwert' : 'Basiswert', progress: 0, scale: 'other' };
+  if (!Number.isSafeInteger(value) || !combatTalent && check.kind !== 'skill' || check.id?.startsWith('secondary:') || isCompanionCheck(check)&&check.id.includes(':resistance:')) return { grade: 'attribute', label: check.kind === 'combat' ? 'Kampfwert' : 'Basiswert', progress: 0, scale: 'other' };
   const ceiling = combatTalent ? 20 : 10;
   return { grade: value <= 0 ? 'untrained' : value < 4 ? 'novice' : value < 7 ? 'trained' : value < ceiling ? 'adept' : 'master',
     label: value <= 0 ? 'Ungeübt' : value < 4 ? 'Grundkenntnisse' : value < 7 ? 'Geübt' : value < ceiling ? 'Versiert' : 'Meisterlich',
     progress: Math.max(0, Math.min(ceiling, value)) / ceiling, scale: 'talents' };
 }
 const button = (action, label, extras = '') => `<button type="button" data-action="${action}" ${extras}>${label}</button>`;
-export const CATEGORIES = [['all', 'Alle Proben'], ['favorites', 'Favoriten'], ['attributes', 'Attribute'], ['combat', 'Kampf'], ['animals', 'Tierproben'], ['armors', 'Rüstungen'], ['BodySkills', 'Körperlich'], ['SocialSkills', 'Sozial'], ['NatureSkills', 'Natur'], ['AcademicSkills', 'Akademisch'], ['CraftingSkills', 'Handwerklich'], ['HobbySkills', 'Freizeit'], ['magic', 'Magie'], ['Miracles', 'Klerikal']];
+export const CATEGORIES = [['all', 'Alle Proben'], ['favorites', 'Favoriten'], ['attributes', 'Attribute'], ['combat', 'Kampf'], ['animals', 'Tierproben'], ['demons','Dämonen'], ['undead','Untote'], ['armors', 'Rüstungen'], ['BodySkills', 'Körperlich'], ['SocialSkills', 'Sozial'], ['NatureSkills', 'Natur'], ['AcademicSkills', 'Akademisch'], ['CraftingSkills', 'Handwerklich'], ['HobbySkills', 'Freizeit'], ['magic', 'Magie'], ['Miracles', 'Klerikal']];
 const categoryOf = check => {
   const key = check.id?.split(':')[0];
   return ['primary', 'secondary'].includes(key) ? 'attributes' : ['Spells', 'Rituals'].includes(key) ? 'magic' : key;
@@ -31,14 +32,14 @@ const categoryOf = check => {
 const validCombat = check => { try { buildCommand(check); return true; } catch { return false; } };
 export function rollableChecks(character) {
   return (character?.checks ?? []).filter(check => check && !check.reason && typeof check.name === 'string' && Number.isSafeInteger(check.value)
-    && (check.kind === 'attribute' || check.kind === 'combat' && validCombat(check) || check.kind === 'skill' && Array.isArray(check.attributes) && check.attributes.length === 3
+    && (check.companionAbility && check.needsAttributes || check.kind === 'attribute' || check.kind === 'combat' && validCombat(check) || check.kind === 'skill' && Array.isArray(check.attributes) && check.attributes.length === 3
       && check.attributes.every(att => att && typeof att.name === 'string' && Number.isSafeInteger(att.value))));
 }
 export function checksForView(character, mode = 'full') {
-  return rollableChecks(character).filter(check => mode === 'battle' ? check.kind === 'combat' : check.kind !== 'combat');
+  return rollableChecks(character).filter(check => mode === 'battle' ? check.kind === 'combat'||isCompanionCheck(check) : check.kind !== 'combat'&&!isCompanionCheck(check));
 }
 const probe = (check, theme = 'fantasy') => check.kind === 'combat' ? `<span class="pp-single-probe" title="${e(`${uiText(theme,'Fertigkeit')} ${check.combat.skillValue} + ${uiText(theme,'Basis')} ${check.combat.baseValue} + ${uiText(theme,'Fokus')} ${check.combat.focusValue} + ${uiText(theme,'Waffenbonus')} ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`)}">${(theme === 'ork' ? {attack:'Hau',parry:'Block',ranged:'Weit'} : {attack:'AT',parry:'PA',ranged:'FK'})[check.combat.type]} · 1W20</span>` : check.kind === 'attribute' ? '<span class="pp-single-probe">3W20</span>'
-  : `<span class="pp-trio">${check.attributes.map(att => `<span title="${e(att.name)}">${e(att.short || att.name)} <strong>${number(att.value)}</strong></span>`).join('')}</span>`;
+  : check.needsAttributes?`<span class="pp-single-probe">${e(uiText(theme,'Attribute wählen …'))}</span>`: `<span class="pp-trio">${check.attributes.map(att => `<span title="${e(att.name)}">${e(att.short || att.name)} <strong>${number(att.value)}</strong></span>`).join('')}</span>`;
 const signed = value => value > 0 ? `+${value}` : String(value);
 export function updateFocusView(content, character) {
   const root = content.querySelector('.pp-root');
@@ -53,7 +54,7 @@ export function updateFocusView(content, character) {
   const checks = new Map(character.checks.map(check => [check.id, check]));
   content.querySelectorAll('.pp-check-row').forEach(row => {
     const check = checks.get(row.dataset.checkId);
-    if (check?.kind !== 'combat' || check.id.startsWith('animals:')) return;
+    if (check?.kind !== 'combat' || isCompanionCheck(check)) return;
     const ratingField = row.querySelector('.pp-rating');
     if (!ratingField) return;
     ratingField.textContent = number(check.value);
@@ -97,6 +98,8 @@ const categoryPaths = {
   all:'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   attributes:'M12 3v18M3 12h18M5 5l14 14M5 19 19 5',
   combat:'M3 2l8 8-2 2-8-8zM5 11l-3 3m3-1 3 3M2 19l2 2 4-4M16 7l6 3v5c0 4-3 6-6 8-3-2-6-4-6-8v-5zM16 10v9',
+  demons:'M4 3l3 6h10l3-6v12l-8 7-8-7ZM8 13h1m6 0h1M9 17h6',
+  undead:'M5 12V9a7 7 0 0 1 14 0v3l-3 3v5H8v-5ZM8 9h2m4 0h2M10 16v4m4-4v4',
   animals:'M7 12c-3-5-6-2-4 1m14-1c3-5 6-2 4 1M9 7c-2-6-5-3-3 1m9-1c2-6 5-3 3 1M6 18c0-7 12-7 12 0 0 4-4 1-6 1s-6 3-6-1Z',
   BodySkills:'m4 17 3-8 4 4 5-9m-7 9 5 5 5-4M13 3h1',
   SocialSkills:'M3 4h18v12H9l-5 4v-4H3zM7 8h10M7 12h6',
@@ -126,7 +129,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const frozen = busy ? 'disabled' : '';
   const options = actors.map(item => `<option value="${e(item.id)}" ${item.id === actor?.id ? 'selected' : ''}>${e(item.name)}${item.hasCharacter ? '' : ' · noch kein Import'}</option>`).join('');
   const image = safePortrait(actor?.img);
-  const switches = mode === 'full'
+  const switches = character?.profile?.companionGroup?'':mode === 'full'
     ? `${button('battle', categoryIcon('combat'), 'class="pp-mode-button" aria-label="Kampfbrett öffnen" title="Kampfbrett öffnen"')}${button('ring', categoryIcon('favorites'), 'class="pp-mode-button" aria-label="Probenring öffnen" title="Probenring öffnen"')}`
     : button('full', mode === 'ring' ? '<span aria-hidden="true">×</span>' : categoryIcon('all'), `class="pp-mode-button" aria-label="${mode === 'ring' ? 'Probenring schließen' : 'Zu den Proben wechseln'}" title="${mode === 'ring' ? 'Probenring schließen' : 'Zu den Proben wechseln'}"`);
   const toolbar = `<div class="pp-toolbar pp-play-toolbar">${image ? `<img class="pp-portrait-medallion" src="${e(image)}" alt="" loading="lazy">` : `<span class="pp-portrait-medallion pp-portrait-placeholder" aria-hidden="true">${categoryIcon('attributes')}</span>`}<label class="pp-picker"><span class="pp-sr-only">Charakter</span><select name="actor" aria-label="Foundry-Charakter" ${frozen}><option value="">Charakter auswählen …</option>${options}</select></label><div class="pp-tools">${switches}${button('administration', '<span aria-hidden="true">⚙</span>', `class="pp-mode-button" aria-label="Werkzeuge" title="Werkzeuge" aria-expanded="${administration || !character}" ${frozen}`)}</div></div>`;
@@ -139,7 +142,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const allChecks = checksForView(character,mode);
   const checks = mode === 'ring' ? allChecks.filter(isFavorite).sort((a,b)=>favoriteKeys.indexOf(keyOf(a))-favoriteKeys.indexOf(keyOf(b))).slice(0,6) : allChecks;
   const available = new Set(checks.map(categoryOf));
-  if(mode==='battle'){available.add('armors');if(character.equipment?.some(item=>item.id.startsWith('Animals:')))available.add('animals');}
+  if(mode==='battle'){available.add('armors');for(const [collection,group] of COMPANION_GROUPS)if(character.equipment?.some(item=>item.id.startsWith(`${collection}:`)))available.add(group);}
   const disabled = busy || !status.ready || status.directReady === false || !actor?.isOwner;
   const disabledReason = !actor?.isOwner ? 'Zum Würfeln werden Besitzerrechte benötigt.' : status.message;
   const rollDisabled = check => disabled || check.kind === 'combat' && status.combatReady === false;
@@ -161,7 +164,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
     return `<div class="pp-roll-buttons">${rollButton(check,rowDisabled,reason)}${rollButton(check,rowDisabled,reason,true)}</div>`;
   };
   const focus = characterFocus(character);
-  const focusControl = mode === 'battle' && focus !== null && checks.some(check => check.kind === 'combat' && !check.id.startsWith('animals:') && check.combat.type !== 'ranged')
+  const focusControl = mode === 'battle' && focus !== null && checks.some(check => check.kind === 'combat' && !isCompanionCheck(check) && check.combat.type !== 'ranged')
     ? `<div class="pp-focus" title="Nahkampffokus wird im Foundry-Charakter gespeichert. Ein erneuter JSON-Import übernimmt wieder den Fokus aus Pedipalpus."><span>Fokus</span><output data-focus="def">DEF ${signed(-focus)}</output><input name="focus" aria-label="Kampffokus" aria-valuetext="OFF ${signed(focus)}, DEF ${signed(-focus)}" type="range" min="-4" max="4" step="1" value="${focus}" ${!actor?.isOwner || busy ? 'disabled' : ''}><output data-focus="off">OFF ${signed(focus)}</output></div>` : '';
   const filters = mode === 'ring' ? '' : `<div class="pp-filters"><label><span class="pp-sr-only">Bereich</span><select name="category" aria-label="Probenbereich">${CATEGORIES.filter(([key]) => ['all','favorites'].includes(key) || available.has(key)).map(([key,label])=>`<option value="${key}" ${key===category?'selected':''}>${mode==='battle'?({all:'Alle Kampfproben',favorites:'Kampffavoriten'}[key]||label):label}</option>`).join('')}</select></label><label class="pp-search"><span class="pp-sr-only">Suche</span><input type="search" name="search" placeholder="${mode==='battle'?'Kampfprobe suchen …':'Probe suchen …'}" aria-label="${mode==='battle'?'Kampfproben durchsuchen':'Fertigkeiten durchsuchen'}" value="${e(search)}"></label></div><p class="pp-search-scope" ${search?'':'hidden'}>Suche in allen Bereichen</p>`;
   const modifierControl = `<div class="pp-modifier"><label><input name="modifier" aria-label="${modifier < 0 || modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis'}" title="Gilt für die nächste Probe, danach wieder 0" type="number" min="0" step="1" data-mode="${modifier === 0 ? 'neutral' : modifier < 0 ? 'relief' : 'difficulty'}" value="${e(Number.isSafeInteger(modifier) ? Math.abs(modifier) : '')}" ${!actor?.isOwner || busy ? 'disabled' : ''}></label><button type="button" name="modifierDirection" title="Zwischen Erschwernis und Erleichterung wechseln" ${!actor?.isOwner || busy ? 'disabled' : ''}>${modifier < 0 || modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis'}</button><span class="pp-wheel-hint"><span class="pp-wheel-steps"><button type="button" data-modifier-step="1" aria-label="Um eins schwerer" ${!actor?.isOwner || busy ? 'disabled' : ''}>↑ schwerer</button><button type="button" data-modifier-step="-1" aria-label="Um eins leichter" ${!actor?.isOwner || busy ? 'disabled' : ''}>↓ leichter</button></span><span>Mausrad</span></span></div>`;
@@ -195,9 +198,15 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
 }
 
 function renderBattleInventory(character,actor,busy,language) {
- const t=text=>e(uiText(language,text)),armors=armorItems(character),animals=(character.equipment??[]).filter(item=>item.id?.startsWith('Animals:'));
+ const t=text=>e(uiText(language,text)),armors=armorItems(character),members=companionEntries(character);
  const checkbox=(item,field,label)=>`<label>${t(label)}<input type="checkbox" data-armor="${e(item.id)}" data-armor-field="${field}" data-armor-locked="${Boolean(item.carrierAnimalId)}" aria-label="${e(item.name)} · ${t(label)}" ${item[field]?'checked':''} ${!actor?.isOwner||busy||!character.sourceJSON||field==='equipped'&&item.carrierAnimalId?'disabled':''}></label>`;
- return `<section class="pp-battle-inventory pp-armor-panel" data-inventory="armors" hidden><h3>${t('Rüstungen')}</h3>${armors.length?armors.map(item=>`<article class="pp-armor-card"><header><strong>${e(item.name)}</strong><span>RS ${number(item.armor)} · BE ${number(item.basePenalty??item.penalty)}</span></header><div>${checkbox(item,'carried','Dabei')}${checkbox(item,'equipped','Angelegt')}${item.carrierAnimalId?`<small>${t('Beim Tier')}</small>`:''}</div></article>`).join(''):`<p>${t('Keine Rüstungen vorhanden.')}</p>`}</section><section class="pp-animal-overview" data-inventory="animals" hidden>${animals.map(item=>{const index=Number(item.id.split(':')[1]);let key='';try{key=companionKey(character,index);}catch{}return `<div><strong>${e(item.name)}</strong><span>${e(item.species)} · LE ${number(item.currentLE)} / ${number(item.maxLE)}</span>${button('animal-portrait',t('Bild / Token'),`data-animal="${index}" data-animal-key="${e(key)}" ${!actor?.isOwner||busy||!key?'disabled':''}`)}</div>`;}).join('')}</section>`;
+ const armor=`<section class="pp-battle-inventory pp-armor-panel" data-inventory="armors" hidden><h3>${t('Rüstungen')}</h3>${armors.length?armors.map(item=>`<article class="pp-armor-card"><header><strong>${e(item.name)}</strong><span>RS ${number(item.armor)} · BE ${number(item.basePenalty??item.penalty)}</span></header><div>${checkbox(item,'carried','Dabei')}${checkbox(item,'equipped','Angelegt')}${item.carrierAnimalId?`<small>${t('Beim Gefolge')}</small>`:''}</div></article>`).join(''):`<p>${t('Keine Rüstungen vorhanden.')}</p>`}</section>`;
+ const panels=COMPANION_GROUPS.map(([_collection,group,label])=>`<section class="pp-animal-overview" data-inventory="${group}" hidden><h3>${t(label)}</h3>${members.map((member,index)=>{
+  if(member._group!==group)return '';
+  let key='';try{key=companionKey(character,index);}catch{}
+  return `<div data-companion-card data-search="${e(`${member.Name} ${member.Species??''} ${member.Domain??''}`.toLocaleLowerCase('de'))}"><strong>${e(member.Name)}</strong><span>${e(member.Domain??member.Species??'')} · LE ${number(member.CurrentLe)} / ${number(member.MaxLe)}${Number.isSafeInteger(member.AstralEnergy)?` · AE ${number(member.CurrentAstralEnergy)} / ${number(member.AstralEnergy)}`:''}</span>${button('animal-portrait',t('Bild / Token'),`data-animal="${index}" data-animal-key="${e(key)}" ${!actor?.isOwner||busy||!key?'disabled':''}`)}</div>`;
+ }).join('')}</section>`).join('');
+ return armor+`<div class="pp-companion-overviews">${panels}</div>`;
 }
 
 export function renderImportOptions(actors, selectedId, canCreate, tokenFrame='concrete') {
