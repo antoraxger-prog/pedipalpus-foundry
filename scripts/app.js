@@ -763,7 +763,7 @@ export class PedipalpusApp extends ApplicationV2 {
     let editor;
     const saved=savedPortraitFraming(actor),initialStyle=saved?.style??style;
     try{return await DialogV2.wait({window:{title:this.t(title)},classes:this.dialogClasses,position:{width:450},modal:true,rejectClose:false,
-      content:portraitEditorHTML(initialStyle,saved?.frame),buttons:[{action,label:this.t(label),disabled:true,callback:()=>editor.value()},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      content:portraitEditorHTML(initialStyle,saved?.frame),buttons:[{action,label:this.t(label),disabled:true,callback:()=>editor.value()},{action:'cancel',label:this.t('Abbrechen'),callback:()=>false}],
       render:(_event,dialog)=>{
         localizeDialog(dialog.element,this.theme);
         editor=new PortraitEditor(dialog.element,{style:initialStyle,crop:saved??undefined,onState:({ready,message})=>{dialog.element.querySelector(`[data-action="${action}"]`).disabled=!ready;if(message)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(message);}});

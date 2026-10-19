@@ -1,6 +1,8 @@
-# Pedipalpus – Proben · 1.5.0
+# Pedipalpus – Proben · 1.5.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
+
+1.5.1 behebt die leere Bildvorschau im Foundry-Bildeditor. Vorhandene Profilbilder lassen sich wieder laden und im Tokenrahmen ausrichten.
 
 ## Pedipalpus als Grundlage
 
