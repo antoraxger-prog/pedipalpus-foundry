@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PEDIPALPUS_PLAYWRIGHT || 'playwright');
 const root = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const checksVersion = process.env.PEDIPALPUS_CHECKS_VERSION || '1.0.14';
-const pageHTML = `<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Pedipalpus – lokale Oberflächenprüfung</title><link rel="stylesheet" href="/styles/pedipalpus.css"><link rel="stylesheet" href="/styles/workbench.css"><link rel="stylesheet" href="/styles/feedback.css"><link rel="stylesheet" href="/styles/atmosphere.css"><style>body{background:#11151a;color:#f0eee9;font:14px system-ui;margin:0;padding:26px}#app{max-width:540px;margin:auto;border:1px solid #414751;border-radius:9px;overflow:hidden}.preview-label{max-width:540px;margin:0 auto 14px;color:#aaa;font-size:12px}#notice{margin:8px auto;max-width:540px}.mock-dialog{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(520px,90vw);max-height:80vh;overflow:auto;padding:24px;background:#272d34;border:1px solid #c9aa6e;box-shadow:0 12px 70px #000;border-radius:8px;z-index:99}.mock-dialog label{display:block}.mock-dialog button{margin:10px 5px;padding:8px}.mock-dialog input,.mock-dialog select{padding:8px;max-width:100%}.mock-dialog h2{font-size:20px}.mock-dialog footer{display:flex;justify-content:flex-end}</style><p class="preview-label">Pedipalpus 1.2.0 · Vorschau mit simulierter Foundry-Umgebung</p><main id="app"></main><div id="notice"></div><script>window.previewChecksVersion=${JSON.stringify(checksVersion)}</script><script type="module" src="/tools/browser-runtime.js"></script></html>`;
+const pageHTML = `<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Pedipalpus – lokale Oberflächenprüfung</title><link rel="stylesheet" href="/styles/pedipalpus.css"><link rel="stylesheet" href="/styles/workbench.css"><link rel="stylesheet" href="/styles/feedback.css"><link rel="stylesheet" href="/styles/atmosphere.css"><style>body{background:#11151a;color:#f0eee9;font:14px system-ui;margin:0;padding:26px}#app{max-width:540px;margin:auto;border:1px solid #414751;border-radius:9px;overflow:hidden}.preview-label{max-width:540px;margin:0 auto 14px;color:#aaa;font-size:12px}#notice{margin:8px auto;max-width:540px}.mock-dialog{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(520px,90vw);max-height:80vh;overflow:auto;padding:24px;background:#272d34;border:1px solid #c9aa6e;box-shadow:0 12px 70px #000;border-radius:8px;z-index:99}.mock-dialog label{display:block}.mock-dialog button{margin:10px 5px;padding:8px}.mock-dialog input,.mock-dialog select{padding:8px;max-width:100%}.mock-dialog h2{font-size:20px}.mock-dialog footer{display:flex;justify-content:flex-end}</style><p class="preview-label">Pedipalpus 1.2.1 · Vorschau mit simulierter Foundry-Umgebung</p><main id="app"></main><div id="notice"></div><script>window.previewChecksVersion=${JSON.stringify(checksVersion)}</script><script type="module" src="/tools/browser-runtime.js"></script></html>`;
 const uploadedImages = new Map();
 const server = http.createServer(async (request, response) => {
   try {
@@ -54,7 +54,8 @@ try {
   const action=async name=>{await admin();await page.locator(`[data-action="${name}"]`).click();};
   const upload=async(raw,{destination,comparison='accept',keepFocus=false}={})=>{
     await action('import');
-    await page.locator('[name="characterFile"]').setInputFiles({name:'synthetic.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(raw))});
+    const npc=raw.Format==='Pedipalpus.Npc';await page.locator(`[data-import-kind="${npc?'npc':'character'}"]`).click();
+    await page.locator(`[name="${npc?'npcFile':'characterFile'}"]`).setInputFiles({name:'synthetic.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(raw))});
     await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);
     if(destination!==undefined)await page.locator('[name="destination"]').selectOption(destination);
     await page.locator('.mock-dialog [data-action="import"]').click();
@@ -124,7 +125,7 @@ try {
   assert.equal(categoryColor.icon,'rgb(52, 120, 188)');assert.equal(categoryColor.stripe,categoryColor.icon);
   assert.equal(await page.locator('.pp-blind-button .pp-blind-eye').count(),await page.locator('.pp-blind-button').count());
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/favoriten-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/favoriten-1.2.1.png')});
   console.log('PASS: Compact quickbar removal, Ork attributes/original names, unmodified theme names, colored category stripe and blind-eye icons.');
   await page.locator('[data-action="battle"]').click();
   await page.locator('[name="search"]').fill('Rapier');
@@ -252,7 +253,7 @@ try {
   }
   await page.locator('[data-action="battle"]').click();assert.equal(await page.locator('.pp-root').getAttribute('data-mode'),'battle');
   assert.equal(await visible().evaluateAll(rows=>rows.every(row=>['combat','animals'].includes(row.dataset.category))),true);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/kampfbrett-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/kampfbrett-1.2.1.png')});
   await page.locator('[data-action="full"]').click();
   await page.locator('[data-action="ring"]').click();assert.equal(await page.locator('.pp-root').getAttribute('data-mode'),'ring');
   assert.equal(await page.locator('.pp-ring-card').count(),6);
@@ -264,7 +265,7 @@ try {
       overlaps:cards.flatMap((a,i)=>cards.slice(i+1).filter(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2)).length};
   });
   assert.deepEqual(ringGeometry,{clipped:0,overlaps:0},'Six ring cards must be visible and must not cover each other');
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.2.1.png')});
   await pref({language:'ork'});await theme('ork');
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
   assert.equal(await page.locator('.pp-ring-card[data-check-id^="AcademicSkills"] .pp-original-name').textContent(),'Geographie');
@@ -273,7 +274,7 @@ try {
     return bounds.flatMap((a,i)=>bounds.slice(i+1).filter(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2)).length;
   });
   assert.equal(orkOverlap,0,'Original-name captions must not make ring cards cover each other');
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.2.0-ork.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.2.1-ork.png')});
   await pref({language:'standard'});await theme('fantasy');
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
   await page.locator('[data-action="full"]').first().click();assert.equal(await page.locator('.pp-root').getAttribute('data-mode'),'full');
@@ -326,13 +327,13 @@ try {
     await theme(mode);if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
     if(await page.locator('.pp-root').getAttribute('data-mode')!=='battle')await page.locator('[data-action="battle"]').click();
     await page.locator('[name="category"]').selectOption('combat');
-    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.2.0-${mode}.png`)});
+    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.2.1-${mode}.png`)});
     await page.setViewportSize({width:440,height:760});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     const app=await page.locator('.pedipalpus-app').boundingBox(),footer=await page.locator('.pp-check-list').boundingBox();
     assert.ok(footer.y+footer.height<=app.y+app.height+1,`${mode} footer fits`);
     assert.ok((await page.locator('.pp-check-list').boundingBox()).height>150,`${mode} leaves useful scroll area`);
-    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.2.0-${mode}-schmal.png`)});
+    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.2.1-${mode}-schmal.png`)});
     await page.setViewportSize({width:1460,height:1000});
   }
   assert.deepEqual(errors,[]);
@@ -457,13 +458,13 @@ try {
   assert.equal(await page.locator('[data-armor="Armors:1"][data-armor-field="carried"]').isChecked(),true);
   await page.locator('[data-armor="Armors:0"][data-armor-field="carried"]').uncheck();
   await page.waitForFunction(()=>document.querySelector('[data-armor="Armors:0"][data-armor-field="equipped"]')?.checked===false);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ruestungen-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ruestungen-1.2.1.png')});
   await page.locator('[name="category"]').selectOption('combat');await theme('sneaky');assert.equal(await page.locator('[name="theme"] option[value="sneaky"]').textContent(),'Alchemy');
   const bubbles=page.locator('.pp-acid-bubbles').first();assert.equal(await bubbles.evaluate(el=>getComputedStyle(el).animationName),'pp-acid-bubble');
   await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await bubbles.evaluate(el=>getComputedStyle(el).animationName),'none');
   await page.emulateMedia({reducedMotion:'no-preference'});await pref({animations:'none'});assert.equal(await bubbles.evaluate(el=>getComputedStyle(el).animationName),'none');await pref({animations:'subtle'});
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/alchemy-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/alchemy-1.2.1.png')});
   console.log('PASS: Click/wheel hints, animal companions without attacks, imported armor states with live BE updates and bubbling Alchemy with motion off.');
   for(const design of ['fantasy','ork','dark','light','demonic','aristocrat','warrior','arcane','sneaky']){
     await theme(design);await page.locator('[name="category"]').selectOption('armors');
@@ -472,7 +473,7 @@ try {
     assert.equal(colors.appearance,'none');assert.equal(colors.background,colors.accent);assert.notEqual(colors.background,'rgb(0, 117, 255)');
   }
   await theme('sneaky');if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/checkboxen-1.2.0-alchemy.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/checkboxen-1.2.1-alchemy.png')});
   console.log('PASS: Checkbox backgrounds and ticks follow all nine designs.');
 
   if(process.env.PEDIPALPUS_PRIVATE_FRAMES){
@@ -490,7 +491,7 @@ try {
       }
       return results;
     });
-    for(const item of pixels){assert.equal(item.corner,0);assert.equal(item.center,255);assert.equal(item.hasFrame,true);await fs.writeFile(path.resolve(root,`../pedipalpus-checks/foundry-ui/token-1.2.0-${item.style}.png`),Buffer.from(item.png.split(',')[1],'base64'));}
+    for(const item of pixels){assert.equal(item.corner,0);assert.equal(item.center,255);assert.equal(item.hasFrame,true);await fs.writeFile(path.resolve(root,`../pedipalpus-checks/foundry-ui/token-1.2.1-${item.style}.png`),Buffer.from(item.png.split(',')[1],'base64'));}
     const directory=path.resolve(root,'../token-work/test-character-folder');await fs.mkdir(path.join(directory,'SavedCharacters'),{recursive:true});await fs.mkdir(path.join(directory,'CharacterPortraits'),{recursive:true});
     await fs.writeFile(path.join(directory,'SavedCharacters','Rüstungsprüfung.json'),JSON.stringify({...equipped,PortraitFileName:'synthetic.png'}));
     const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOYmWb8HwAFAAIyPExoIAAAAABJRU5ErkJggg==','base64');await fs.writeFile(path.join(directory,'CharacterPortraits','synthetic.png'),png);
@@ -557,7 +558,7 @@ try {
   await page.locator('[name="category"]').selectOption('all');
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
   assert.ok((await page.locator('.pp-companion-overviews').boundingBox()).height>=45,'Companion cards must not collapse to their heading');
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/gefolge-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/gefolge-1.2.1.png')});
   await page.locator('[name="search"]').fill('Wache');
   assert.equal(await page.locator('[data-inventory="undead"]').isVisible(),true);assert.equal(await page.locator('[data-inventory="demons"]').isVisible(),false);
   await page.locator('[name="search"]').fill('');
@@ -617,7 +618,7 @@ try {
   await npcRow().locator('[data-blind="true"]').click();for(let index=0;index<3;index++)await page.locator(`[name="companionAttribute${index}"]`).selectOption('MU');
   assert.equal(await page.locator('[data-action="companion-check"]').isDisabled(),true);
   await page.locator('[name="companionAttribute2"]').selectOption('KO');await page.locator('[name="companionCheckName"]').fill('Tür öffnen');
-  await page.locator('.mock-dialog').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-attributwahl-1.2.0.png')});
+  await page.locator('.mock-dialog').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-attributwahl-1.2.1.png')});
   await page.locator('[data-action="companion-check"]').click();await page.waitForFunction(before=>testMessages.length===before+1,beforeNpcAbility);await idle();
   assert.equal(await page.evaluate(()=>testMessages.at(-1).testMode),'blind');assert.match(await page.evaluate(()=>testMessages.at(-1).content),/Tür öffnen/);
   assert.equal(await page.locator('[name="modifier"]').inputValue(),'0');
@@ -661,19 +662,19 @@ try {
   assert.equal(await page.locator('[data-check-id="NpcAbilities:1"] [data-action="favorite"]').getAttribute('aria-pressed'),'true');
   await page.evaluate(()=>{for(const app of foundry.applications.api.ApplicationV2.instances())app.setPosition({width:540,height:520});});
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-proben-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-proben-1.2.1.png')});
   const npcZipDownload=page.waitForEvent('download');await action('export');const npcZip=await npcZipDownload;const zipBytes=await fs.readFile(await npcZip.path());
   const exportedNpc=await page.evaluate(async bytes=>{const {readCharacterFile}=await import('/scripts/bundle.js');const bundle=await readCharacterFile(new File([new Uint8Array(bytes)],'npc.zip'));return {file:JSON.parse(bundle.json),portrait:Boolean(bundle.portrait)};},Array.from(zipBytes));
   assert.equal(exportedNpc.file.Format,'Pedipalpus.Npc');assert.equal(exportedNpc.file.Npc.Focus,4);assert.equal('OffOffset' in exportedNpc.file,false);assert.equal('PortraitFileName' in exportedNpc.file,false);assert.equal(exportedNpc.portrait,true);
   console.log('PASS: NPC reimport retains actor/token identity, attribute choices and favorites after reordering, refreshes linked undead and exports the original NPC format with current focus.');
 
   await page.evaluate(raw=>{window.liveNpc=raw;window.showOpenFilePicker=async()=>[{kind:'file',name:'live.nsc.json',queryPermission:async()=> 'granted',getFile:async()=>new File([JSON.stringify(window.liveNpc)],'live.nsc.json',{type:'application/json'})}];},npc);
-  await action('import');await page.locator('[data-pick-character]').click();await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);await page.locator('.mock-dialog [data-action="import"]').click();await page.waitForFunction(()=>!document.querySelector('.mock-dialog')||document.querySelector('.pp-import-diff'));if(await page.locator('.pp-import-diff').count())await page.locator('.mock-dialog [data-action="accept"]').click();await idle();
+  await action('import');await page.locator('[data-pick-npc]').click();await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);await page.locator('.mock-dialog [data-action="import"]').click();await page.waitForFunction(()=>!document.querySelector('.mock-dialog')||document.querySelector('.pp-import-diff'));if(await page.locator('.pp-import-diff').count())await page.locator('.mock-dialog [data-action="accept"]').click();await idle();
   await page.evaluate(()=>{window.liveNpc.Npc.Features[1].Grade='Legende';});await action('refresh');await page.locator('.pp-import-diff').waitFor();assert.match(await page.locator('.pp-import-diff').textContent(),/Testzauber/);await page.locator('.mock-dialog [data-action="accept"]').click();await idle();
   assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='Spells:0').value,npcId),20);
   assert.equal(await page.evaluate(()=>JSON.stringify(game.actors.get('actor-1').getFlag('pedipalpus-foundry','character'))),originalParent);
   // Another edit during the import comparison must not be silently overwritten.
-  const changed=structuredClone(npc);changed.Npc.Abilities[1].Grade='Legende';await action('import');await page.locator('[name="characterFile"]').setInputFiles({name:'changed.nsc.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);await page.locator('.mock-dialog [data-action="import"]').click();await page.locator('.pp-import-diff').waitFor();
+  const changed=structuredClone(npc);changed.Npc.Abilities[1].Grade='Legende';await action('import');await page.locator('[name="npcFile"]').setInputFiles({name:'changed.nsc.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);await page.locator('.mock-dialog [data-action="import"]').click();await page.locator('.pp-import-diff').waitFor();
   await page.evaluate(async id=>{const {withFocus}=await import('/scripts/combat.js'),actor=game.actors.get(id);await actor.setFlag('pedipalpus-foundry','character',withFocus(actor.getFlag('pedipalpus-foundry','character'),-2));},npcId);
   await page.locator('.mock-dialog [data-action="accept"]').click();await idle();assert.match(await page.evaluate(()=>notifications.at(-1).message),/inzwischen geändert/);
   assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),-2);
@@ -694,6 +695,62 @@ try {
   assert.equal(await page.locator('.mock-dialog h2').textContent(),'Anderer tut Ding');assert.match(await page.locator('.mock-dialog').textContent(),/Zwei Werte gleich geht/);
   await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();await pref({language:'standard'});
   assert.deepEqual(errors,[]);console.log('PASS: Read-only NPC users cannot roll or alter data; NPC attribute selection supports the independent Ork language.');
+
+  // Both import panels retain their own source and never reuse a pending file from the other panel.
+  await page.evaluate(async()=>{for(const app of foundry.applications.api.ApplicationV2.instances()){app.importFolders={};app.importSelections={};}await game.modules.get('pedipalpus-foundry').api.open('actor-1');});await idle();
+  const folderRoot=path.resolve(root,'../artifacts/import-folders-1.2.1');
+  await fs.mkdir(path.join(folderRoot,'SavedCharacters'),{recursive:true});await fs.mkdir(path.join(folderRoot,'SavedNpcs'),{recursive:true});
+  await fs.writeFile(path.join(folderRoot,'SavedCharacters','Held.json'),JSON.stringify(combatFixture()));
+  await fs.writeFile(path.join(folderRoot,'SavedNpcs','Alrik.nsc.json'),JSON.stringify(npcFixture()));
+  const secondNpc=npcFixture();secondNpc.Npc.Name='Zweite Testwache';await fs.writeFile(path.join(folderRoot,'SavedNpcs','Zweite.nsc.json'),JSON.stringify(secondNpc));
+  await action('import');await page.locator('[name="characterFolder"]').setInputFiles(folderRoot);
+  await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Testcharakter ·'));
+  assert.equal(await page.locator('[name="folderCharacter"] option').count(),2);
+  await page.locator('[data-import-kind="npc"]').click();await page.locator('[name="folderNpc"] option[value="1"]').waitFor({state:'attached'});
+  assert.equal(await page.locator('[name="folderNpc"] option').count(),3);assert.equal(await page.locator('.mock-dialog [data-action="import"]').isDisabled(),true);
+  await page.locator('[name="folderNpc"]').selectOption('0');await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Alrik Testwache ·'));
+  assert.equal(await page.locator('[name="destination"] option[value="actor-1"]').evaluate(option=>option.disabled),true);
+  await page.locator('[name="portraitFile"]').setInputFiles({name:'manual.png',mimeType:'image/png',buffer:npcPng});await page.waitForFunction(()=>document.querySelector('.pp-portrait-preview')?.textContent.includes('manual.png'));
+  await page.locator('[data-import-kind="character"]').click();await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Testcharakter ·'));
+  assert.equal(await page.locator('[name="portraitFile"]').evaluate(field=>field.files.length),0);assert.equal(await page.locator('[name="folderCharacter"]').inputValue(),'0');
+  await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();await action('import');await page.locator('[data-import-kind="npc"]').click();
+  await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Alrik Testwache ·'));
+  await page.locator('.mock-dialog').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-import-1.2.1.png')});
+  await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();
+  console.log('PASS: Separate character and NPC panels filter a shared selected folder, retain both choices across reopening and clear manual portraits on a type change.');
+
+  await page.evaluate(({pc,npc})=>{
+    for(const app of foundry.applications.api.ApplicationV2.instances()){app.importFolders={};app.importSelections={};}
+    const file=(name,raw)=>({kind:'file',name,queryPermission:async()=> 'granted',getFile:async()=>new File([JSON.stringify(raw)],name,{type:'application/json'})});
+    const folder=(name,files)=>({name,async *values(){yield* files;}});
+    const pcSaved=folder('SavedCharacters',[file('Held.json',pc)]),npcSaved=folder('SavedNpcs',[file('Alrik.nsc.json',npc)]);
+    window.pcFolder={name:'Pedipalpus',getFileHandle:async()=>{throw new DOMException('Missing','NotFoundError');},queryPermission:async()=> 'granted',getDirectoryHandle:async name=>{if(name==='SavedCharacters')return pcSaved;throw new Error('Missing');},async *values(){}};
+    window.npcFolder={name:'NSC_Generator',queryPermission:async()=> 'granted',getDirectoryHandle:async name=>{if(name==='SavedNpcs')return npcSaved;throw new Error('Missing');},async *values(){}};
+    window.nextFolder=window.pcFolder;window.showDirectoryPicker=async()=>window.nextFolder;
+  },{pc:combatFixture(),npc:npcFixture()});
+  await action('import');await page.locator('[data-pick-folder]').click();await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Testcharakter ·'));
+  await page.locator('[data-import-kind="npc"]').click();await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.includes('keine NSC-Dateien'));
+  assert.equal(await page.locator('.mock-dialog [data-action="import"]').isDisabled(),true);assert.equal(await page.locator('[data-pick-npc]').isVisible(),true);
+  await page.evaluate(()=>{window.nextFolder=window.npcFolder;});await page.locator('[data-pick-npc-folder]').click();await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Alrik Testwache ·'));
+  assert.match(await page.locator('[data-folder-source="npc"]').textContent(),/NSC_Generator/);
+  await page.locator('[data-import-kind="character"]').click();await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Testcharakter ·'));
+  assert.match(await page.locator('[data-folder-source="character"]').textContent(),/Pedipalpus/);
+  await page.locator('[data-import-kind="npc"]').click();await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Alrik Testwache ·'));
+  await page.locator('[name="npcFile"]').setInputFiles({name:'wrong.nsc.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(combatFixture()))});
+  await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.includes('gespeicherte NSC-Datei'));
+  assert.equal(await page.locator('.mock-dialog [data-action="import"]').isDisabled(),true);
+  await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();
+  console.log('PASS: A separate NSC directory remains selectable after a PC-only directory; native folder handles stay independent and the NSC panel rejects a mislabeled player file.');
+
+  await page.evaluate(pc=>{for(const app of foundry.applications.api.ApplicationV2.instances()){app.importFolders={};app.importSelections={};}window.showOpenFilePicker=()=>new Promise(resolve=>{window.finishOldPicker=()=>resolve([{kind:'file',name:'old.json',queryPermission:async()=> 'granted',getFile:async()=>new File([JSON.stringify(pc)],'old.json',{type:'application/json'})}]);});},combatFixture());
+  await action('import');await page.locator('[data-pick-character]').click();await page.waitForFunction(()=>typeof window.finishOldPicker==='function');
+  await page.locator('[data-import-kind="npc"]').click();await page.locator('[name="npcFile"]').setInputFiles({name:'new.nsc.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(npcFixture()))});
+  await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.startsWith('Alrik Testwache ·'));await page.evaluate(()=>window.finishOldPicker());
+  await page.waitForFunction(()=>document.querySelector('[data-import-kind="npc"]')?.getAttribute('aria-pressed')==='true');
+  assert.match(await page.locator('.pp-import-preview').textContent(),/^Alrik Testwache ·/);assert.equal(await page.locator('[name="destination"] option[value="actor-1"]').evaluate(option=>option.disabled),true);
+  assert.equal(await page.locator('.mock-dialog [data-action="import"]').isDisabled(),false);
+  await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();assert.deepEqual(errors,[]);
+  console.log('PASS: A late file-picker result cannot replace an NPC selected after switching panels or re-enable an incompatible import target.');
 
 
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

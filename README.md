@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 1.2.0
+# Pedipalpus – Proben · 1.2.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -37,6 +37,8 @@ In der Welt **Pedipalpus – Proben** und **Ucurifunke – Proben** aktivieren. 
 Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benötigen zusätzlich die entsprechende Foundry-Berechtigung. Beobachter können die Proben lesen.
 
 ## NSC-Generator: eigener Import
+
+Unter **JSON importieren** stehen **Charakter importieren** und **NSC importieren** getrennt zur Auswahl. Ein bereits ausgewählter Pedipalpus-Ordner bleibt erhalten. Im NSC-Bereich kann zusätzlich eine einzelne Datei oder ein eigener NSC-Ordner mit `SavedNpcs` gewählt werden; beide Ordnerauswahlen bleiben während der Sitzung unabhängig erhalten. Enthält ein gemeinsamer Ordner beide Speicherordner, zeigt jeder Bereich nur die passenden Dateien.
 
 **JSON importieren** erkennt zusätzlich das NSC-Format `Pedipalpus.Npc`, Version 1, mit der Endung `.nsc.json`. Die Dateien liegen im Generator unter `SavedNpcs`. Datei oder Austausch-ZIP auswählen und einen neuen bzw. vorhandenen NSC als Ziel wählen. Die Auswahlliste kennzeichnet NSC mit **[NSC]**. Ein freigegebener Ordner kann `SavedCharacters` und `SavedNpcs` enthalten; **Aktualisieren** liest auch die letzte NSC-Datei frisch ein.
 

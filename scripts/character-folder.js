@@ -2,12 +2,14 @@ import { parseCharacter } from './data.js';
 import { readCharacterFile } from './bundle.js';
 
 const path=file=>String(file.webkitRelativePath||file.name||'').replace(/\\/g,'/').normalize('NFC');
-export function characterFiles(files) {
+export function characterFiles(files,kind='all') {
   const all=Array.from(files??[]);
   if(all.length>10000)throw new Error('Bitte nur den Pedipalpus-Ordner oder den Charakterordner auswählen.');
   const json=all.filter(file=>/\.json$/i.test(file.name));
-  const saved=json.filter(file=>/(?:^|\/)(?:SavedCharacters|SavedNpcs)\//i.test(path(file)));
-  const selected=saved.length?saved:json.filter(file=>path(file).split('/').length<=2);
+  const isNpc=file=>/(?:^|\/)SavedNpcs\//i.test(path(file))||/\.nsc\.json$/i.test(file.name);
+  const matching=json.filter(file=>kind==='all'||(kind==='npc'?isNpc(file):!isNpc(file)&&!/(?:^|\/)SavedNpcs\//i.test(path(file))));
+  const saved=matching.filter(file=>/(?:^|\/)(?:SavedCharacters|SavedNpcs)\//i.test(path(file)));
+  const selected=saved.length?saved:matching.filter(file=>path(file).split('/').length<=2&&!/(?:^|\/)SavedCharacters\//i.test(path(file)));
   return selected.sort((a,b)=>path(a).localeCompare(path(b),'de'));
 }
 export function matchingPortrait(files,filename) {

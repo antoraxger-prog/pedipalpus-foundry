@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PEDIPALPUS_PLAYWRIGHT || 'playwright');
 const root = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const checksVersion = process.env.PEDIPALPUS_CHECKS_VERSION || '1.0.14';
-const pageHTML = `<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Pedipalpus – lokale Oberflächenprüfung</title><link rel="stylesheet" href="/styles/pedipalpus.css"><link rel="stylesheet" href="/styles/workbench.css"><link rel="stylesheet" href="/styles/feedback.css"><link rel="stylesheet" href="/styles/atmosphere.css"><style>body{background:#11151a;color:#f0eee9;font:14px system-ui;margin:0;padding:26px}#app{max-width:540px;margin:auto;border:1px solid #414751;border-radius:9px;overflow:hidden}.preview-label{max-width:540px;margin:0 auto 14px;color:#aaa;font-size:12px}#notice{margin:8px auto;max-width:540px}.mock-dialog{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(520px,90vw);max-height:80vh;overflow:auto;padding:24px;background:#272d34;border:1px solid #c9aa6e;box-shadow:0 12px 70px #000;border-radius:8px;z-index:99}.mock-dialog label{display:block}.mock-dialog button{margin:10px 5px;padding:8px}.mock-dialog input,.mock-dialog select{padding:8px;max-width:100%}.mock-dialog h2{font-size:20px}.mock-dialog footer{display:flex;justify-content:flex-end}</style><p class="preview-label">Pedipalpus 1.2.0 · Vorschau mit simulierter Foundry-Umgebung</p><main id="app"></main><div id="notice"></div><script>window.previewChecksVersion=${JSON.stringify(checksVersion)}</script><script type="module" src="/tools/browser-runtime.js"></script></html>`;
+const pageHTML = `<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Pedipalpus – lokale Oberflächenprüfung</title><link rel="stylesheet" href="/styles/pedipalpus.css"><link rel="stylesheet" href="/styles/workbench.css"><link rel="stylesheet" href="/styles/feedback.css"><link rel="stylesheet" href="/styles/atmosphere.css"><style>body{background:#11151a;color:#f0eee9;font:14px system-ui;margin:0;padding:26px}#app{max-width:540px;margin:auto;border:1px solid #414751;border-radius:9px;overflow:hidden}.preview-label{max-width:540px;margin:0 auto 14px;color:#aaa;font-size:12px}#notice{margin:8px auto;max-width:540px}.mock-dialog{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(520px,90vw);max-height:80vh;overflow:auto;padding:24px;background:#272d34;border:1px solid #c9aa6e;box-shadow:0 12px 70px #000;border-radius:8px;z-index:99}.mock-dialog label{display:block}.mock-dialog button{margin:10px 5px;padding:8px}.mock-dialog input,.mock-dialog select{padding:8px;max-width:100%}.mock-dialog h2{font-size:20px}.mock-dialog footer{display:flex;justify-content:flex-end}</style><p class="preview-label">Pedipalpus 1.2.1 · Vorschau mit simulierter Foundry-Umgebung</p><main id="app"></main><div id="notice"></div><script>window.previewChecksVersion=${JSON.stringify(checksVersion)}</script><script type="module" src="/tools/browser-runtime.js"></script></html>`;
 const uploadedImages = new Map();
 const server = http.createServer(async (request, response) => {
   try {
@@ -118,13 +118,13 @@ try {
   assert.equal(await page.locator('[name="category"] option[value="magic"]').count(), 0);
   assert.equal(await page.locator('[name="category"] option[value="Miracles"]').count(), 0);
   await fs.mkdir(path.resolve(root, '../pedipalpus-checks/foundry-ui'), {recursive:true});
-  await page.screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kompakt-1.2.0-dunkel.png'),fullPage:true});
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kompakt-1.2.0.png')});
+  await page.screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kompakt-1.2.1-dunkel.png'),fullPage:true});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kompakt-1.2.1.png')});
   await selectTheme('dark');
   assert.equal(await page.locator('.pp-root').getAttribute('data-theme'), 'dark');
   await selectTheme('light');
   assert.equal(await page.locator('.pp-root').getAttribute('data-theme'), 'light');
-  await page.screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kompakt-1.2.0-hell.png'),fullPage:true});
+  await page.screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kompakt-1.2.1-hell.png'),fullPage:true});
   await selectTheme('dark');
   await page.locator('[name="category"]').selectOption('attributes');
   assert.equal(await page.locator('.pp-check-row:not([hidden])').evaluateAll(rows => rows.every(row => row.dataset.category === 'attributes')), true);
@@ -178,7 +178,7 @@ try {
     assert.ok(footer.y + footer.height <= fullBounds.y + fullBounds.height);
     assert.equal(await page.locator('.pp-dice-button[data-action="roll"]').count(), 12);
     assert.equal(await page.locator('.pp-check-name[data-action="roll"], .pp-rating[data-action="roll"]').count(), 12);
-    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, `../pedipalpus-checks/foundry-ui/talente-1.2.0-${mode}.png`)});
+    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, `../pedipalpus-checks/foundry-ui/talente-1.2.1-${mode}.png`)});
   }
   await selectTheme('fantasy');
   await selectTheme('ork');
@@ -193,7 +193,7 @@ try {
   await administration();
   await page.locator('[data-action="administration"]').click();
   assert.doesNotMatch(await page.locator('.pp-root').textContent(),/unga|bunga/i);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/talente-1.2.0-ork.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/talente-1.2.1-ork.png')});
   await selectTheme('fantasy');
   await page.evaluate(async () => {
     const actor = game.actors.contents[0];
@@ -205,7 +205,7 @@ try {
   assert.equal(await page.locator('.pp-check-row[data-grade="master"]').count(), 1);
   assert.equal(await page.locator('.pp-check-row[data-grade="trained"] .pp-rating').textContent(), '10');
   assert.equal(await page.locator('.pp-footer').count(), 0);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/attribute-1.2.0-fantasy.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/attribute-1.2.1-fantasy.png')});
   await page.setViewportSize({width:440,height:760});
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   assert.deepEqual(errors, []);
@@ -256,7 +256,7 @@ try {
   await page.waitForFunction(count => testMessages.length === count + 1,messagesBefore);
   assert.equal(await page.locator('.mock-dialog').count(),0);
   assert.match(await page.evaluate(() => testMessages.at(-1).content), /Rapier/);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kampf-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kampf-1.2.1.png')});
   await page.locator('[name="category"]').selectOption('animals');
   assert.equal(await page.locator('.pp-check-row:not([hidden])').count(),2);
   await page.locator('.pp-check-row:not([hidden]) [data-action="roll"][data-blind="true"]').first().click();
@@ -298,12 +298,12 @@ try {
   await page.waitForFunction(()=>game.actors.contents[0].getFlag('pedipalpus-foundry','character').combat.offDefOffset===1);
   assert.equal(await page.locator('[data-focus="off"]').textContent(),'Hau +1');
   assert.match(await page.locator('.pp-check-row:not([hidden])').first().locator('.pp-single-probe').getAttribute('title'),/Kampf-Laune 1/);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ork-1.2.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ork-1.2.1.png')});
   await page.setViewportSize({width:440,height:760});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ork-1.2.0-schmal.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ork-1.2.1-schmal.png')});
   await administration();await page.locator('[data-action="import"]').click();
-  assert.equal(await page.locator('.mock-dialog h2').textContent(),'Dein Blatt holen');
+  assert.equal(await page.locator('.mock-dialog h2').textContent(),'Eigenes Blatt / andere Leute holen');
   assert.equal(await page.locator('.pp-import-preview').textContent(),'JSON-Blatt wählen. Kurz warten.');
   assert.equal(await page.locator('[name="destination"] option[value=""]').textContent(),'Neuen du machen');
   await page.locator('[name="characterFile"]').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{')});

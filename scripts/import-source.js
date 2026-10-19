@@ -22,11 +22,16 @@ async function permit(handle){
  if(!handle.queryPermission||await handle.queryPermission({mode:'read'})==='granted')return true;
  return typeof handle.requestPermission==='function'&&await handle.requestPermission({mode:'read'})==='granted';
 }
-export async function directoryCharacters(directory){
+export async function directoryCharacters(directory,kind='all'){
  if(!await permit(directory))throw new Error('Der Ordnerzugriff wurde nicht freigegeben.');
- const folders=[];for(const name of ['SavedCharacters','SavedNpcs']){try{folders.push(await directory.getDirectoryHandle(name));}catch{}}
+ const folders=[];for(const name of kind==='npc'?['SavedNpcs']:kind==='character'?['SavedCharacters']:['SavedCharacters','SavedNpcs']){try{folders.push(await directory.getDirectoryHandle(name));}catch{}}
  if(!folders.length)folders.push(directory);
- const files=[];for(const folder of folders)for await(const handle of folder.values())if(handle.kind==='file'&&/\.json$/i.test(handle.name))files.push(handle);
+ const files=[];for(const folder of folders)for await(const handle of folder.values())if(handle.kind==='file'&&/\.json$/i.test(handle.name)){
+  const npcFolder=/^SavedNpcs$/i.test(folder.name??''),characterFolder=/^SavedCharacters$/i.test(folder.name??''),npcFile=/\.nsc\.json$/i.test(handle.name);
+  if(kind==='npc'&&(characterFolder||!npcFolder&&!npcFile))continue;
+  if(kind==='character'&&(npcFolder||npcFile))continue;
+  files.push(handle);
+ }
  if(files.length>200)throw new Error('Bitte einen Charakterordner mit höchstens 200 Dateien auswählen.');
  return files.sort((a,b)=>a.name.localeCompare(b.name,'de'));
 }

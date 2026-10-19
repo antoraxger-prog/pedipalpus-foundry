@@ -513,9 +513,11 @@ export class PedipalpusApp extends ApplicationV2 {
     let portraitError = false;
     let portraitSequence = 0;
     let readSequence = 0;
+    let importKind=getCharacter(this.actor)?.sourceFormat===NPC_FORMAT?'npc':'character';
+    this.importFolders??={};this.importSelections??={};
     const answer = await DialogV2.wait({
-      window: { title: this.t('Pedipalpus-Charakter importieren') }, position: { width: 550 },
-      classes: this.dialogClasses, content: renderImportOptions(actors, this.actorId, canCreate, this.preferences.tokenFrame), modal:true, rejectClose: false,
+      window: { title: this.t('Charakter / NSC importieren') }, position: { width: 550 },
+      classes: this.dialogClasses, content: renderImportOptions(actors, this.actorId, canCreate, this.preferences.tokenFrame,importKind), modal:true, rejectClose: false,
       buttons: [{ action: 'import', label:this.t('Importieren'), icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
           if (!pending) { this.notify('warn', 'Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }
@@ -524,7 +526,6 @@ export class PedipalpusApp extends ApplicationV2 {
         } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => null }],
       render: (_event, dialog) => {
         localizeDialog(dialog.element,this.theme);
-        const input = dialog.element.querySelector('[name="characterFile"]');
         const destination=dialog.element.querySelector('[name="destination"]');
         const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled; };
         destination.addEventListener('change',syncButton);
@@ -542,7 +543,21 @@ export class PedipalpusApp extends ApplicationV2 {
           } catch (error) { if (sequence === portraitSequence) { portraitError = true; preview.textContent = this.t(error.message); } }
           finally { if (sequence === portraitSequence) { portraitBusy = false; syncButton(); } }
         });
-        const readFile=async (file,source=null,live=null) => {
+        const folderContext=kind=>this.importFolders[kind]??this.importFolders[kind==='npc'?'character':'npc']??null;
+        const resetSelection=(clearImage=false)=>{
+          ++readSequence;pending=null;pendingSource=null;portraitPackaged=null;portrait=portraitManual;
+          if(clearImage){++portraitSequence;portraitManual=null;portrait=null;portraitBusy=false;portraitError=false;imageInput.value='';}
+          dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(portrait?`Bild ausgewählt: ${portrait.file.name}`:'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.');
+          dialog.element.querySelector('.pp-portrait-source').textContent=this.t('Optional ein Charakterbild auswählen.');
+          dialog.element.querySelector('.pp-import-preview').textContent=this.t('Bitte eine JSON-Datei auswählen.');syncButton();
+          return readSequence;
+        };
+        const selectKind=kind=>{
+          importKind=kind;
+          dialog.element.querySelectorAll('[data-import-kind]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.importKind===kind)));
+          dialog.element.querySelectorAll('[data-import-panel]').forEach(panel=>{panel.hidden=panel.dataset.importPanel!==kind;});
+        };
+        const readFile=async (file,source=null,live=null,{expectedKind=null,files=[]}={}) => {
           const sequence = ++readSequence;
           pending = null;pendingSource=null;
           portraitPackaged = null; portrait = portraitManual;
@@ -553,11 +568,14 @@ export class PedipalpusApp extends ApplicationV2 {
           preview.textContent = this.t('Datei wird gelesen …');
           try {
             if (!file) throw new Error('Bitte eine JSON-Datei auswählen.');
-            const imported=live??await readCharacterWithPortrait(file,Array.from(new Set([...(this.characterFolderFiles??[]),...Array.from(input.files??[])])));
+            const imported=live??await readCharacterWithPortrait(file,files);
             const parsed = parseCharacter(imported.json);
+            const actualKind=parsed.sourceFormat===NPC_FORMAT?'npc':'character';
+            if(expectedKind&&actualKind!==expectedKind)throw new Error(expectedKind==='npc'?'Bitte eine gespeicherte NSC-Datei (.nsc.json) auswählen.':'Bitte eine Pedipalpus-Charakterdatei auswählen.');
             parsed.sourceJSON=imported.json;
             const packagedPortrait=imported.portrait?await preparePortrait(imported.portrait):null;
             if (sequence !== readSequence) return;
+            selectKind(actualKind);
             portraitPackaged=packagedPortrait;portrait=portraitManual || portraitPackaged;
             if(portrait && !portraitBusy && !portraitError)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${portrait.file.name}`);
             pending = parsed;pendingSource=source??{fileName:file.name};
@@ -570,18 +588,70 @@ export class PedipalpusApp extends ApplicationV2 {
               : this.t('Optional ein Charakterbild auswählen.');
           } catch (error) { if (sequence === readSequence) preview.textContent = this.t(error.message); }
         };
-        input.addEventListener('change',()=>{const files=Array.from(input.files??[]).filter(file=>/\.(json|zip)$/i.test(file.name));if(files.length!==1){pending=null;syncButton();dialog.element.querySelector('.pp-import-preview').textContent=this.t('Bitte genau einen Charakter auswählen.');return;}readFile(files[0]);});
-        dialog.element.querySelector('[data-pick-character]').addEventListener('click',async()=>{try{pending=null;pendingSource=null;syncButton();const [handle]=await globalThis.showOpenFilePicker({multiple:false,types:[{description:'Pedipalpus-Charakter',accept:{'application/json':['.json'],'application/zip':['.zip']}}]});const source={fileHandle:handle,directoryHandle:this.characterFolderHandle??null,fileName:handle.name};await readFile(await handle.getFile(),source,await readLiveSource(source));}catch(error){if(error.name!=='AbortError')dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);}});
-        const folderChoice=dialog.element.querySelector('[name="folderCharacter"]');
-        dialog.element.querySelector('[name="characterFolder"]').addEventListener('change',event=>{
-          pending=null;folderHandles=null;syncButton();this.characterFolderFiles=Array.from(event.target.files??[]);
-          try{const files=characterFiles(this.characterFolderFiles);folderChoice.innerHTML='<option value="">Charakter auswählen …</option>'+files.map((file,index)=>`<option value="${index}">${escapeHTML(file.name.replace(/\.json$/i,''))}</option>`).join('');folderChoice.parentElement.hidden=files.length===0;if(files.length===1){folderChoice.value='0';readFile(files[0]);}else dialog.element.querySelector('.pp-import-preview').textContent=this.t(files.length?'Bitte einen Charakter aus dem Ordner auswählen.':'Im Ordner wurden keine Charakterdateien gefunden.');}
-          catch(error){dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);}
-        });
-        let folderHandles=null;
-        dialog.element.querySelector('[data-pick-folder]').addEventListener('click',async()=>{try{this.characterFolderHandle=await globalThis.showDirectoryPicker({mode:'read'});folderHandles=await directoryCharacters(this.characterFolderHandle);pending=null;syncButton();folderChoice.innerHTML='<option value="">Charakter auswählen …</option>'+folderHandles.map((handle,index)=>`<option value="${index}">${escapeHTML(handle.name.replace(/\.json$/i,''))}</option>`).join('');folderChoice.parentElement.hidden=folderHandles.length===0;if(folderHandles.length===1){folderChoice.value='0';await readHandle(0);}else dialog.element.querySelector('.pp-import-preview').textContent=this.t(folderHandles.length?'Bitte einen Charakter aus dem Ordner auswählen.':'Im Ordner wurden keine Charakterdateien gefunden.');}catch(error){if(error.name!=='AbortError')dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);}});
-        const readHandle=async index=>{const handle=folderHandles[index],source={fileHandle:handle,directoryHandle:this.characterFolderHandle,fileName:handle.name};await readFile(await handle.getFile(),source,await readLiveSource(source));};
-        folderChoice.addEventListener('change',()=>{if(folderChoice.value==='')return;if(folderHandles){readHandle(Number(folderChoice.value)).catch(error=>{dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);});return;}const file=characterFiles(this.characterFolderFiles)[Number(folderChoice.value)];if(file)readFile(file);});
+        const entries=new Map();
+        const fail=(error,ticket)=>{if(ticket===readSequence&&error.name!=='AbortError')dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);};
+        const readSelected=async kind=>{
+          const entry=entries.get(kind),index=Number(entry.choice.value);
+          if(entry.choice.value===''||!entry.items[index]||kind!==importKind)return;
+          const ticket=resetSelection(),item=entry.items[index],context=folderContext(kind);
+          this.importSelections[kind]=item.webkitRelativePath||item.name;
+          try{
+            let file=item,source=null,live=null;
+            if(context?.handle){source={fileHandle:item,directoryHandle:context.handle,fileName:item.name};file=await item.getFile();live=await readLiveSource(source);}
+            if(ticket!==readSequence||kind!==importKind)return;
+            await readFile(file,source,live,{expectedKind:kind,files:context?.files??[]});
+          }catch(error){fail(error,ticket);}
+        };
+        const loadFolder=async kind=>{
+          const entry=entries.get(kind),context=folderContext(kind),ticket=readSequence;
+          entry.items=[];entry.choice.innerHTML='';entry.choice.parentElement.hidden=true;entry.hint.textContent='';
+          if(!context)return;
+          try{
+            const items=context.handle?await directoryCharacters(context.handle,kind):characterFiles(context.files,kind);
+            if(ticket!==readSequence||kind!==importKind)return;
+            entry.items=items;
+            entry.hint.textContent=`${this.t('Gewählter Ordner')}: ${context.handle?.name||context.files?.[0]?.webkitRelativePath?.split('/')[0]||this.t('Ordner')}`;
+            entry.choice.innerHTML=`<option value="">${this.t(kind==='npc'?'NSC auswählen …':'Charakter auswählen …')}</option>`+items.map((item,index)=>`<option value="${index}">${escapeHTML(item.name.replace(/(?:\.nsc)?\.json$/i,''))}</option>`).join('');
+            entry.choice.parentElement.hidden=items.length===0;
+            const selected=items.flatMap((item,index)=>(item.webkitRelativePath||item.name)===this.importSelections[kind]?[index]:[]);
+            if(items.length===1||selected.length===1){entry.choice.value=String(selected.length===1?selected[0]:0);await readSelected(kind);}
+            else dialog.element.querySelector('.pp-import-preview').textContent=this.t(items.length?(kind==='npc'?'Bitte einen NSC aus dem Ordner auswählen.':'Bitte einen Charakter aus dem Ordner auswählen.'):(kind==='npc'?'Hier wurden keine NSC-Dateien gefunden. Bitte den NSC-Ordner oder eine einzelne NSC-Datei auswählen.':'Im Ordner wurden keine Charakterdateien gefunden.'));
+          }catch(error){fail(error,ticket);}
+        };
+        for(const kind of ['character','npc']){
+          const npc=kind==='npc',entry={choice:dialog.element.querySelector(`[name="${npc?'folderNpc':'folderCharacter'}"]`),hint:dialog.element.querySelector(`[data-folder-source="${kind}"]`),items:[]};entries.set(kind,entry);
+          const fileInput=dialog.element.querySelector(`[name="${npc?'npcFile':'characterFile'}"]`);
+          fileInput.addEventListener('change',()=>{
+            const ticket=resetSelection(),files=Array.from(fileInput.files??[]),selected=files.filter(file=>/\.(json|zip)$/i.test(file.name));
+            if(selected.length!==1){dialog.element.querySelector('.pp-import-preview').textContent=this.t('Bitte genau einen Charakter auswählen.');return;}
+            if(kind!==importKind)return;entry.choice.value='';
+            readFile(selected[0],null,null,{expectedKind:npc?'npc':null,files:Array.from(new Set([...(folderContext(kind)?.files??[]),...files]))}).catch(error=>fail(error,ticket));
+          });
+          dialog.element.querySelector(npc?'[data-pick-npc]':'[data-pick-character]').addEventListener('click',async()=>{
+            const ticket=resetSelection();entry.choice.value='';
+            try{
+              const [handle]=await globalThis.showOpenFilePicker({multiple:false,types:[{description:npc?'Pedipalpus-NSC':'Pedipalpus-Charakter',accept:{'application/json':['.json'],'application/zip':['.zip']}}]});
+              if(ticket!==readSequence||kind!==importKind)return;
+              const source={fileHandle:handle,directoryHandle:folderContext(kind)?.handle??null,fileName:handle.name},file=await handle.getFile(),live=await readLiveSource(source);
+              if(ticket!==readSequence||kind!==importKind)return;
+              await readFile(file,source,live,{expectedKind:npc?'npc':null});
+            }catch(error){fail(error,ticket);}
+          });
+          dialog.element.querySelector(`[name="${npc?'npcFolder':'characterFolder'}"]`).addEventListener('change',event=>{
+            resetSelection();this.importFolders[kind]={files:Array.from(event.target.files??[])};delete this.importSelections[kind];
+            if(kind==='character'){this.characterFolderFiles=this.importFolders[kind].files;this.characterFolderHandle=null;}
+            loadFolder(kind);
+          });
+          dialog.element.querySelector(npc?'[data-pick-npc-folder]':'[data-pick-folder]').addEventListener('click',async()=>{
+            const ticket=resetSelection();
+            try{const handle=await globalThis.showDirectoryPicker({mode:'read'});if(ticket!==readSequence||kind!==importKind)return;this.importFolders[kind]={handle};delete this.importSelections[kind];if(kind==='character'){this.characterFolderHandle=handle;this.characterFolderFiles=[];}await loadFolder(kind);}catch(error){fail(error,ticket);}
+          });
+          entry.choice.addEventListener('change',()=>{readSelected(kind);});
+        }
+        dialog.element.querySelectorAll('[data-import-kind]').forEach(button=>button.addEventListener('click',()=>{
+          const kind=button.dataset.importKind;if(kind===importKind)return;resetSelection(true);selectKind(kind);loadFolder(kind);
+        }));
+        loadFolder(importKind);
       }
     });
     return this.acceptImport(answer);

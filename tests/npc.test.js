@@ -141,3 +141,15 @@ test('Character and NPC folders can be selected together without reading unrelat
  const directory={getDirectoryHandle:async name=>({async *values(){yield {kind:'file',name:name==='SavedCharacters'?'a.json':'b.nsc.json'};}})};
  assert.deepEqual((await directoryCharacters(directory)).map(file=>file.name),['a.json','b.nsc.json']);
 });
+
+test('Separate folder lists keep player files and NPC files apart, including a directly selected SavedNpcs directory',async()=>{
+ const make=(name,path)=>{const file=new File(['{}'],name);Object.defineProperty(file,'webkitRelativePath',{value:path});return file;};
+ const pc=make('a.json','App/SavedCharacters/a.json'),npc=make('b.nsc.json','App/SavedNpcs/b.nsc.json'),renamed=make('c.json','App/SavedNpcs/c.json'),catalog=make('catalog.json','App/GameData/catalog.json');
+ assert.deepEqual(characterFiles([pc,npc,renamed,catalog],'character'),[pc]);assert.deepEqual(characterFiles([pc,npc,renamed,catalog],'npc'),[npc,renamed]);
+ const handle=name=>({kind:'file',name,getFile:()=>assert.fail('Listing must not open a file')});
+ const folder=(name,files)=>({name,async *values(){yield* files;},getDirectoryHandle:async()=>{throw new Error('No subdirectory');}});
+ const pcs=folder('SavedCharacters',[handle('a.json')]),npcs=folder('SavedNpcs',[handle('b.nsc.json'),handle('c.json')]);
+ const root={getDirectoryHandle:async name=>name==='SavedCharacters'?pcs:npcs};
+ assert.deepEqual((await directoryCharacters(root,'character')).map(file=>file.name),['a.json']);assert.deepEqual((await directoryCharacters(root,'npc')).map(file=>file.name),['b.nsc.json','c.json']);
+ assert.deepEqual((await directoryCharacters(pcs,'npc')).map(file=>file.name),[]);assert.deepEqual((await directoryCharacters(npcs,'npc')).map(file=>file.name),['b.nsc.json','c.json']);
+});
