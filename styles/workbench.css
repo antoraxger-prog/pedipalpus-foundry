@@ -43,7 +43,7 @@
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-check-row[data-grade="master"] button.pp-rating, .pedipalpus-app .pp-root[data-theme="light"] .pp-check-row[data-grade="master"] button.pp-rating { color: #714d11; background: linear-gradient(140deg,#f5e4ae,#fff8dc,#e8cc86); }
 .pedipalpus-app .pp-root[data-theme="ork"] .pp-check-row[data-grade="master"] button.pp-rating { color: #542317; background: #eee2bb; border: 2px solid #9a3320; box-shadow: -3px 0 #d1c19b,3px 0 #d1c19b; }
 .pedipalpus-app .pp-root button.pp-dice-button { width: 31px; height: 31px; min-height: 31px; }
-.pedipalpus-app .pp-root button.pp-blind-button { width: 36px; }
+.pedipalpus-app .pp-root button.pp-blind-button { width: 31px; }
 .pedipalpus-app .pp-table td:last-child { width: 77px; }
 .pedipalpus-app .pp-weapon-header th { position: static; top: auto; padding: 5px 8px; text-align: left; font-weight: 600; border-top: 2px solid var(--pp-border); }
 .pedipalpus-app .pp-weapon-header small { display: inline; margin-left: 7px; font-weight: normal; font-family: 'Segoe UI',sans-serif; }

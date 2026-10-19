@@ -92,8 +92,9 @@
 .pedipalpus-app .pp-category-icon { color: var(--pp-category-color,inherit); }
 .pedipalpus-app .pp-root .pp-check-row[data-category] > td:first-child { border-left: 3px solid var(--pp-category-color,transparent); }
 .pedipalpus-app .pp-root .pp-ring-card[data-category] { border-left: 3px solid var(--pp-category-color,var(--pp-border)); }
-.pedipalpus-app .pp-root button.pp-blind-button { width: 42px; gap: 2px; }
-.pedipalpus-app .pp-root button.pp-blind-button svg.pp-blind-eye { width: 15px; height: 15px; flex-shrink: 0; }
+.pedipalpus-app .pp-root button.pp-blind-button { width: 31px; gap: 1px; padding: 2px; }
+.pedipalpus-app .pp-root button.pp-blind-button svg { width: 13px; height: 17px; flex-shrink: 0; }
+.pedipalpus-app .pp-root button.pp-blind-button svg.pp-blind-eye { width: 11px; height: 13px; flex-shrink: 0; }
 .pedipalpus-app .pp-root .pp-table td:last-child { width: 84px; }
 .pedipalpus-app .pp-value-medallion[data-zero="true"] button.pp-rating { position: relative; overflow: hidden; border-style: dashed; }
 .pedipalpus-app .pp-value-medallion[data-zero="true"] button.pp-rating::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: url('../assets/cracks.svg') center / 100% 100% no-repeat; opacity: .8; }
