@@ -176,3 +176,8 @@
 .pedipalpus-dialog .pp-crop-stage canvas:focus-visible { outline:2px solid var(--pp-accent,#bd9b53); outline-offset:-3px; }
 .pedipalpus-dialog .pp-portrait-editor input[type="range"] { width:100%; }
 .pedipalpus-dialog .pp-portrait-editor [data-crop-zoom] { display:inline-block; min-width:45px; }
+.pedipalpus-dialog .pp-custom-frame-import { margin:6px 0; padding:5px 7px; border:1px solid var(--pp-border,#887857); border-radius:3px; }
+.pedipalpus-dialog .pp-custom-frame-import summary { cursor:pointer; font-size:12px; }
+.pedipalpus-dialog .pp-custom-frame-import label { margin-top:8px; }
+.pedipalpus-dialog .pp-custom-frame-hint { font-size:11px; }
+.pedipalpus-dialog [data-custom-frame-status]:empty { display:none; }

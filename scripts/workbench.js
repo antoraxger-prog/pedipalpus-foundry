@@ -1,4 +1,5 @@
 import { MODULE_ID } from './data.js';
+import {tokenStyles} from './custom-frames.js';
 
 const plain = value => value && typeof value === 'object' && !Array.isArray(value)
   && [Object.prototype, null].includes(Object.getPrototypeOf(value));
@@ -135,7 +136,7 @@ export function validateWorkbench(value) {
     animations: choices(source.animations, ['none', 'subtle', 'full'], 'subtle'),
     soundVersion: 1, sound: source.soundVersion === 1 ? source.sound !== false : true, volume: typeof source.volume === 'number' && Number.isFinite(source.volume) ? Math.max(0, Math.min(1, source.volume)) : 0.25,
     soundSet: choices(source.soundSet, ['theme', 'fantasy', 'ork', 'dark', 'light', 'dice'], 'theme'),
-    tokenFrame:choices(source.tokenFrame,['concrete','silver-thin','undead'],'concrete'),
+    tokenFrame:choices(source.tokenFrame,tokenStyles().map(([id])=>id),'concrete'),
     presets, followToken: source.followToken === true
   };
 }

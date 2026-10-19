@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 1.4.0
+# Pedipalpus – Proben · 1.5.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -170,12 +170,20 @@ Im Kampfbrett den **Fokus** zwischen DEF (links) und OFF (rechts) einstellen, vo
 
 Das kleine Profilbild oben links anklicken oder **Werkzeuge → Charakterbild importieren** öffnen. Ein vorhandenes Bild wird geladen; eine neue Bilddatei kann dort ebenfalls ausgewählt werden. In der runden Vorschau das Bild mit der Maus verschieben, bei Bedarf mit **Vergrößerung** näher heranholen. Alternativ die Pfeiltasten verwenden; mit Umschalt größere Schritte. **Ausschnitt zurücksetzen** stellt Mitte und Ausgangsgröße wieder her. Anschließend **Bild übernehmen** wählen.
 
-Der gewählte Ausschnitt samt Rahmen wird je Charakter in Foundry gespeichert, beim Wiederöffnen und beim Aktualisieren aus der JSON wieder verwendet. Das vollständige Originalbild bleibt erhalten; Token-Vorlage, bearbeitbare verknüpfte Tokens und das kleine Profilbild verwenden den runden Ausschnitt. Abbrechen verändert weder Bilder noch Einstellungen. Für Begleiter dieselbe Vorschau unter **Bild / Token** verwenden. Bereits in Foundry geänderte Bilder oder Begleiterzuordnungen müssen vor einer Übernahme erneut geöffnet werden. Der Ausschnitt wird nicht in die lokale Windows-Datei zurückgeschrieben.
+Der gewählte Ausschnitt samt Rahmen wird je Charakter in Foundry gespeichert, beim Wiederöffnen und beim Aktualisieren aus der JSON wieder verwendet. Das vollständige Originalbild bleibt erhalten; Token-Vorlage, bearbeitbare verknüpfte Tokens und das kleine Profilbild verwenden den runden Ausschnitt. Abbrechen verwirft Änderungen am Bildausschnitt. Bereits hinzugefügte eigene Rahmen bleiben in deiner Auswahl. Für Begleiter dieselbe Vorschau unter **Bild / Token** verwenden. Bereits in Foundry geänderte Bilder oder Begleiterzuordnungen müssen vor einer Übernahme erneut geöffnet werden. Der Ausschnitt wird nicht in die lokale Windows-Datei zurückgeschrieben.
 
 
 Pedipalpus speichert das Bild separat unter `CharacterPortraits`; die JSON enthält nur `PortraitFileName`. Beim Import **Pedipalpus-Ordner auswählen** und den Ordner mit `SavedCharacters` und `CharacterPortraits` freigeben. Nach der Charakterauswahl findet das Modul das zugehörige Bild automatisch. Alternativ JSON und Bild gemeinsam auswählen, ein Charakter-ZIP importieren oder ein manuelles Bild hinzufügen. Das Modul liest ausschließlich ausgewählte bzw. ausdrücklich freigegebene Dateien.
 
 PNG, JPG/JPEG, BMP und WebP bis 10 MB werden unterstützt. BMP wird für Foundry in PNG umgewandelt. Das vollständige Bild bleibt als Charakterportrait erhalten. Für die Token-Vorlage entsteht ein separates rundes PNG mit transparentem Außenbereich und dem ausgewählten Rahmen. Bearbeitbare verknüpfte Tokens erhalten dieses Tokenbild. Unverknüpfte Tokens und Tokens anderer Charaktere behalten ihre Bilder. Ohne Bildauswahl bleiben sämtliche bestehenden Bilder erhalten. Die Übernahme benötigt Foundry-Uploadrechte; fehlende Tokenrechte werden gemeldet. Die Bilder werden im Datenordner der Welt gespeichert und gehören nicht zum Modul-Release.
+
+## Eigene Tokenrahmen
+
+Im Bildeditor oder unter **Einstellungen → Eigenen Rahmen hinzufügen** eine transparente PNG- oder WebP-Datei auswählen. Auch rechteckige Vorlagen werden proportional übernommen. Der Rand muss geschlossen sein und eine transparente Mitte für das Charakterbild besitzen; außen bleibt das Token transparent. Unterstützt sind 16–2048 Pixel je Seite und Bilder bis 10 MB.
+
+Der Rahmen wird beim Hinzufügen dauerhaft für deinen Foundry-Benutzer in dieser Welt gespeichert und erscheint anschließend unter **Tokenrahmen**, auch für neue Charaktere, NSCs und Begleiter. Dieselbe Datei erneut hinzuzufügen erzeugt kein Duplikat. Das Hinzufügen ist unabhängig vom späteren Speichern oder Abbrechen des Bildausschnitts. Bis zu 50 eigene Rahmen können gespeichert werden. Zum Hochladen sind die üblichen Foundry-Uploadrechte nötig; ein Spielleiterkonto ist dafür nicht erforderlich.
+
+Bereits mit eigenen Rahmen erstellte Charaktere und Begleiter behalten die benötigten Bildverweise. Andere berechtigte Nutzer können deren Bildausschnitt daher ebenfalls weiterbearbeiten, auch wenn sie den Rahmen nicht in ihrer persönlichen Auswahl haben. Die bisherigen Concrete-, Silver-Thin- und Undead-Rahmen bleiben nutzbar. Eigene Rahmen werden auf dem Foundry-Server gespeichert und nicht in die lokale Pedipalpus-Datei oder auf GitHub übernommen.
 
 ## Werte aktualisieren
 

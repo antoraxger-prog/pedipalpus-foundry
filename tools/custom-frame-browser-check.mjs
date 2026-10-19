@@ -1,0 +1,74 @@
+import http from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
+import { fixture, combatFixture, retinueFixture, npcFixture } from '../tests/fixture.js';
+const require = createRequire(import.meta.url);
+const { chromium } = require(process.env.PEDIPALPUS_PLAYWRIGHT || 'playwright');
+const root = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
+const checksVersion = process.env.PEDIPALPUS_CHECKS_VERSION || '1.0.14';
+const pageHTML = `<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Pedipalpus – lokale Oberflächenprüfung</title><link rel="stylesheet" href="/styles/pedipalpus.css"><link rel="stylesheet" href="/styles/workbench.css"><link rel="stylesheet" href="/styles/feedback.css"><link rel="stylesheet" href="/styles/atmosphere.css"><style>body{background:#11151a;color:#f0eee9;font:14px system-ui;margin:0;padding:26px}#app{max-width:540px;margin:auto;border:1px solid #414751;border-radius:9px;overflow:hidden}.preview-label{max-width:540px;margin:0 auto 14px;color:#aaa;font-size:12px}#notice{margin:8px auto;max-width:540px}.mock-dialog{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(520px,90vw);max-height:80vh;overflow:auto;padding:24px;background:#272d34;border:1px solid #c9aa6e;box-shadow:0 12px 70px #000;border-radius:8px;z-index:99}.mock-dialog label{display:block}.mock-dialog button{margin:10px 5px;padding:8px}.mock-dialog input,.mock-dialog select{padding:8px;max-width:100%}.mock-dialog h2{font-size:20px}.mock-dialog footer{display:flex;justify-content:flex-end}</style><p class="preview-label">Pedipalpus 1.5.0 · Vorschau mit simulierter Foundry-Umgebung</p><main id="app"></main><div id="notice"></div><script>window.previewChecksVersion=${JSON.stringify(checksVersion)}</script><script type="module" src="/tools/browser-runtime.js"></script></html>`;
+const uploadedImages = new Map();
+const server = http.createServer(async (request, response) => {
+  try {
+    const url = new URL(request.url, 'http://localhost');
+    if(url.pathname==='/preview-upload' && request.method==='POST'){
+      const target=url.searchParams.get('path');if(!/^worlds\/test-world\/pedipalpus-portraits\/[a-f0-9]{64}\.png$/.test(target??''))throw new Error('Invalid upload');
+      const chunks=[];for await(const chunk of request)chunks.push(chunk);uploadedImages.set('/'+target,Buffer.concat(chunks));return response.end('Uploaded');
+    }
+    if(url.pathname==='/icons/svg/mystery-man.svg'){response.setHeader('Content-Type','image/svg+xml');return response.end('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#6e634c"/><circle cx="32" cy="23" r="12" fill="#d6c5a1"/><path d="M10 64V54c0-24 44-24 44 0v10" fill="#d6c5a1"/></svg>');}
+    if(uploadedImages.has(url.pathname)){response.setHeader('Content-Type','image/png');return response.end(uploadedImages.get(url.pathname));}
+    if (url.pathname === '/') { response.setHeader('Content-Type', 'text/html; charset=utf-8'); return response.end(pageHTML); }
+    let target;
+    if (url.pathname === '/checks-reference.js') target = fileURLToPath(new URL(`../../pedipalpus-checks/ucurifunke-v${checksVersion}/${checksVersion === '1.0.8' ? 'ucurifunke-checks/' : ''}scripts/ucurifunke-checks.js`, import.meta.url));
+    else { target = path.resolve(root, '.' + url.pathname); if (!target.startsWith(root + path.sep)) throw new Error('Invalid path'); }
+    response.setHeader('Content-Type', target.endsWith('.wav') ? 'audio/wav' : target.endsWith('.svg') ? 'image/svg+xml' : target.endsWith('.css') ? 'text/css' : 'text/javascript');
+    response.end(await fs.readFile(target));
+  } catch { response.statusCode = 404; response.end('Not found'); }
+});
+await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+let browser;
+try{
+ browser=await chromium.launch({headless:true,executablePath:process.env.PEDIPALPUS_BROWSER});const page=await browser.newPage({viewport:{width:1200,height:1000}}),errors=[];page.on('pageerror',error=>errors.push(error.message));page.setDefaultTimeout(10000);await page.goto(`http://127.0.0.1:${server.address().port}`);await page.waitForFunction(()=>window.previewReady);
+ const idle=()=>page.waitForFunction(()=>Array.from(foundry.applications.api.ApplicationV2.instances()).every(app=>!app.busy&&!app.referenceBusy));
+ const admin=async()=>{if(!await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();};
+ const prefs=async()=>{await admin();await page.locator('[data-action="preferences"]').click();};
+ const ready=action=>page.waitForFunction(action=>document.querySelector(`.mock-dialog [data-action="${action}"]`)?.disabled===false,action);
+ const raw=retinueFixture();const actorId=await page.evaluate(async raw=>{const {normalizeCharacter}=await import('/scripts/data.js');const actor=await foundry.documents.Actor.create({name:raw.Name,img:'icons/svg/mystery-man.svg',ownership:{player:3},prototypeToken:{actorLink:true},flags:{'pedipalpus-foundry':{character:{...normalizeCharacter(raw),sourceJSON:JSON.stringify(raw)}}}});await game.modules.get('pedipalpus-foundry').api.open(actor.id);return actor.id;},raw);
+ const images=await page.evaluate(()=>{
+  const frame=document.createElement('canvas');frame.width=600;frame.height=360;const ctx=frame.getContext('2d');ctx.strokeStyle='rgba(230,140,255,.9)';ctx.lineWidth=22;ctx.strokeRect(30,30,540,300);ctx.fillStyle='#ead2ff';for(const x of [30,570])for(const y of [30,330]){ctx.beginPath();ctx.arc(x,y,14,0,Math.PI*2);ctx.fill();}const framePng=frame.toDataURL('image/png').split(',')[1];
+  const opaque=document.createElement('canvas');opaque.width=opaque.height=100;const oc=opaque.getContext('2d');oc.fillStyle='#abcdef';oc.fillRect(0,0,100,100);
+  const portrait=document.createElement('canvas');portrait.width=600;portrait.height=360;const pc=portrait.getContext('2d');pc.fillStyle='#263b40';pc.fillRect(0,0,600,360);pc.fillStyle='#d6ad80';pc.beginPath();pc.ellipse(300,180,78,112,0,0,Math.PI*2);pc.fill();pc.fillStyle='#222';pc.fillRect(265,150,10,6);pc.fillRect(325,150,10,6);pc.fillRect(285,220,30,4);
+  return {frame:framePng,opaque:opaque.toDataURL('image/png').split(',')[1],portrait:portrait.toDataURL('image/png').split(',')[1]};
+ });
+ const frameFile={name:'Violetter Rechteckrahmen.png',mimeType:'image/png',buffer:Buffer.from(images.frame,'base64')},photo={name:'portrait.png',mimeType:'image/png',buffer:Buffer.from(images.portrait,'base64')};
+ await prefs();await page.locator('.pp-custom-frame-import > summary').click();await page.locator('[name="customFrameFile"]').setInputFiles(frameFile);await page.waitForFunction(()=>document.querySelector('[data-custom-frame-status]')?.textContent.includes('Rahmen gespeichert.'));
+ const id=await page.locator('[name="tokenFrame"]').inputValue();assert.match(id,/^custom-[a-f0-9]{64}$/);assert.equal(await page.evaluate(()=>game.user.isGM),false);assert.equal(await page.evaluate(()=>Object.keys(game.settings.get('pedipalpus-foundry','customTokenFrames')).length),1);
+ await page.locator('.mock-dialog [data-action="save"]').click();await idle();assert.equal(await page.evaluate(()=>Array.from(foundry.applications.api.ApplicationV2.instances())[0].preferences.tokenFrame),id);
+ console.log('PASS: A player with upload rights adds a transparent rectangular PNG in preferences; it becomes a saved selectable default.');
+ await page.locator('[data-action="portrait-edit"]').click();await page.locator('[name="portraitFile"]').setInputFiles(photo);await ready('image');assert.equal(await page.locator('[name="tokenFrame"]').inputValue(),id);
+ const pixels=await page.locator('.pp-crop-stage canvas').evaluate(c=>{const ctx=c.getContext('2d'),read=(x,y)=>Array.from(ctx.getImageData(x,y,1,1).data);return {outside:read(256,100),center:read(256,256),border:read(256,128),corner:read(485,380)};});
+ assert.equal(pixels.outside[3],0);assert.equal(pixels.center[3],255);assert.ok(pixels.border[0]>180&&pixels.border[2]>180&&pixels.border[3]>100);assert.ok(pixels.corner[3]>100,'A rectangular corner outside the old circle must remain visible');
+ await page.locator('.mock-dialog').screenshot({path:path.resolve(root,'../artifacts/eigene-rahmen-1.5.0.png')});await page.locator('.mock-dialog [data-action="image"]').click();await idle();
+ const stored=await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','portraitFraming'),actorId);assert.equal(stored.style,id);assert.equal(stored.frame.width,600);assert.equal(stored.frame.height,360);
+ console.log('PASS: Rectangle keeps its aspect ratio, purple frame colors and non-round corners; the center contains the portrait and the outer area remains transparent.');
+ await page.locator('[data-action="portrait-edit"]').click();await ready('image');await page.locator('.pp-custom-frame-import > summary').click();await page.locator('[name="customFrameFile"]').setInputFiles(frameFile);await page.waitForFunction(()=>document.querySelector('[data-custom-frame-status]')?.textContent.includes('Rahmen gespeichert:'));await ready('image');assert.equal(await page.evaluate(()=>Object.keys(game.settings.get('pedipalpus-foundry','customTokenFrames')).length),1);
+ const uploadCount=uploadedImages.size;await page.locator('[name="customFrameFile"]').setInputFiles({name:'opaque.png',mimeType:'image/png',buffer:Buffer.from(images.opaque,'base64')});await page.waitForFunction(()=>document.querySelector('[data-custom-frame-status]')?.textContent.includes('transparente Mitte'));await ready('image');assert.equal(uploadedImages.size,uploadCount);assert.equal(await page.locator('[name="tokenFrame"]').inputValue(),id);await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();
+ console.log('PASS: Re-adding the same image reuses the saved frame; an opaque invalid image uploads nothing and leaves the previous frame usable.');
+ const data=await page.evaluate(id=>JSON.parse(JSON.stringify(game.actors.get(id))),actorId);await page.reload();await page.waitForFunction(()=>window.previewReady);await prefs();assert.equal(await page.locator('[name="tokenFrame"]').inputValue(),id);assert.equal(await page.locator(`[name="tokenFrame"] option[value="${id}"]`).count(),1);await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();
+ const restored=await page.evaluate(async data=>{const actor=await foundry.documents.Actor.create(data);await game.modules.get('pedipalpus-foundry').api.open(actor.id);return actor.id;},data);
+ await page.locator('[data-action="portrait-edit"]').click();await ready('image');assert.equal(await page.locator('[name="tokenFrame"]').inputValue(),id);await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();
+ console.log('PASS: Saved custom frame and default survive a browser reload and restore with the actor portrait.');
+ await page.evaluate(async()=>{game.user.id='other-player';const {loadWorkbench}=await import('/scripts/workbench.js');for(const app of foundry.applications.api.ApplicationV2.instances()){app.preferences=loadWorkbench();await app.render({force:true});}});
+ assert.equal(await page.evaluate(()=>Object.keys(game.settings.get('pedipalpus-foundry','customTokenFrames')).length),0);await page.locator('[data-action="portrait-edit"]').click();await ready('image');assert.equal(await page.locator('[name="tokenFrame"]').inputValue(),id);await page.locator('[name="portraitZoom"]').evaluate(el=>{el.value='1.2';el.dispatchEvent(new Event('input',{bubbles:true}));});await page.locator('.mock-dialog [data-action="image"]').click();await idle();assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','portraitFraming').frame.id,restored),id);
+ console.log('PASS: Frame library is personal; another owner can still open and adjust an existing token because its saved framing includes the required frame metadata.');
+ await page.evaluate(async()=>{game.user.id='player';const {loadWorkbench}=await import('/scripts/workbench.js');for(const app of foundry.applications.api.ApplicationV2.instances()){app.preferences=loadWorkbench();await app.render({force:true});}});
+ await page.locator('[data-action="battle"]').click();await page.locator('[name="category"]').selectOption('animals');await page.locator('.pp-companion-section:not([hidden]) > summary').click();await page.locator('[data-action="animal-portrait"][data-animal="0"]').click();await page.locator('[name="portraitFile"]').setInputFiles(photo);await ready('animal-image');assert.equal(await page.locator('[name="tokenFrame"]').inputValue(),id);await page.locator('.mock-dialog [data-action="animal-image"]').click();await idle();assert.equal(await page.evaluate(parent=>game.actors.contents.find(a=>a.getFlag('pedipalpus-foundry','companion')?.sourceActorId===parent).getFlag('pedipalpus-foundry','portraitFraming').frame.id,restored),id);
+ console.log('PASS: A saved custom rectangular frame is also available for companion token creation.');
+ await admin();await page.locator('[data-action="import"]').click();assert.equal(await page.locator(`[name="tokenFrame"] option[value="${id}"]`).count(),1);await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();
+ const webp=await page.evaluate(async data=>{const bitmap=await createImageBitmap(await(await fetch('data:image/png;base64,'+data)).blob()),c=document.createElement('canvas');c.width=bitmap.width;c.height=bitmap.height;c.getContext('2d').drawImage(bitmap,0,0);bitmap.close();return c.toDataURL('image/webp').split(',')[1];},images.frame);
+ await page.locator('[data-action="portrait-edit"]').click();await ready('image');await page.locator('.pp-custom-frame-import > summary').click();await page.locator('[name="customFrameFile"]').setInputFiles({name:'WebP Rahmen.webp',mimeType:'image/webp',buffer:Buffer.from(webp,'base64')});await page.waitForFunction(()=>document.querySelector('[data-custom-frame-status]')?.textContent.includes('Rahmen gespeichert:'));await ready('image');const webpId=await page.locator('[name="tokenFrame"]').inputValue();assert.notEqual(webpId,id);await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();assert.equal(await page.evaluate(()=>Object.keys(game.settings.get('pedipalpus-foundry','customTokenFrames')).length),2);assert.equal(await page.evaluate(parent=>game.actors.get(parent).getFlag('pedipalpus-foundry','portraitFraming').style,restored),id);
+ console.log('PASS: Custom frames appear in character import; transparent WebP is supported and an explicitly added frame remains saved even if portrait editing is cancelled.');assert.deepEqual(errors,[]);
+}finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

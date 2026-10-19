@@ -14,9 +14,9 @@ import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
 import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices,withCompanionImport } from './retinue.js';
 import { companionEntries,companionKey,companionActor,saveCompanion,companionTargetState,prepareCompanionImport,verifyCompanionImport,applyCompanionImport } from './companions.js';
 import { characterFiles, readCharacterWithPortrait } from './character-folder.js';
-import { TOKEN_STYLES, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames, savedPortraitFraming, portraitFromActor } from './tokens.js';
+import { tokenStyles, importCustomFrame, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames, savedPortraitFraming, portraitFromActor } from './tokens.js';
 import { writeCharacterBundle } from './bundle.js';
-import {PortraitEditor,portraitEditorHTML} from './portrait-editor.js';
+import {PortraitEditor,portraitEditorHTML,customFrameImportHTML,fillFrameOptions} from './portrait-editor.js';
 import { checkDisplayName } from './ork-talents.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
@@ -419,8 +419,8 @@ export class PedipalpusApp extends ApplicationV2 {
       ${row('Animationen',select('animations',[['none','Aus'],['subtle','Dezent'],['full','Lebendig']]))}
       ${row('Soundeffekte',`<input name="sound" type="checkbox" ${draft.sound?'checked':''}>`)}
       ${row('Lautstärke',`<span><input name="volume" type="range" min="0" max="1" step="0.05" value="${draft.volume}"><output data-volume>${Math.round(draft.volume*100)}%</output></span>`)}
-      ${row('Tokenrahmen',select('tokenFrame',TOKEN_STYLES))}
-      <button type="button" data-token-refresh>${t('Token aktualisieren')}</button>
+      ${row('Tokenrahmen',select('tokenFrame',tokenStyles()))}
+      ${customFrameImportHTML()}<button type="button" data-token-refresh>${t('Token aktualisieren')}</button>
       ${game.user.isGM?`<label>${t('Originalrahmen importieren')}<input name="tokenFramesZip" type="file" accept=".zip"></label>`:''}<p data-frame-status role="status"></p>
       ${row('Klangset',select('soundSet',[['theme','Passend zum Design'],['fantasy','Fantasy'],['ork','Ork'],['dark','Neutral']]))}
       <button type="button" data-sound-preview>${t('Rastklang anhören')}</button><p data-sound-status role="status" hidden></p>
@@ -437,8 +437,15 @@ export class PedipalpusApp extends ApplicationV2 {
       }},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
       render:(_event,dialog)=>{
         const frameStatus=dialog.element.querySelector('[data-frame-status]');
+        dialog.element.querySelector('[name="customFrameFile"]').addEventListener('change',async event=>{
+          const field=event.target;if(!field.files?.[0])return;field.disabled=true;const save=dialog.element.querySelector('[data-action="save"]'),refresh=dialog.element.querySelector('[data-token-refresh]');save.disabled=refresh.disabled=true;
+          const status=dialog.element.querySelector('[data-custom-frame-status]');status.textContent=this.t('Rahmen wird gespeichert …');
+          try{const frame=await importCustomFrame(field.files[0]);if(dialog.element.isConnected){fillFrameOptions(dialog.element.querySelector('[name="tokenFrame"]'),frame.id,frame);status.textContent=`${this.t('Rahmen gespeichert.')} ${frame.name}`;}}
+          catch(error){if(dialog.element.isConnected)status.textContent=this.t(error.message);}
+          finally{if(dialog.element.isConnected){field.disabled=false;save.disabled=refresh.disabled=false;}}
+        });
         dialog.element.querySelector('[name="tokenFramesZip"]')?.addEventListener('change',async event=>{const field=event.target;field.disabled=true;try{await importTokenFrames(field.files?.[0]);frameStatus.textContent=this.t('Originalrahmen importiert.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{field.disabled=false;}});
-        dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,actor.img,message=>this.notify('warn',message),await uploadPortrait(framed.token),framingFor(framed));frameStatus.textContent=this.t('Rundes Token erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
+        dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,actor.img,message=>this.notify('warn',message),await uploadPortrait(framed.token),framingFor(framed));frameStatus.textContent=this.t('Tokenbild erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
         const host=dialog.element.querySelector('.pp-favorite-editor');
         const update=()=>{host.innerHTML=(draft.favorites[this.actorId] || []).map((ref,index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`;};
         update();
@@ -756,7 +763,7 @@ export class PedipalpusApp extends ApplicationV2 {
     let editor;
     const saved=savedPortraitFraming(actor),initialStyle=saved?.style??style;
     try{return await DialogV2.wait({window:{title:this.t(title)},classes:this.dialogClasses,position:{width:450},modal:true,rejectClose:false,
-      content:portraitEditorHTML(initialStyle),buttons:[{action,label:this.t(label),disabled:true,callback:()=>editor.value()},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      content:portraitEditorHTML(initialStyle,saved?.frame),buttons:[{action,label:this.t(label),disabled:true,callback:()=>editor.value()},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
       render:(_event,dialog)=>{
         localizeDialog(dialog.element,this.theme);
         editor=new PortraitEditor(dialog.element,{style:initialStyle,crop:saved??undefined,onState:({ready,message})=>{dialog.element.querySelector(`[data-action="${action}"]`).disabled=!ready;if(message)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(message);}});

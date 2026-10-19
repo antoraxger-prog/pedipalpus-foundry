@@ -44,7 +44,7 @@ export async function uploadPortrait(prepared) {
   return result.path;
 }
 
-export const framingFor=portrait=>portrait?.tokenCrop?{x:portrait.tokenCrop.x,y:portrait.tokenCrop.y,zoom:portrait.tokenCrop.zoom,style:portrait.tokenStyle}:null;
+export const framingFor=portrait=>portrait?.tokenCrop?{x:portrait.tokenCrop.x,y:portrait.tokenCrop.y,zoom:portrait.tokenCrop.zoom,style:portrait.tokenStyle,...(portrait.tokenFrame?{frame:portrait.tokenFrame}:{})}:null;
 
 export async function applyPortrait(actor, path, warn = message => ui.notifications.warn(message), tokenPath = path, framing = null) {
   if (!actor?.canUserModify(game.user,'update')) throw new Error('Zum Bildimport benötigst du Besitzerrechte auf diesem Charakter.');
