@@ -168,3 +168,11 @@
 .pedipalpus-dialog .pp-import-toggle input { flex: 0 0 auto; margin: 0; }
 .pedipalpus-dialog [data-companion-import-options] { display: grid; gap: 5px; max-height: 220px; overflow-y: auto; border: 1px solid var(--pp-border,#967f55); padding: 7px; }
 .pedipalpus-dialog [data-companion-import-options]:empty { display: none; }
+.pedipalpus-app .pp-root button.pp-portrait-trigger { width:36px; min-width:36px; height:36px; min-height:36px; padding:0; border:0; background:transparent; box-shadow:none; }
+.pedipalpus-app .pp-portrait-trigger .pp-portrait-medallion { display:block; }
+.pedipalpus-dialog .pp-crop-stage { width:min(256px,100%); aspect-ratio:1; margin:10px auto; border:1px solid var(--pp-border,#887857); border-radius:5px; overflow:hidden; background:repeating-conic-gradient(#353535 0 25%,#454545 0 50%) 0 / 16px 16px; }
+.pedipalpus-dialog .pp-crop-stage canvas { display:block; width:100%; height:100%; cursor:grab; touch-action:none; }
+.pedipalpus-dialog .pp-crop-stage canvas.pp-dragging { cursor:grabbing; }
+.pedipalpus-dialog .pp-crop-stage canvas:focus-visible { outline:2px solid var(--pp-accent,#bd9b53); outline-offset:-3px; }
+.pedipalpus-dialog .pp-portrait-editor input[type="range"] { width:100%; }
+.pedipalpus-dialog .pp-portrait-editor [data-crop-zoom] { display:inline-block; min-width:45px; }

@@ -1,5 +1,7 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Bildausschnitt bearbeiten':'Gesicht richtig hin', 'Bild auswählen oder vorhandenes Bild ausrichten.':'Neues Gesicht wählen. Oder altes schieben.', 'Bild im Rahmen ziehen. Zum Vergrößern den Regler verwenden.':'Gesicht im Ring schieben. Regler macht größer.', 'Vergrößerung':'Größer machen', 'Ausschnitt zurücksetzen':'Gesicht wieder Mitte', 'Bild wird geladen …':'Gesicht kommt …', 'Bildausschnitt. Bild mit der Maus verschieben oder Pfeiltasten verwenden.':'Gesicht schieben. Maus oder Pfeiltasten nehmen.',
+
   'Bilder übernehmen':'Gesichter mitnehmen', 'Begleiter übernehmen':'Freunde mitnehmen', 'Spieler zuweisen':'Wem gehört das?', 'Bisherige Rechte behalten':'Gehört weiter denen', 'Keinen Token ändern':'Figur lassen', 'Neuen Token-Eintrag anlegen':'Neue Figur machen', 'Keine Begleiter in dieser Datei.':'Keine Freunde auf Blatt.', 'Ohne Begleiterimport bleiben bisherige Begleiter und ihre Tokens unverändert.':'Freunde nicht holen? Alte Freunde bleiben wie sind.', 'Der Spieler erhält Besitzerrechte am Charakter und an den ausgewählten Begleiter-Einträgen. Bestehende Rechte bleiben erhalten.':'Spieler kriegt Blatt und gewählte Freunde. Alte Besitzer bleiben.',
 
   'Pedipalpus-Charakterdatei':'Dein Pedipalpus-Blatt',

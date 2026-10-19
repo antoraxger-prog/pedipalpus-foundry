@@ -5,17 +5,18 @@ import { connectionStatus, executeCheck } from './commands.js';
 import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment } from './storage.js';
 import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, checksForView } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
-import { preparePortrait, uploadPortrait, applyPortrait } from './portraits.js';
+import { preparePortrait, uploadPortrait, applyPortrait, framingFor } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
 import { uiText, localizeSurface, localizeDialog } from './language.js';
 import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
 import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices,withCompanionImport } from './retinue.js';
-import { companionEntries,companionKey,companionActor,saveCompanion,prepareCompanionImport,verifyCompanionImport,applyCompanionImport } from './companions.js';
+import { companionEntries,companionKey,companionActor,saveCompanion,companionTargetState,prepareCompanionImport,verifyCompanionImport,applyCompanionImport } from './companions.js';
 import { characterFiles, readCharacterWithPortrait } from './character-folder.js';
-import { TOKEN_STYLES, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames } from './tokens.js';
+import { TOKEN_STYLES, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames, savedPortraitFraming, portraitFromActor } from './tokens.js';
 import { writeCharacterBundle } from './bundle.js';
+import {PortraitEditor,portraitEditorHTML} from './portrait-editor.js';
 import { checkDisplayName } from './ork-talents.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
@@ -322,7 +323,7 @@ export class PedipalpusApp extends ApplicationV2 {
       if (button.dataset.action === 'refresh') await this.refreshCharacter();
       if (button.dataset.action === 'import') await this.importCharacter();
       if (button.dataset.action === 'animal-portrait') await this.importAnimalPortrait(button);
-      if (button.dataset.action === 'portrait') await this.importPortrait();
+      if (['portrait','portrait-edit'].includes(button.dataset.action)) await this.importPortrait();
       if (button.dataset.action === 'administration') { this.administration=!this.administration;await this.render({force:true});if(this.administration&&this.preferences.animations!=='none')this.element.querySelector('.pp-administration')?.classList.add('pp-tools-opening'); }
       if (button.dataset.action === 'preferences') await this.preferencesDialog();
       if (button.dataset.action === 'presets') await this.presetsDialog();
@@ -376,7 +377,7 @@ export class PedipalpusApp extends ApplicationV2 {
         if (['battle','ring','full','administration','preferences','presets','favorite','breakdown'].includes(field.dataset.action)) field.disabled=false;
         if (field.dataset.action==='roll') { const status=connectionStatus(),check=getCharacter(this.actor)?.checks.find(check=>check.id===field.dataset.check);field.disabled=!this.actor?.isOwner || !status.ready || status.directReady===false || check?.kind==='combat' && status.combatReady===false; }
         if (field.dataset.action==='import') field.disabled=!(visibleActors().some(actor=>actor.canUserModify(game.user,'update')) || foundry.documents.Actor.canUserCreate(game.user));
-        if (field.dataset.action==='portrait') field.disabled=!this.actor?.isOwner;
+        if (['portrait','portrait-edit'].includes(field.dataset.action)) field.disabled=!this.actor?.isOwner;
         if (field.dataset.action==='animal-portrait') field.disabled=!this.actor?.isOwner||!field.dataset.animalKey;
         if (field.dataset.action==='refresh') field.disabled=!this.actor?.isOwner||!getCharacter(this.actor)?.sourceJSON;
         if (field.dataset.action==='preset') field.disabled=!this.actor?.isOwner;
@@ -437,7 +438,7 @@ export class PedipalpusApp extends ApplicationV2 {
       render:(_event,dialog)=>{
         const frameStatus=dialog.element.querySelector('[data-frame-status]');
         dialog.element.querySelector('[name="tokenFramesZip"]')?.addEventListener('change',async event=>{const field=event.target;field.disabled=true;try{await importTokenFrames(field.files?.[0]);frameStatus.textContent=this.t('Originalrahmen importiert.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{field.disabled=false;}});
-        dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,actor.img,message=>this.notify('warn',message),await uploadPortrait(framed.token));frameStatus.textContent=this.t('Rundes Token erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
+        dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,actor.img,message=>this.notify('warn',message),await uploadPortrait(framed.token),framingFor(framed));frameStatus.textContent=this.t('Rundes Token erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
         const host=dialog.element.querySelector('.pp-favorite-editor');
         const update=()=>{host.innerHTML=(draft.favorites[this.actorId] || []).map((ref,index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`;};
         update();
@@ -689,7 +690,7 @@ export class PedipalpusApp extends ApplicationV2 {
   }
   async acceptImport(answer) {
     if (!answer?.snapshot) return;
-    const previous=getCharacter(game.actors.get(answer.actorId));
+    const importActor=game.actors.get(answer.actorId),previous=getCharacter(importActor),previousFraming=savedPortraitFraming(importActor),portraitExpected=importActor?JSON.stringify({img:importActor.img,framing:importActor.getFlag(MODULE_ID,'portraitFraming')}):undefined;
     const includeCompanions=answer.includeCompanions??true,includeImages=answer.includeImages??true;
     ownerAssignment(answer.ownerId);
     answer.snapshot=retainNpcChoices(previous,answer.snapshot);
@@ -709,9 +710,9 @@ export class PedipalpusApp extends ApplicationV2 {
         if(accepted.keepFocus)answer.snapshot=withFocus(answer.snapshot,characterFocus(previous));
       }
     }
-    if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame);
+    if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame,previousFraming??undefined);
     if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
-    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId});
+    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId,portraitExpected});
     if(includeCompanions)await applyCompanionImport(actor,plan,{includeImages,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
     this.selectActor(actor.id);
     await this.persist({...this.preferences,actorId:actor.id,category:'all'});
@@ -726,7 +727,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const source=await importSource(actor.id);if(!source?.fileHandle)return this.importCharacter();
     let imported;try{imported=await readLiveSource(source,{includePortrait:source.includeImages??true});}catch(error){this.notify('warn',this.t(error.message||'Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.'));return this.importCharacter();}
     const snapshot=parseCharacter(imported.json);snapshot.sourceJSON=imported.json;
-    return this.acceptImport({snapshot,includeImages:source.includeImages??true,includeCompanions:source.includeCompanions??getCharacter(actor)?.retinueImportEnabled??true,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:source.tokenFrame??this.preferences.tokenFrame,source});
+    return this.acceptImport({snapshot,includeImages:source.includeImages??true,includeCompanions:source.includeCompanions??getCharacter(actor)?.retinueImportEnabled??true,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:savedPortraitFraming(actor)?.style??source.tokenFrame??this.preferences.tokenFrame,source});
   }
   async configureCompanionAbility(actor,check){
     const character=getCharacter(actor),expected=JSON.stringify(character),root=Boolean(check.npcChoice);
@@ -751,45 +752,37 @@ export class PedipalpusApp extends ApplicationV2 {
     if(!root||check.npcChoice.remember)await actor.setFlag(MODULE_ID,'character',updated);
     return {...updated.checks.find(entry=>entry.id===check.id),name};
   }
-  async importPortrait() {
-    const actor = this.actor;
-    if (!actor?.canUserModify(game.user,'update')) throw new Error('Bitte einen eigenen Foundry-Charakter auswählen.');
-    let portrait = null;
-    let sequence = 0;
-    const answer = await DialogV2.wait({window:{title:this.t('Charakterbild importieren')},classes:this.dialogClasses,position:{width:450},rejectClose:false,
-      content:'<label>Bilddatei<input name="portraitFile" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><p class="pp-portrait-preview">Bild bis 10 MB auswählen. Das Bild wird für Charakter, Token-Vorlage und bearbeitbare verknüpfte Tokens übernommen.</p>',
-      buttons:[{action:'image',label:this.t('Bild übernehmen'),disabled:true,callback:() => portrait},{action:'cancel',label:this.t('Abbrechen'),callback:() => null}],
-      render:(_event,dialog) => {
+  async editPortrait(actor,{title='Charakterbild importieren',style=this.preferences.tokenFrame,action='image',label='Bild übernehmen'}={}){
+    let editor;
+    const saved=savedPortraitFraming(actor),initialStyle=saved?.style??style;
+    try{return await DialogV2.wait({window:{title:this.t(title)},classes:this.dialogClasses,position:{width:450},modal:true,rejectClose:false,
+      content:portraitEditorHTML(initialStyle),buttons:[{action,label:this.t(label),disabled:true,callback:()=>editor.value()},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      render:(_event,dialog)=>{
         localizeDialog(dialog.element,this.theme);
-        dialog.element.querySelector('[name="portraitFile"]').addEventListener('change',async event => {
-          const read = ++sequence;
-          portrait = null;
-          const submit = dialog.element.querySelector('[data-action="image"]'); submit.disabled = true;
-          try {
-            const image = await preparePortrait(event.target.files?.[0]);
-            if (read !== sequence) return;
-            portrait = image; submit.disabled = false;
-            dialog.element.querySelector('.pp-portrait-preview').textContent = this.t(`Bild ausgewählt: ${event.target.files[0].name}`);
-          } catch(error) { if (read === sequence) dialog.element.querySelector('.pp-portrait-preview').textContent = this.t(error.message); }
-        });
+        editor=new PortraitEditor(dialog.element,{style:initialStyle,crop:saved??undefined,onState:({ready,message})=>{dialog.element.querySelector(`[data-action="${action}"]`).disabled=!ready;if(message)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(message);}});
+        if(actor?.img&&!actor.img.endsWith('mystery-man.svg'))editor.load(()=>portraitFromActor(actor),saved??undefined);
+        else editor.state(false,this.t('Bitte ein Bild auswählen.'));
       }});
-    if (!answer) return;
-    const framed=await prepareTokenPortrait(answer,this.preferences.tokenFrame);
-    await applyPortrait(actor,await uploadPortrait(framed),message => this.notify('warn',message),await uploadPortrait(framed.token));
-    this.notify('info', 'Charakter- und Tokenbild übernommen.');
+    }finally{editor?.destroy();}
   }
-  async importAnimalPortrait(button) {
+  async importPortrait(){
+    const actor=this.actor;if(!actor?.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Bitte einen eigenen Foundry-Charakter auswählen.');
+    const expected=JSON.stringify({img:actor.img,framing:actor.getFlag(MODULE_ID,'portraitFraming')}),answer=await this.editPortrait(actor);
+    if(!answer)return;
+    const verify=()=>{if(!actor.isOwner||!actor.canUserModify(game.user,'update')||JSON.stringify({img:actor.img,framing:actor.getFlag(MODULE_ID,'portraitFraming')})!==expected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte erneut öffnen.');};
+    verify();const framed=await prepareTokenPortrait(answer.portrait,answer.style,answer.crop),image=await uploadPortrait(framed),token=await uploadPortrait(framed.token);verify();
+    await applyPortrait(actor,image,message=>this.notify('warn',message),token,framingFor(framed));
+    this.notify('info','Charakter- und Tokenbild übernommen.');
+  }
+  async importAnimalPortrait(button){
     const source=this.actor,index=Number(button.dataset.animal),character=getCharacter(source),key=companionKey(character,index);
     if(button.dataset.animalKey!==key)throw new Error('Das Gefolgsmitglied wurde inzwischen geändert. Bitte erneut auswählen.');
-    const animal=companionEntries(character)[index],existing=source.getFlag(MODULE_ID,'companion')?.sourceActorId?source:companionActor(source.id,key),selected=existing?.getFlag(MODULE_ID,'companion')?.tokenStyle||this.preferences.tokenFrame;
-    let portrait=null,sequence=0;
-    const answer=await DialogV2.wait({window:{title:`${animal.Name} · ${this.t('Bild / Token')}`},classes:this.dialogClasses,position:{width:450},modal:true,rejectClose:false,
-      content:`<label>${escapeHTML(this.t('Bild'))}<input type="file" name="portraitFile" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><label>${escapeHTML(this.t('Tokenrahmen'))}<select name="tokenFrame">${TOKEN_STYLES.map(([style,label])=>`<option value="${style}" ${style===selected?'selected':''}>${label}</option>`).join('')}</select></label><p class="pp-portrait-preview">${escapeHTML(this.t(existing?'Vorhandenes Bild wird verwendet.':'Bitte ein Bild auswählen.'))}</p>`,
-      buttons:[{action:'animal-image',label:this.t('Token erstellen'),disabled:!existing,callback:(_event,_button,dialog)=>({portrait,style:dialog.element.querySelector('[name="tokenFrame"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
-      render:(_event,dialog)=>{dialog.element.querySelector('[name="portraitFile"]').addEventListener('change',async event=>{const read=++sequence,submit=dialog.element.querySelector('[data-action="animal-image"]');portrait=null;submit.disabled=true;try{const prepared=await preparePortrait(event.target.files?.[0]);if(read!==sequence)return;portrait=prepared;submit.disabled=false;dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${prepared.file.name}`);}catch(error){if(read===sequence)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(error.message);}});}});
+    const animal=companionEntries(character)[index],existing=source.getFlag(MODULE_ID,'companion')?.sourceActorId?source:companionActor(source.id,key),style=existing?.getFlag(MODULE_ID,'companion')?.tokenStyle||this.preferences.tokenFrame;
+    const expected=JSON.stringify({img:existing?.img,framing:existing?.getFlag(MODULE_ID,'portraitFraming')}),expectedTarget={id:existing?.id,state:companionTargetState(existing),source:JSON.stringify(character)},answer=await this.editPortrait(existing,{title:`${animal.Name} · ${this.t('Bild / Token')}`,style,action:'animal-image',label:'Token erstellen'});
     if(!answer)return;
-    const framed=answer.portrait?await prepareTokenPortrait(answer.portrait,answer.style):await tokenFromActor(existing,answer.style);
-    await saveCompanion(source,index,key,framed,message=>this.notify('warn',message));
+    if(JSON.stringify({img:existing?.img,framing:existing?.getFlag(MODULE_ID,'portraitFraming')})!==expected)throw new Error('Das Gefolgsbild wurde inzwischen geändert. Bitte erneut öffnen.');
+    const framed=await prepareTokenPortrait(answer.portrait,answer.style,answer.crop);
+    await saveCompanion(source,index,key,framed,message=>this.notify('warn',message),expectedTarget);
     this.notify('info',`${animal.Name}: ${this.t('Token erstellt. Aus dem Charakterverzeichnis auf die Karte ziehen.')}`);
   }
   async linkSelectedToken() {

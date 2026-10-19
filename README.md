@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 1.3.1
+# Pedipalpus – Proben · 1.4.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -167,6 +167,11 @@ Die Auswertung erfolgt über Ucurifunke – Proben 1.0.14. Dessen Kampfregeln un
 Im Kampfbrett den **Fokus** zwischen DEF (links) und OFF (rechts) einstellen, von −4 bis +4 wie in Pedipalpus. Angriff und Parade ändern sich sofort gegensinnig; Fernkampf, sämtliche Gefolgsproben und Talentstärken bleiben gleich. Der Fokus wird am Foundry-Charakter gespeichert und gilt bis zur nächsten Änderung. Besitzer dürfen ihn ändern, Beobachter können ihn sehen. Vorhandene Kampfimporte ab 0.7.0 sind direkt nutzbar. Ein neuer JSON-Import übernimmt wieder den Fokus aus der importierten Datei. Die lokale Windows-Datei wird nicht verändert.
 
 ## Charakter- und Tokenbilder
+
+Das kleine Profilbild oben links anklicken oder **Werkzeuge → Charakterbild importieren** öffnen. Ein vorhandenes Bild wird geladen; eine neue Bilddatei kann dort ebenfalls ausgewählt werden. In der runden Vorschau das Bild mit der Maus verschieben, bei Bedarf mit **Vergrößerung** näher heranholen. Alternativ die Pfeiltasten verwenden; mit Umschalt größere Schritte. **Ausschnitt zurücksetzen** stellt Mitte und Ausgangsgröße wieder her. Anschließend **Bild übernehmen** wählen.
+
+Der gewählte Ausschnitt samt Rahmen wird je Charakter in Foundry gespeichert, beim Wiederöffnen und beim Aktualisieren aus der JSON wieder verwendet. Das vollständige Originalbild bleibt erhalten; Token-Vorlage, bearbeitbare verknüpfte Tokens und das kleine Profilbild verwenden den runden Ausschnitt. Abbrechen verändert weder Bilder noch Einstellungen. Für Begleiter dieselbe Vorschau unter **Bild / Token** verwenden. Bereits in Foundry geänderte Bilder oder Begleiterzuordnungen müssen vor einer Übernahme erneut geöffnet werden. Der Ausschnitt wird nicht in die lokale Windows-Datei zurückgeschrieben.
+
 
 Pedipalpus speichert das Bild separat unter `CharacterPortraits`; die JSON enthält nur `PortraitFileName`. Beim Import **Pedipalpus-Ordner auswählen** und den Ordner mit `SavedCharacters` und `CharacterPortraits` freigeben. Nach der Charakterauswahl findet das Modul das zugehörige Bild automatisch. Alternativ JSON und Bild gemeinsam auswählen, ein Charakter-ZIP importieren oder ein manuelles Bild hinzufügen. Das Modul liest ausschließlich ausgewählte bzw. ausdrücklich freigegebene Dateien.
 

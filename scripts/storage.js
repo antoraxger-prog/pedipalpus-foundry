@@ -1,5 +1,5 @@
 import { MODULE_ID, FLAG, validSnapshot,normalizeCharacter } from './data.js';
-import { uploadPortrait, applyPortrait } from './portraits.js';
+import { uploadPortrait, applyPortrait, framingFor } from './portraits.js';
 import { withArmorState } from './equipment.js';
 import { isCompanionCheck,COMPANION_GROUPS } from './retinue.js';
 import { withFocus } from './combat.js';
@@ -42,7 +42,7 @@ export async function assignOwner(actor,ownerId=''){
  if(ownerId)await actor.update(Object.fromEntries(Object.entries(ownership).map(([id,level])=>[`ownership.${id}`,level])));
 }
 
-export async function saveCharacter(snapshot, actorId = null, portrait = null, warn,expected,{ownerId=''}={}) {
+export async function saveCharacter(snapshot, actorId = null, portrait = null, warn,expected,{ownerId='',portraitExpected}={}) {
   const ownership=ownerAssignment(ownerId);
   if (!validSnapshot(snapshot)) throw new Error('Die importierten Charakterdaten sind unvollständig.');
   if (game.system.id !== 'worldbuilding') throw new Error('Diese erste Version unterstützt Simple Worldbuilding.');
@@ -51,6 +51,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     if (!actor?.canUserModify(game.user, 'update')) throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
     const verify=()=>{
       const current=getCharacter(actor);
+      if(portrait&&portraitExpected!==undefined&&JSON.stringify({img:actor.img,framing:actor.getFlag(MODULE_ID,'portraitFraming')})!==portraitExpected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte den Import erneut öffnen.');
       if(actor.getFlag(MODULE_ID,'companion')?.sourceActorId)throw new Error('Ein verknüpfter Begleiter kann nicht als Hauptcharakter überschrieben werden. Bitte einen neuen Eintrag anlegen.');
       if(current&&(current.sourceFormat??'character')!==(snapshot.sourceFormat??'character'))throw new Error('Charakter- und NSC-Import dürfen einander nicht überschreiben. Bitte einen passenden oder neuen Foundry-Eintrag wählen.');
       if(expected!==undefined&&JSON.stringify(current)!==expected)throw new Error('Die Foundry-Daten wurden inzwischen geändert. Bitte den Import erneut vergleichen.');
@@ -62,7 +63,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     // Andere Flags, Foundry-Werte, Besitzerrechte und die Actor-ID bleiben erhalten.
     verify();
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
-    if (image) await applyPortrait(actor,image,warn,tokenImage);
+    if (image) await applyPortrait(actor,image,warn,tokenImage,framingFor(portrait));
     await assignOwner(actor,ownerId);
     return actor;
   }
@@ -73,7 +74,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     name: snapshot.profile.name, type: 'character', img: image || 'icons/svg/mystery-man.svg',
     ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,...ownership },
     prototypeToken: { name: snapshot.profile.name, actorLink: true, ...(image ? {texture:{src:tokenImage}} : {}) },
-    flags: { [MODULE_ID]: { [FLAG]: snapshot } }
+    flags: { [MODULE_ID]: { [FLAG]: snapshot,...(framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{}) } }
   });
 }
 
