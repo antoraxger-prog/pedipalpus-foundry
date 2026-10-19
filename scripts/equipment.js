@@ -1,5 +1,7 @@
 import { normalizeCharacter } from './data.js';
 import { characterFocus } from './combat.js';
+import { NPC_FORMAT,mapNpcFile,retainNpcChoices } from './npc.js';
+import { retainCompanionChoices } from './retinue.js';
 
 const list=value=>Array.isArray(value)?value.filter(item=>item&&typeof item==='object'):[];
 const finite=value=>typeof value==='number'&&Number.isFinite(value)?value:0;
@@ -11,6 +13,7 @@ export function equipmentSource(character) {
   return JSON.parse(character.sourceJSON.replace(/^\uFEFF/,''));
 }
 export function armorItems(character) {
+  if(character?.sourceFormat===NPC_FORMAT)return (character.equipment??[]).filter(item=>item.id?.startsWith('Armors:')).map(item=>({...item,carried:null}));
   try { return list(equipmentSource(character).Armors).map((item,index)=>({id:`Armors:${index}`,name:String(item.Name??''),armor:item.Protection,penalty:item.MobilityPenalty,basePenalty:item.BaseMobilityPenalty,carried:carried(item),equipped:item.IsEquiped===true,carrierAnimalId:String(item.CarrierAnimalId??'')})); }
   catch { return (character?.equipment??[]).filter(item=>item.id?.startsWith('Armors:')); }
 }
@@ -34,7 +37,15 @@ export function recalculateArmor(raw) {
 
 export function withArmorState(character,id,field,value) {
   if(!/^Armors:\d+$/.test(id??'')||!['carried','equipped'].includes(field)||typeof value!=='boolean')throw new Error('Die Rüstungsauswahl ist ungültig.');
-  const raw=equipmentSource(character),index=Number(id.split(':')[1]),armor=list(raw.Armors)[index];
+  const raw=equipmentSource(character),index=Number(id.split(':')[1]);
+  if(character.sourceFormat===NPC_FORMAT){
+    if(field!=='equipped')throw new Error('Das NSC-Format speichert nur Angelegt, keinen Dabei-Zustand.');
+    mapNpcFile(raw);
+    const armor=raw.Npc.Armors[index];if(!armor)throw new Error('Die Rüstung ist im aktuellen NSC nicht mehr vorhanden.');
+    armor.Equipped=value;const focus=characterFocus(character);if(focus!==null)raw.Npc.Focus=focus;
+    return retainCompanionChoices(character,retainNpcChoices(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)}));
+  }
+  const armor=list(raw.Armors)[index];
   if(!armor)throw new Error('Die Rüstung ist im aktuellen Charakter nicht mehr vorhanden.');
   if(field==='equipped'&&value&&!own(armor))throw new Error('Diese Rüstung wird von einem Tier getragen und kann hier nicht angelegt werden.');
   if(field==='carried'){armor.OnPerson=value;if(!value)armor.IsEquiped=false;}

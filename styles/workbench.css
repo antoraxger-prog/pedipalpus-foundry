@@ -141,3 +141,5 @@
   .pedipalpus-app .pp-root .pp-ring { grid-template-columns: 1fr; }
   .pedipalpus-app .pp-root .pp-table td.pp-name-cell { min-width: 70px; }
 }
+
+.pedipalpus-dialog .pp-import-preview { max-height:140px; overflow:auto; overflow-wrap:anywhere; }

@@ -1,7 +1,7 @@
 import { MODULE_ID, FLAG, validSnapshot,normalizeCharacter } from './data.js';
 import { uploadPortrait, applyPortrait } from './portraits.js';
 import { withArmorState } from './equipment.js';
-import { isCompanionCheck } from './retinue.js';
+import { isCompanionCheck,COMPANION_GROUPS } from './retinue.js';
 import { withFocus } from './combat.js';
 
 export const getCharacter = actor => {
@@ -12,7 +12,7 @@ export const getCharacter = actor => {
       const imported=normalizeCharacter(JSON.parse(value.sourceJSON.replace(/^\uFEFF/,'')),value.importedAt);
       return {...value,retinue:imported.retinue,retinueSchemaVersion:1,
         checks:[...value.checks.filter(check=>!isCompanionCheck(check)),...imported.checks.filter(isCompanionCheck)],
-        equipment:[...value.equipment.filter(item=>! /^(Animals|Demons|Undead):/.test(item.id??'')),...imported.equipment.filter(item=>/^(Animals|Demons|Undead):/.test(item.id??''))]};
+        equipment:[...value.equipment.filter(item=>!COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`))),...imported.equipment.filter(item=>COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`)))]};
     }catch{}
   }
   return value;
@@ -30,16 +30,24 @@ export function visibleActors() {
     .sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
-export async function saveCharacter(snapshot, actorId = null, portrait = null, warn) {
+export async function saveCharacter(snapshot, actorId = null, portrait = null, warn,expected) {
   if (!validSnapshot(snapshot)) throw new Error('Die importierten Charakterdaten sind unvollständig.');
   if (game.system.id !== 'worldbuilding') throw new Error('Diese erste Version unterstützt Simple Worldbuilding.');
   if (actorId) {
     const actor = game.actors.get(actorId);
     if (!actor?.canUserModify(game.user, 'update')) throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
+    const verify=()=>{
+      const current=getCharacter(actor);
+      if(actor.getFlag(MODULE_ID,'companion')?.sourceActorId)throw new Error('Ein verknüpfter Begleiter kann nicht als Hauptcharakter überschrieben werden. Bitte einen neuen Eintrag anlegen.');
+      if(current&&(current.sourceFormat??'character')!==(snapshot.sourceFormat??'character'))throw new Error('Charakter- und NSC-Import dürfen einander nicht überschreiben. Bitte einen passenden oder neuen Foundry-Eintrag wählen.');
+      if(expected!==undefined&&JSON.stringify(current)!==expected)throw new Error('Die Foundry-Daten wurden inzwischen geändert. Bitte den Import erneut vergleichen.');
+    };
+    verify();
     const image = portrait ? await uploadPortrait(portrait) : null;
     const tokenImage=portrait?.token?await uploadPortrait(portrait.token):image;
     // Das Flag besitzt ein festes Schema; Arrays werden vollständig ersetzt.
     // Andere Flags, Foundry-Werte, Besitzerrechte und die Actor-ID bleiben erhalten.
+    verify();
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
     if (image) await applyPortrait(actor,image,warn,tokenImage);
     return actor;

@@ -1,5 +1,8 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Chimären':'Gemischte Viecher', 'Personen':'Leute', 'Elementare':'Zauber aus Zeug', 'Golems':'Gebautes läuft', 'Fähigkeiten':'Was können', 'Merkmale':'Zauber können', 'NSC-Probe':'Anderer tut Ding', 'Attribut':'Wert', 'Fertiger Probenwert':'Fertige Wurf-Zahl',
+  'Zwei gleiche Attribute sind erlaubt; alle drei dürfen nicht gleich sein.':'Zwei Werte gleich geht. Drei gleich geht nicht.', 'Pedipalpus-Charakterdatei oder NSC-Datei':'Blatt von du oder anderen',
+  'Amateur':'Bisschen können', 'Lehrling':'Lernt noch', 'Geselle':'Kann gut', 'Meister':'Kann sehr gut', 'Legende':'Alle kennen Können',
   'Tiere':'Tierfreunde', 'Dämonen':'Böse Zauberviecher', 'Untote':'Tote laufen', 'Gefolgsprobe':'Freund tut Ding', 'Beim Gefolge':'Freund trägt',
   'Bild':'Gesicht', 'Vorhandenes Bild wird verwendet.':'Altes Gesicht nehmen.', 'Bitte ein Bild auswählen.':'Gesicht wählen.', 'Token erstellen':'Figur machen', 'Token erstellt. Aus dem Charakterverzeichnis auf die Karte ziehen.':'Figur da. Aus Liste auf Karte ziehen.',
   'Probenname':'Was Freund tun?', 'Attribute wählen …':'Werte wählen …', 'Attribut auswählen …':'Wert wählen …',
@@ -197,7 +200,7 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
   });
   root.querySelectorAll('.pp-weapon-header').forEach(header=>{
     const id=JSON.parse(header.dataset.checkIds || '[]')[0],check=checks.get(id),subtitle=header.querySelector('small');
-    if(subtitle && check && !check.animalName){subtitle.textContent=`${orkTalentName(check.combat.skillName)} · ${t('Talent')} ${check.combat.skillValue}`;const original=header.ownerDocument.createElement('small');original.className='pp-original-name';original.textContent=check.combat.skillName;subtitle.after(original);}
+    if(subtitle && check && !check.companionName && !check.animalName && !check.fixedCombat){subtitle.textContent=`${orkTalentName(check.combat.skillName)} · ${t('Talent')} ${check.combat.skillValue}`;const original=header.ownerDocument.createElement('small');original.className='pp-original-name';original.textContent=check.combat.skillName;subtitle.after(original);}
   });
 }
 

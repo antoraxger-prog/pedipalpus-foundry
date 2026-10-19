@@ -1,11 +1,12 @@
-export const COMPANION_GROUPS = [['Animals','animals','Tiere'],['Demons','demons','Dämonen'],['Undead','undead','Untote']];
+export const COMPANION_GROUPS = [['Animals','animals','Tiere'],['Demons','demons','Dämonen'],['Undead','undead','Untote'],['Chimeras','chimeras','Chimären'],['Persons','persons','Personen'],['Elementals','elementals','Elementare'],['Golems','golems','Golems']];
 export const COMPANION_ATTRIBUTES = [['MU','Mut'],['KL','Klugheit'],['IN','Intuition'],['CH','Charisma'],['FF','Fingerfertigkeit'],['GE','Gewandtheit'],['KO','Konstitution'],['KK','Körperkraft']];
 export const objects = value => Array.isArray(value) ? value.filter(item=>item && typeof item==='object' && !Array.isArray(item)) : [];
-export const isCompanionCheck = check => /^(animals|demons|undead):/.test(check?.id??'');
+export const isCompanionCheck = check => COMPANION_GROUPS.some(([_collection,group])=>check?.id?.startsWith(`${group}:`));
 export function retinueEntries(raw){
  return COMPANION_GROUPS.flatMap(([collection,group])=>objects(raw?.[collection]).map((member,index)=>({...member,_collection:collection,_group:group,_index:index})));
 }
 export function readCompanions(character){
+ if(character?.sourceFormat==='Pedipalpus.Npc'&&Array.isArray(character.retinue))return character.retinue;
  try{return retinueEntries(JSON.parse(character.sourceJSON.replace(/^\uFEFF/,'')));}catch{}
  if(Array.isArray(character?.retinue))return character.retinue;
  return (character?.equipment??[]).flatMap(item=>{
@@ -14,7 +15,7 @@ export function readCompanions(character){
  });
 }
 export const memberAttributes = member => COMPANION_ATTRIBUTES.flatMap(([short,name])=>Number.isSafeInteger(member?.[short])?[{short,name,value:member[short]}]:[]);
-export function companionProbes(raw){
+export function companionProbes(raw,{npcRules=false}={}){
  const result=[];
  for(const member of retinueEntries(raw)){
   const prefix=`${member._group}:${member._index}`,attrs=memberAttributes(member);
@@ -22,11 +23,11 @@ export function companionProbes(raw){
   const add=(suffix,label,value,attributes,kind='skill',ability=null)=>{
    const name=`${member.Name} – ${label}`,needsAttributes=Boolean(ability)&&attributes.length!==3;
    const reason=!Number.isSafeInteger(value)?'Der Probenwert fehlt.':/[|\r\n]/.test(name)||name.length>160?'Der Probenname ist ungültig.':kind==='skill'&&!needsAttributes&&attributes.length!==3?'Die Probenattribute fehlen.':needsAttributes&&!attrs.length?'Die Attribute dieses Wesens fehlen.':'';
-   result.push({id:`${prefix}:${suffix}`,name,group:String(member.Name??''),category:`${member._group}-${suffix.split(':')[0]}`,kind,value,attributes,reason,...extra,...(ability?{companionAbility:ability,needsAttributes}:{} )});
+   result.push({id:`${prefix}:${suffix}`,name,group:String(member.Name??''),category:`${member._group}-${suffix.split(':')[0]}`,kind,value,attributes,reason,...extra,...(npcRules?{npcRules:true}:{}),...(ability?{companionAbility:ability,needsAttributes}:{} )});
   };
   for(const attr of attrs)add(`attribute:${attr.short}`,attr.name,attr.value,[],'attribute');
   for(const [field,label,keys] of [['MentalMagicResistance','Geistige Magieresistenz',['MU','KL','IN']],['PhysicalMagicResistance','Körperliche Magieresistenz',['GE','KO','KK']]]){
-   if(Number.isSafeInteger(member[field]))add(`resistance:${field}`,label,member[field],keys.flatMap(key=>attrs.filter(attr=>attr.short===key)));
+   if(Number.isSafeInteger(member[field]))add(`resistance:${field}`,label,member[field],keys.flatMap(key=>attrs.filter(attr=>attr.short===key)),'skill',npcRules?{collection:'Resistance',index:0,name:label,keys}:null);
   }
   for(const [collection,type] of [['MundaneAbilities','mundane'],['MagicalAbilities','magical']])objects(member[collection]).forEach((ability,index)=>{
    const keys=[ability.FirstAttribute,ability.SecondAttribute,ability.ThirdAttribute];
@@ -43,9 +44,10 @@ export function withCompanionAttributes(character,checkId,keys){
  if(!member||String(member.InventoryId??'')!==check.companionId)throw new Error('Das Gefolgsmitglied wurde inzwischen geändert.');
  const attributes=keys.map(key=>memberAttributes(member).find(attr=>attr.short===key));
  if(attributes.some(attr=>!attr))throw new Error('Bitte drei vorhandene Attribute dieses Wesens auswählen.');
+ if(check.npcRules&&new Set(keys).size<2)throw new Error('Alle drei Attribute dürfen bei NSC-Proben nicht gleich sein.');
  const replacement={...check,attributes,needsAttributes:false,companionAbility:{...check.companionAbility,keys:[...keys]}};
  let sourceJSON=character.sourceJSON;
- if(sourceJSON){
+ if(sourceJSON&&character.sourceFormat!=='Pedipalpus.Npc'){
   const raw=JSON.parse(sourceJSON.replace(/^\uFEFF/,'')),source=objects(raw[member._collection])[member._index],ability=objects(source?.[check.companionAbility.collection])[check.companionAbility.index];
   if(!ability||String(ability.Name??'Fähigkeit')!==check.companionAbility.name)throw new Error('Die Fähigkeit wurde inzwischen geändert.');
   [ability.FirstAttribute,ability.SecondAttribute,ability.ThirdAttribute]=keys;

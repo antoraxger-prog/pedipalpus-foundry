@@ -24,8 +24,9 @@ async function permit(handle){
 }
 export async function directoryCharacters(directory){
  if(!await permit(directory))throw new Error('Der Ordnerzugriff wurde nicht freigegeben.');
- let saved=directory;try{saved=await directory.getDirectoryHandle('SavedCharacters');}catch{}
- const files=[];for await(const handle of saved.values())if(handle.kind==='file'&&/\.json$/i.test(handle.name))files.push(handle);
+ const folders=[];for(const name of ['SavedCharacters','SavedNpcs']){try{folders.push(await directory.getDirectoryHandle(name));}catch{}}
+ if(!folders.length)folders.push(directory);
+ const files=[];for(const folder of folders)for await(const handle of folder.values())if(handle.kind==='file'&&/\.json$/i.test(handle.name))files.push(handle);
  if(files.length>200)throw new Error('Bitte einen Charakterordner mit höchstens 200 Dateien auswählen.');
  return files.sort((a,b)=>a.name.localeCompare(b.name,'de'));
 }

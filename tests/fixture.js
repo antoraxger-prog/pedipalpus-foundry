@@ -1,4 +1,17 @@
 const att = (LongName, ShortName, TotalValue) => ({ LongName, ShortName, TotalValue });
+export function npcFixture(){
+ const keys=['MU','KL','IN','CH','FF','GE','KO','KK','gMR','kMR','RE'],names=['Mut','Klugheit','Intuition','Charisma','Fingerfertigkeit','Gewandtheit','Konstitution','Körperkraft','Geistige Magieresistenz','Körperliche Magieresistenz','Reaktionsvermögen'];
+ const attributes=keys.map((Key,index)=>({Key,Name:names[index],BaseValue:index<8?12:index===8?2:index===9?1:3,RaceModifier:Key==='KO'?1:0,Modifier:0}));
+ const npc={Name:'Alrik Testwache',RaceName:'Mittelländer',LifeFactor:1.2,RaceSpeed:0,RaceCarryBonus:0,Focus:2,AstralBody:3,Consecrated:true,ConsecrationLevel:1,AdditionalImpairment:0,Notes:'Nur Testdaten',CurrentLe:25,CurrentAe:10,CurrentKe:4,Attributes:attributes,
+  Derived:['LE','AE','KE','OFF','DEF','FKB','AW','WS','TK','GS','BL','WA'].map(Key=>({Key,Calculated:999,Modifier:0})),
+  Abilities:[{Name:'Einbrechen',Grade:'Geselle'}],Features:[{Name:'Körper',Grade:'Geselle'},{Name:'Objekt',Grade:'Meister'}],
+  Techniques:[{Name:'Äxte und Beile',Type:'Melee',Value:12},{Name:'Schwerter',Type:'Melee',Value:12},{Name:'Bögen',Type:'Ranged',Value:12}],
+  Weapons:[{Name:'Testaxt',Kind:'Nahkampf',Techniques:'Äxte und Beile',AttackModifier:0,ParryModifier:0,DefenseBonus:0,MobilityTolerance:3},{Name:'Testbogen',Kind:'Fernkampf',Techniques:'Bögen',AttackModifier:1,MobilityTolerance:4},{Name:'Testschild',Kind:'Parierwaffe',Techniques:'Schwerter',ParryModifiers:'-2;0;2',TrainingLevel:2,DefenseBonus:1,MobilityTolerance:2}],
+  Armors:[{Name:'Testpanzer',Protection:4,MobilityPenalty:5,Equipped:true,Weight:10000}],
+  Powers:[{Name:'Testzauber',Kind:'Zauber',Features:'Körper; Objekt',Grade:'Vom Merkmal',FirstAttribute:'KL',SecondAttribute:'FF',ThirdAttribute:'KO',HasCheck:true},{Name:'Eigene Stufe',Kind:'Zauber',Features:'Objekt',Grade:'Lehrling',FirstAttribute:'MU',SecondAttribute:'MU',ThirdAttribute:'IN',HasCheck:true},{Name:'Ohne Merkmal',Kind:'Zauber',Features:'Unbekannt',Grade:'Vom Merkmal',HasCheck:true},{Name:'Probenlos',Kind:'Ritual',Grade:'Amateur',HasCheck:false},{Name:'Testliturgie',Kind:'Liturgie',Grade:'Amateur',FirstAttribute:'MU',SecondAttribute:'IN',ThirdAttribute:'CH',HasCheck:true}],
+  Conditions:[],Retinue:['Tier','Dämon','Untoter','Chimäre','Person','Elementar','Golem'].map((Kind,index)=>({Name:`Begleiter ${Kind}`,Kind,Category:'Test',Attributes:attributes.slice(0,8).map(row=>({...row,BaseValue:8,RaceModifier:0})),CurrentLe:14,MaxLe:20,CurrentAe:4,MaxAe:8,MentalResistance:2,PhysicalResistance:3,Abilities:[{Name:'Wachen',Grade:'Amateur'}],Attacks:[{Name:'Hieb',AttackValue:6,ParryValue:7,IsRanged:index===5}]}))};
+ return {Format:'Pedipalpus.Npc',Version:1,Npc:npc};
+}
 export function fixture() {
   const kl = att('Klugheit', 'KL', 16), intuition = att('Intuition', 'IN', 14);
   return {

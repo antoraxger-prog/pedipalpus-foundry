@@ -1,10 +1,10 @@
-# Pedipalpus – Proben · 1.1.0
+# Pedipalpus – Proben · 1.2.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
 ## Pedipalpus als Grundlage
 
-Dieses Modul ergänzt die Windows-App **Pedipalpus von [Tschuangtse](https://github.com/Tschuangtse)**. Zum Spielen wird eine dort erstellte und gespeicherte Charakterdatei benötigt. Charaktererstellung und Steigerungen erfolgen in Pedipalpus; dieses Modul bringt die importierten Proben nach Foundry.
+Dieses Modul ergänzt die Windows-App **Pedipalpus von [Tschuangtse](https://github.com/Tschuangtse)**. Zum Spielen wird eine dort erstellte und gespeicherte Charakterdatei oder eine NSC-Datei aus dem eigenständigen NSC-Generator im selben Originalprojekt benötigt. Charaktererstellung und Steigerungen erfolgen in Pedipalpus; dieses Modul bringt die importierten Proben nach Foundry.
 
 - [Pedipalpus – unser Fork des Originalprojekts von Tschuangtse](https://github.com/antoraxger-prog/Pedipalpus)
 
@@ -35,6 +35,22 @@ In der Welt **Pedipalpus – Proben** und **Ucurifunke – Proben** aktivieren. 
 5. Einen Bereich auswählen oder über die Suche eine Probe finden. Ein Klick auf den Fähigkeitsnamen, den Probenwert oder das Würfelsymbol würfelt direkt; **durchgestrichenes Auge + Würfelsymbol** würfelt verdeckt. Das Ergebnis erscheint ohne weitere Modifikator-Abfrage im Chat.
 
 Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benötigen zusätzlich die entsprechende Foundry-Berechtigung. Beobachter können die Proben lesen.
+
+## NSC-Generator: eigener Import
+
+**JSON importieren** erkennt zusätzlich das NSC-Format `Pedipalpus.Npc`, Version 1, mit der Endung `.nsc.json`. Die Dateien liegen im Generator unter `SavedNpcs`. Datei oder Austausch-ZIP auswählen und einen neuen bzw. vorhandenen NSC als Ziel wählen. Die Auswahlliste kennzeichnet NSC mit **[NSC]**. Ein freigegebener Ordner kann `SavedCharacters` und `SavedNpcs` enthalten; **Aktualisieren** liest auch die letzte NSC-Datei frisch ein.
+
+NSC verwenden ihre eigenen Berechnungen: Attributbasis plus Volksbeitrag und Modifikator, abgeleitete Werte einschließlich Rundung, Fähigkeits-/Merkmalsstufen 4/8/12/16/20 und Zauberwerte aus eigener Stufe oder höchstem passenden Merkmal. Zwischengespeicherte Summen werden nicht als fertige Werte vertraut. Kräfte ohne passendes Merkmal oder eigene Stufe und probenlose Rituale werden nicht gewürfelt; fehlende Werte werden nicht erfunden. Merkmale und allgemeine Fähigkeiten sind eigene Bereiche. Die NSC-Stufen heißen Amateur, Lehrling, Geselle, Meister und Legende; sie ersetzen keine Skala bisheriger Charaktere.
+
+Vor allgemeinen Fähigkeits-, Merkmals-, Wahrnehmungs- und Kraftproben öffnet sich die Attributauswahl. Zwei gleiche Attribute sind erlaubt, drei gleiche wie im Generator gesperrt. Die Wahl für allgemeine Fähigkeiten und Merkmale bleibt in Foundry gemerkt und überlebt eindeutigen Reimport. Eine abweichende Auswahl für einen einzelnen Zauberwurf verändert dessen Originalattribute nicht. Abbrechen verbraucht die nächste Erschwernis nicht. Namen, Werte, Würfelknöpfe, verdeckte Würfe, Favoriten und Makros verwenden dieselbe Würfelfunktion.
+
+NSC-Kampfwerte berücksichtigen eigene Techniken, Fokus, Rüstung und Waffenboni. Bei Gleichstand zählt die gespeicherte Reihenfolge der Kampftechniken. Fernkampf nutzt die im NSC gespeicherte Waffentoleranz; dies ändert die bisherige Charakterregel nicht. Waffengewicht erzeugt keine zusätzliche NSC-BE. Ausweichen ist ein fertiger PA-Wert und ändert sich nicht mit dem Fokus. NSC-Rüstungen besitzen ausschließlich **Angelegt**, keinen erfundenen Dabei-Zustand.
+
+Das gesamte NSC-Gefolge wird übernommen: Tiere, Dämonen, Untote, Chimären, Personen, Elementare und Golems. Alle verwenden eigene Werte, Proben und **Bild / Token**. Die NSC-Datei enthält weder Portraits noch feste Gefolgskennungen. Bilder deshalb manuell oder im Austausch-ZIP hinzufügen. Für die Zuordnung beim Aktualisieren müssen Art und Name eines Gefolgsmitglieds eindeutig bleiben. Gleiche Art und gleicher Name werden nicht automatisch einem Token zugewiesen; bei Umbenennung bleibt der alte Eintrag mit Bild erhalten, erhält aber keine veralteten Proben. Für das umbenannte Wesen lässt sich ein neuer Token-Eintrag erstellen. Die aktuelle Hauptanwendung kann ebenfalls gespeicherte Chimären über dieselbe Gefolgsansicht verwenden; der Baukasten selbst bleibt in Pedipalpus.
+
+Charakter- und NSC-Dateien dürfen einander nicht überschreiben. Unpassende vorhandene Importziele sind nach Dateiauswahl gesperrt. Ein verknüpfter Begleiter ist kein Ziel für einen Hauptimport. Ändert jemand den Foundry-Stand während des Importvergleichs, wird die Übernahme abgelehnt und muss neu verglichen werden. Gleichnamige Charakter- und NSC-Proben teilen keine Makroreferenz. Vorhandene Charaktere, Tiere und Skelette benötigen für dieses Update keinen Umbau.
+
+Das Austauschpaket enthält bei NSC eine `npc.nsc.json` im ursprünglichen Format, mit aktuellen NSC-Rüstungszuständen und Fokus; die übrigen Originaldaten bleiben erhalten. Ein vorhandenes Portrait wird separat beigefügt, ohne fremde Portrait- oder Charakterfelder in die NSC-JSON einzutragen. Die Windows-Datei bleibt unberührt. Unterstützt ist Formatversion 1 bis 5 MB; fremde, gemischte und unbekannte zukünftige Formate werden zurückgewiesen. Es gibt keine automatische Generierung, Steigerung oder Ressourcenverwaltung im Foundry-Modul.
 
 ## Kompakte Oberfläche
 
@@ -130,7 +146,7 @@ Unter **Tierproben**, **Dämonen** und **Untote** stehen die jeweiligen eigenen 
 
 Profane und magische Fähigkeiten der Wesen verwenden ihren gespeicherten Probenwert. Vor dem Wurf lassen sich drei eigene Attribute auswählen; doppelte Attribute sind erlaubt. Die zuletzt gewählten Attribute bleiben pro Wesen und Fähigkeit gespeichert, auch bei einem erneuten Import ohne vorgegebene Attribute. Neue Vorgaben aus Pedipalpus haben Vorrang. Ein optionaler Probenname gilt nur für diesen Wurf. Abbrechen verbraucht den nächsten Modifikator nicht. Dasselbe gilt für verdeckte Würfe und Makros bei geschlossenem Fenster.
 
-Vorhandene Importe mit gespeicherter Original-JSON werden beim Öffnen für das neue Gefolgeformat ergänzt. Alte Tiere bleiben Tiere; ein dort eingetragenes Skelett wird nicht automatisch in eine andere Liste verschoben. Fehlen Pflichtwerte, werden keine Ersatzwerte erfunden. Neue oder in Pedipalpus geänderte Wesen benötigen **Aktualisieren** oder einen erneuten Import in denselben Foundry-Charakter. Die Dateiversion bleibt 17; Dämonen und Untote sind zusätzliche optionale Listen.
+Vorhandene Importe mit gespeicherter Original-JSON werden beim Öffnen für das neue Gefolgeformat ergänzt. Alte Tiere bleiben Tiere; ein dort eingetragenes Skelett wird nicht automatisch in eine andere Liste verschoben. Fehlen Pflichtwerte, werden keine Ersatzwerte erfunden. Neue oder in Pedipalpus geänderte Wesen benötigen **Aktualisieren** oder einen erneuten Import in denselben Foundry-Charakter. Die Dateiversion bleibt 17; Dämonen, Untote und Chimären sind zusätzliche optionale Listen.
 
 Die Auswertung erfolgt über Ucurifunke – Proben 1.0.14. Dessen Kampfregeln unterscheiden sich in Randfällen vom neuen lokalen Pedipalpus-Würfelmodus: Die lokale Qualitätsdeckelung bei Netto-Erleichterung und die automatische Erfolgs-/Misserfolgsregel für natürliche 1/20 sind in Foundrys veröffentlichtem Modul noch nicht vollständig gleich umgesetzt. Für eine einheitliche Auswertung muss das Probenmodul entsprechend aktualisiert werden.
 

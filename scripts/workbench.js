@@ -37,11 +37,12 @@ export function checkReference(check) {
   if (!check || typeof check !== 'object') throw new Error('Die Probe wurde nicht gefunden.');
   const parts = typeof check.id === 'string' ? check.id.split(':') : [];
   const animals = parts[0] === 'animals' && check.kind==='combat' || typeof check.animalName === 'string';
-  const category = animals ? 'animals' : check.kind === 'combat'
-    ? parts[0] === 'combat' && parts[1] ? parts[1] : ['demons','undead'].includes(parts[0])?parts[0]:text(check.category) || 'combat'
+  let category = animals ? 'animals' : check.kind === 'combat'
+    ? parts[0] === 'combat' && parts[1] ? parts[1] : ['demons','undead','chimeras','persons','elementals','golems'].includes(parts[0])?parts[0]:text(check.category) || 'combat'
     : text(check.category) || parts[0] || check.kind;
+  if(check.sourceFormat==='Pedipalpus.Npc')category=`npc:${category}`;
   return canonicalReference({ kind: check.kind, category, name: check.name,
-    ...(!(animals&&check.kind==='combat') && check.companionId?{companionId:check.companionId}:{}),
+    ...((!(animals&&check.kind==='combat')||check.sourceFormat==='Pedipalpus.Npc') && check.companionId?{companionId:check.companionId}:{}),
     ...(check.kind === 'combat' ? { combatType: check.combat?.type, weaponName: check.combat?.weaponName,
       ...(animals ? { animalName: check.animalName ?? '' } : {}) } : {}) });
 }
@@ -82,7 +83,7 @@ export function groupWeaponChecks(checks) {
     }
     const instances = new Map();
     bucket.checks.forEach((check, index) => {
-      const match = /^(combat:[^:]+:\d+|(?:animals|demons|undead):\d+:\d+):(attack|parry|ranged)$/.exec(check.id ?? '');
+      const match = /^(combat:[^:]+:\d+|(?:animals|demons|undead|chimeras|persons|elementals|golems):\d+:\d+):(attack|parry|ranged)$/.exec(check.id ?? '');
       const instance = match?.[1] ?? `unpaired:${index}`;
       if (!instances.has(instance)) instances.set(instance, []);
       instances.get(instance).push(check);

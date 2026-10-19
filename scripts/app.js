@@ -1,3 +1,4 @@
+import { NPC_FORMAT,retainNpcChoices,withNpcAttributes } from './npc.js';
 import { rememberImportSource,importSource,directoryCharacters,readLiveSource } from './import-source.js';
 import { parseCharacter, MODULE_ID } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
@@ -88,7 +89,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const keys = type => (this.preferences[type][actor?.id] ?? []).flatMap(ref => {
       try { return [resolveCheck(current,ref).id]; } catch { return []; }
     });
-    return renderView({ actors: actors.map(item => ({ id: item.id, name: item.name, hasCharacter: !!getCharacter(item) })),
+    return renderView({ actors: actors.map(item => ({ id: item.id, name: item.name, hasCharacter: !!getCharacter(item),npc:getCharacter(item)?.sourceFormat===NPC_FORMAT })),
       actor, character: getCharacter(actor), status: connectionStatus(),
       canImport: actors.some(actor => actor.canUserModify(game.user, 'update')) || foundry.documents.Actor.canUserCreate(game.user),
       token: this.token, canLinkToken: actor?.isOwner && !this.token && canvas.tokens?.controlled?.length === 1,
@@ -174,7 +175,7 @@ export class PedipalpusApp extends ApplicationV2 {
         const checks=getCharacter(actor)?.checks || [];
         this.element.querySelectorAll('.pp-check-row').forEach(row=>{
           const check=checks.find(check=>check.id===row.dataset.checkId);
-          if(check?.kind==='combat'&&!isCompanionCheck(check)&&check.combat.type!=='ranged'){
+          if(check?.kind==='combat'&&!isCompanionCheck(check)&&!check.fixedCombat&&check.combat.type!=='ranged'){
             const rating=row.querySelector('.pp-rating');rating?.classList.add('pp-changed-value');setTimeout(()=>rating?.classList.remove('pp-changed-value'),320);
           }
         });
@@ -341,7 +342,7 @@ export class PedipalpusApp extends ApplicationV2 {
         this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"], [name="focus"]').forEach(field => { field.disabled = true; });
         let check = reference ? resolveCheck(getCharacter(actor),reference) : getCharacter(actor)?.checks.find(check => check.id === button.dataset.check);
         if (!reference && (!check || !clickedCheck || referenceKey(checkReference(check))!==referenceKey(checkReference(clickedCheck)))) throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
-        if(check.companionAbility){check=await this.configureCompanionAbility(actor,check);if(!check)return;}
+        if(check.companionAbility||check.npcChoice){check=await this.configureCompanionAbility(actor,check);if(!check)return;}
         this.feedback('rollPending','');
         pendingTimer=setTimeout(()=>button.setAttribute?.('aria-busy','true'),180);
         await executeCheck(actor, check, token, { modifier: this.modifier, blind: button.dataset.blind === 'true' });
@@ -483,7 +484,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const character=getCharacter(this.actor);
     if(!this.actor?.isOwner || !character?.sourceJSON)throw new Error('Für das Austauschpaket bitte die Originaldatei einmal erneut importieren.');
     const raw=JSON.parse(character.sourceJSON.replace(/^\uFEFF/,'')),focus=characterFocus(character);
-    if(focus!==null){raw.OffDefOffset=focus;raw.OffOffset=focus;raw.DefOffset=-focus;}
+    if(focus!==null){if(character.sourceFormat===NPC_FORMAT)raw.Npc.Focus=focus;else{raw.OffDefOffset=focus;raw.OffOffset=focus;raw.DefOffset=-focus;}}
     let portrait=null;
     const image=this.actor.img;
     if(image && /\.(png|jpe?g|bmp|webp)(?:[?#].*)?$/i.test(image)){
@@ -494,13 +495,13 @@ export class PedipalpusApp extends ApplicationV2 {
         const extension=url.pathname.match(/\.([a-z]+)$/i)[1];portrait=new File([bytes],`portrait.${extension}`,{type:bytes.type});
       }
     }
-    if(portrait)raw.PortraitFileName=portrait.name;
+    if(portrait&&character.sourceFormat!==NPC_FORMAT)raw.PortraitFileName=portrait.name;
     const blob=await writeCharacterBundle(JSON.stringify(raw,null,2),portrait),url=URL.createObjectURL(blob),link=document.createElement('a');
     link.href=url;link.download=`${this.actor.name.replace(/[^\p{L}\p{N} _-]/gu,'').slice(0,70)||'Charakter'}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     this.feedback('saved','Austauschpaket gespeichert.');
   }
   async importCharacter() {
-    const actors = visibleActors().filter(actor => actor.canUserModify(game.user, 'update'));
+    const actors = visibleActors().filter(actor => actor.canUserModify(game.user, 'update')&&!actor.getFlag(MODULE_ID,'companion')?.sourceActorId);
     const canCreate = foundry.documents.Actor.canUserCreate(game.user);
     if (!actors.length && !canCreate) throw new Error('Für den Import benötigst du Besitzerrechte auf einem Foundry-Charakter.');
     let pending = null;
@@ -524,7 +525,9 @@ export class PedipalpusApp extends ApplicationV2 {
       render: (_event, dialog) => {
         localizeDialog(dialog.element,this.theme);
         const input = dialog.element.querySelector('[name="characterFile"]');
-        const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError; };
+        const destination=dialog.element.querySelector('[name="destination"]');
+        const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled; };
+        destination.addEventListener('change',syncButton);
         const imageInput = dialog.element.querySelector('[name="portraitFile"]');
         imageInput.addEventListener('change', async () => {
           const sequence = ++portraitSequence;
@@ -558,8 +561,10 @@ export class PedipalpusApp extends ApplicationV2 {
             portraitPackaged=packagedPortrait;portrait=portraitManual || portraitPackaged;
             if(portrait && !portraitBusy && !portraitError)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${portrait.file.name}`);
             pending = parsed;pendingSource=source??{fileName:file.name};
+            for(const option of destination.options){const target=getCharacter(game.actors.get(option.value));option.disabled=Boolean(target&&(target.sourceFormat??'character')!==(parsed.sourceFormat??'character'));}
+            if(destination.selectedOptions[0]?.disabled){const compatible=Array.from(destination.options).find(option=>!option.disabled);if(compatible)destination.value=compatible.value;}
             syncButton();
-            preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} ${this.t('Proben')} · ${this.t('Dateiversion')} ${parsed.sourceVersion}`;
+            preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} ${this.t('Proben')} · ${parsed.sourceFormat===NPC_FORMAT?'NSC · ':''}${this.t('Dateiversion')} ${parsed.sourceVersion}${parsed.warnings.length?' · '+parsed.warnings.join(' '):''}`;
             dialog.element.querySelector('.pp-portrait-source').textContent = parsed.profile.portraitFileName
               ? this.t(packagedPortrait?'Pedipalpus-Bild automatisch gefunden.':`Pedipalpus-Bild: CharacterPortraits/${parsed.profile.portraitFileName}. Den Pedipalpus-Ordner auswählen oder das Bild unten hinzufügen.`)
               : this.t('Optional ein Charakterbild auswählen.');
@@ -584,7 +589,7 @@ export class PedipalpusApp extends ApplicationV2 {
   async acceptImport(answer) {
     if (!answer?.snapshot) return;
     const previous=getCharacter(game.actors.get(answer.actorId));
-    answer.snapshot=retainCompanionChoices(previous,answer.snapshot);
+    answer.snapshot=retainCompanionChoices(previous,retainNpcChoices(previous,answer.snapshot));
     if(previous){
       const differences=compareCharacters(previous,answer.snapshot);
       if(differences.length){
@@ -597,7 +602,7 @@ export class PedipalpusApp extends ApplicationV2 {
       }
     }
     if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame);
-    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message));
+    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous));
     await refreshCompanions(actor,message=>this.notify('warn',message));
     this.selectActor(actor.id);
     await this.persist({...this.preferences,actorId:actor.id,category:'all'});
@@ -615,27 +620,27 @@ export class PedipalpusApp extends ApplicationV2 {
     return this.acceptImport({snapshot,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:source.tokenFrame??this.preferences.tokenFrame,source});
   }
   async configureCompanionAbility(actor,check){
-    const character=getCharacter(actor),member=companionEntries(character).find(member=>member._group===check.companionGroup&&member._index===check.companionIndex);
+    const character=getCharacter(actor),expected=JSON.stringify(character),root=Boolean(check.npcChoice);
+    const member=root?{Name:character.profile.name}:companionEntries(character).find(member=>member._group===check.companionGroup&&member._index===check.companionIndex);
     if(!member)throw new Error('Dieses Gefolgsmitglied ist nicht mehr vorhanden.');
-    const attrs=memberAttributes(member),e=escapeHTML,keys=check.companionAbility.keys??[];
-    const answer=await DialogV2.wait({window:{title:this.t('Gefolgsprobe')},classes:this.dialogClasses,position:{width:460},modal:true,rejectClose:false,
-      content:`<p>${e(member.Name)} · ${e(check.companionAbility.name)} · PW ${e(check.value)}</p>${[0,1,2].map(index=>`<label>${index+1}. Attribut<select name="companionAttribute${index}"><option value="">Attribut auswählen …</option>${attrs.map(attr=>`<option value="${attr.short}" ${keys[index]===attr.short?'selected':''}>${e(attr.name)} ${e(attr.value)}</option>`).join('')}</select></label>`).join('')}<label>Probenname<input name="companionCheckName" maxlength="100" value="${e(check.companionAbility.name)}"></label>`,
+    const attrs=root?character.attributes:memberAttributes(member),e=escapeHTML,choice=check.companionAbility??{...check.npcChoice,name:check.name},keys=choice.keys??[],npcRules=root||check.npcRules;
+    const answer=await DialogV2.wait({window:{title:this.t(root?'NSC-Probe':'Gefolgsprobe')},classes:this.dialogClasses,position:{width:460},modal:true,rejectClose:false,
+      content:`<p>${e(member.Name)} · ${e(choice.name)} · PW ${e(check.value)}</p>${[0,1,2].map(index=>`<label>${index+1}. ${e(this.t('Attribut'))}<select name="companionAttribute${index}"><option value="">${e(this.t('Attribut auswählen …'))}</option>${attrs.map(attr=>`<option value="${attr.short}" ${keys[index]===attr.short?'selected':''}>${e(attr.name)} ${e(attr.value)}</option>`).join('')}</select></label>`).join('')}<label>${e(this.t('Probenname'))}<input name="companionCheckName" maxlength="100" value="${e(choice.name)}"></label>${npcRules?`<p>${e(this.t('Zwei gleiche Attribute sind erlaubt; alle drei dürfen nicht gleich sein.'))}</p>`:''}`,
       buttons:[{action:'companion-check',label:this.t('Würfeln'),disabled:keys.length!==3,callback:(_event,_button,dialog)=>({keys:[0,1,2].map(index=>dialog.element.querySelector(`[name="companionAttribute${index}"]`).value),name:dialog.element.querySelector('[name="companionCheckName"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
       render:(_event,dialog)=>{
         localizeDialog(dialog.element,this.theme);
-        const update=()=>{dialog.element.querySelector('[data-action="companion-check"]').disabled=Array.from(dialog.element.querySelectorAll('select')).some(field=>!field.value);};
+        const update=()=>{const values=Array.from(dialog.element.querySelectorAll('select')).map(field=>field.value);dialog.element.querySelector('[data-action="companion-check"]').disabled=values.some(value=>!value)||npcRules&&new Set(values).size<2;};
         dialog.element.querySelectorAll('select').forEach(field=>field.addEventListener('change',update));update();
       }});
     if(!answer)return null;
     if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
     const fresh=getCharacter(actor),now=fresh?.checks.find(entry=>entry.id===check.id);
-    if(!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
-    const label=answer.name.trim()||check.companionAbility.name;
-    if(/[|\r\n]/.test(label)||`${member.Name} – ${label}`.length>160)throw new Error('Der Probenname ist zu lang oder enthält ungültige Zeichen.');
-    const updated=withCompanionAttributes(fresh,check.id,answer.keys);
-    await actor.setFlag(MODULE_ID,'character',updated);
-    const selected=updated.checks.find(entry=>entry.id===check.id);
-    return {...selected,name:`${member.Name} – ${label}`};
+    if(JSON.stringify(fresh)!==expected||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
+    const label=answer.name.trim()||choice.name,name=root?label:`${member.Name} – ${label}`;
+    if(/[|\r\n]/.test(name)||name.length>160)throw new Error('Der Probenname ist zu lang oder enthält ungültige Zeichen.');
+    const updated=root?withNpcAttributes(fresh,check.id,answer.keys):withCompanionAttributes(fresh,check.id,answer.keys);
+    if(!root||check.npcChoice.remember)await actor.setFlag(MODULE_ID,'character',updated);
+    return {...updated.checks.find(entry=>entry.id===check.id),name};
   }
   async importPortrait() {
     const actor = this.actor;

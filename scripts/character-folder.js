@@ -6,7 +6,7 @@ export function characterFiles(files) {
   const all=Array.from(files??[]);
   if(all.length>10000)throw new Error('Bitte nur den Pedipalpus-Ordner oder den Charakterordner auswählen.');
   const json=all.filter(file=>/\.json$/i.test(file.name));
-  const saved=json.filter(file=>/(?:^|\/)SavedCharacters\//i.test(path(file)));
+  const saved=json.filter(file=>/(?:^|\/)(?:SavedCharacters|SavedNpcs)\//i.test(path(file)));
   const selected=saved.length?saved:json.filter(file=>path(file).split('/').length<=2);
   return selected.sort((a,b)=>path(a).localeCompare(path(b),'de'));
 }

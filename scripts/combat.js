@@ -8,7 +8,7 @@ const comparable = value => text(value).replace(/[äöüÄÖÜß]/g, c => ({ä:'
 const validFocus = value => Number.isSafeInteger(value) && value >= -4 && value <= 4;
 export function characterFocus(character) {
   if (validFocus(character?.combat?.offDefOffset)) return character.combat.offDefOffset;
-  const checks = (character?.checks ?? []).filter(check => check.kind === 'combat' && !isCompanionCheck(check) && check.combat?.type !== 'ranged');
+  const checks = (character?.checks ?? []).filter(check => check.kind === 'combat' && !isCompanionCheck(check) && !check.fixedCombat && check.combat?.type !== 'ranged');
   const values = checks.map(check => check.combat.type === 'attack' ? check.combat.focusValue : -check.combat.focusValue);
   return values.length && values.every(value => validFocus(value) && value === values[0]) ? values[0] : null;
 }
@@ -18,13 +18,13 @@ export function withFocus(character, focus) {
   if (characterFocus(character) === null) throw new Error('Der gespeicherte Fokus ist unvollständig. Bitte die Charakterdatei erneut importieren.');
   return {...character, combat: {...character.combat, offDefOffset: focus, offOffset: focus, defOffset: -focus},
     checks: character.checks.map(check => {
-      if (check.kind !== 'combat' || isCompanionCheck(check) || check.combat.type === 'ranged') return check;
+      if (check.kind !== 'combat' || isCompanionCheck(check) || check.fixedCombat || check.combat.type === 'ranged') return check;
       const combat = {...check.combat, focusValue: check.combat.type === 'attack' ? focus : -focus};
       return {...check, combat, value: check.reason ? check.value : combat.skillValue + combat.baseValue + combat.focusValue + combat.weaponModifier - combat.mobilityPenalty};
     })};
 }
 
-export function combatChecks(raw) {
+export function combatChecks(raw,{npcRules=false}={}) {
   const checks = [];
   const add = (id, weaponName, skillName, type, skillValue, baseValue, focusValue, weaponModifier, mobilityPenalty, extra = {}) => {
     const values = [skillValue, baseValue, focusValue, weaponModifier, mobilityPenalty];
@@ -46,8 +46,8 @@ export function combatChecks(raw) {
         const skill = list(raw[ranged ? 'RangedSkills' : 'MeleeSkills']).find(x => comparable(x.Name) === comparable(name));
         if (integer(skill?.Value) !== null && (!best || skill.Value > best.Value)) best = skill;
       }
-      const penalty = Number.isSafeInteger(raw.Be) && (ranged || Number.isSafeInteger(weapon.MobilityTolerance))
-        ? Math.max(0, raw.Be - (ranged ? 2 : weapon.MobilityTolerance)) : null;
+      const penalty = Number.isSafeInteger(raw.Be) && (ranged&&!npcRules || Number.isSafeInteger(weapon.MobilityTolerance))
+        ? Math.max(0, raw.Be - (ranged&&!npcRules ? 2 : weapon.MobilityTolerance)) : null;
       const base = type => savedInteger(raw[type === 'attack' ? 'Off' : type === 'parry' ? 'Def' : 'Fk']);
       for (const type of ranged ? ['ranged'] : ['attack','parry']) {
         add(`combat:${key}:${i}:${type}`,text(weapon.Name),text(best?.Name),type,integer(best?.Value),base(type),

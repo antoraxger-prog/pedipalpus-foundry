@@ -194,8 +194,8 @@ export async function readCharacterFile(file) {
 }
 
 export async function writeCharacterBundle(json, portrait = null) {
-  parseCharacter(json);
-  const entries = [{ name: 'character.json', bytes: encoder.encode(json) }];
+  const snapshot=parseCharacter(json);
+  const entries = [{ name: snapshot.sourceFormat==='Pedipalpus.Npc'?'npc.nsc.json':'character.json', bytes: encoder.encode(json) }];
   if (portrait) {
     if (!Number.isSafeInteger(portrait.size) || portrait.size <= 0 || portrait.size > MAX_PORTRAIT_SIZE) fail('Bitte ein Charakterbild bis 10 MB auswählen.');
     const ext = extension(portrait.name), bytes = new Uint8Array(await portrait.arrayBuffer());

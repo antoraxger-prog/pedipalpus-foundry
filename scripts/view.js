@@ -10,29 +10,30 @@ export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => 
 const e = escapeHTML;
 const number = value => Number.isSafeInteger(value) ? value.toLocaleString('de-DE') : '–';
 export function mastery(check) {
-  const combatTalent = check.kind === 'combat' && !isCompanionCheck(check);
+  const combatTalent = check.kind === 'combat' && !isCompanionCheck(check) && !check.fixedCombat;
+  if(check.npcChoice&&!check.id.startsWith('NpcDerived:')||check.npcRules&&check.companionAbility&&!check.id.includes(':resistance:'))return {grade:check.value>=16?'master':check.value>=12?'adept':check.value>=8?'trained':'novice',label:({4:'Amateur',8:'Lehrling',12:'Geselle',16:'Meister',20:'Legende'})[check.value]??'Probenwert',progress:Math.max(0,Math.min(20,check.value))/20,scale:'npc'};
   const value = combatTalent ? check.combat?.skillValue : check.value;
   if (check.kind === 'attribute') return {
     grade: value <= 1 ? 'untrained' : value < 8 ? 'novice' : value <= 12 ? 'trained' : value < 20 ? 'adept' : 'master',
     label: value <= 1 ? 'Sehr schwach' : value < 8 ? 'Schwach' : value <= 12 ? 'Durchschnittlich' : value < 20 ? 'Stark' : 'Meisterlich',
     progress: Math.max(0, Math.min(19, value - 1)) / 19, scale: 'attributes'
   };
-  if (!Number.isSafeInteger(value) || !combatTalent && check.kind !== 'skill' || check.id?.startsWith('secondary:') || isCompanionCheck(check)&&check.id.includes(':resistance:')) return { grade: 'attribute', label: check.kind === 'combat' ? 'Kampfwert' : 'Basiswert', progress: 0, scale: 'other' };
+  if (!Number.isSafeInteger(value) || !combatTalent && check.kind !== 'skill' || check.id?.startsWith('secondary:') || check.id?.startsWith('NpcDerived:') || isCompanionCheck(check)&&check.id.includes(':resistance:')) return { grade: 'attribute', label: check.kind === 'combat' ? 'Kampfwert' : 'Basiswert', progress: 0, scale: 'other' };
   const ceiling = combatTalent ? 20 : 10;
   return { grade: value <= 0 ? 'untrained' : value < 4 ? 'novice' : value < 7 ? 'trained' : value < ceiling ? 'adept' : 'master',
     label: value <= 0 ? 'Ungeübt' : value < 4 ? 'Grundkenntnisse' : value < 7 ? 'Geübt' : value < ceiling ? 'Versiert' : 'Meisterlich',
     progress: Math.max(0, Math.min(ceiling, value)) / ceiling, scale: 'talents' };
 }
 const button = (action, label, extras = '') => `<button type="button" data-action="${action}" ${extras}>${label}</button>`;
-export const CATEGORIES = [['all', 'Alle Proben'], ['favorites', 'Favoriten'], ['attributes', 'Attribute'], ['combat', 'Kampf'], ['animals', 'Tierproben'], ['demons','Dämonen'], ['undead','Untote'], ['armors', 'Rüstungen'], ['BodySkills', 'Körperlich'], ['SocialSkills', 'Sozial'], ['NatureSkills', 'Natur'], ['AcademicSkills', 'Akademisch'], ['CraftingSkills', 'Handwerklich'], ['HobbySkills', 'Freizeit'], ['magic', 'Magie'], ['Miracles', 'Klerikal']];
+export const CATEGORIES = [['all', 'Alle Proben'], ['favorites', 'Favoriten'], ['attributes', 'Attribute'], ['combat', 'Kampf'], ['animals', 'Tierproben'], ['demons','Dämonen'], ['undead','Untote'], ['chimeras','Chimären'], ['persons','Personen'], ['elementals','Elementare'], ['golems','Golems'], ['NpcAbilities','Fähigkeiten'], ['NpcFeatures','Merkmale'], ['armors', 'Rüstungen'], ['BodySkills', 'Körperlich'], ['SocialSkills', 'Sozial'], ['NatureSkills', 'Natur'], ['AcademicSkills', 'Akademisch'], ['CraftingSkills', 'Handwerklich'], ['HobbySkills', 'Freizeit'], ['magic', 'Magie'], ['Miracles', 'Klerikal']];
 const categoryOf = check => {
   const key = check.id?.split(':')[0];
-  return ['primary', 'secondary'].includes(key) ? 'attributes' : ['Spells', 'Rituals'].includes(key) ? 'magic' : key;
+  return key==='NpcDerived'?'attributes':['primary', 'secondary'].includes(key) ? 'attributes' : ['Spells', 'Rituals'].includes(key) ? 'magic' : key;
 };
 const validCombat = check => { try { buildCommand(check); return true; } catch { return false; } };
 export function rollableChecks(character) {
   return (character?.checks ?? []).filter(check => check && !check.reason && typeof check.name === 'string' && Number.isSafeInteger(check.value)
-    && (check.companionAbility && check.needsAttributes || check.kind === 'attribute' || check.kind === 'combat' && validCombat(check) || check.kind === 'skill' && Array.isArray(check.attributes) && check.attributes.length === 3
+    && ((check.companionAbility||check.npcChoice) && check.needsAttributes || check.kind === 'attribute' || check.kind === 'combat' && validCombat(check) || check.kind === 'skill' && Array.isArray(check.attributes) && check.attributes.length === 3
       && check.attributes.every(att => att && typeof att.name === 'string' && Number.isSafeInteger(att.value))));
 }
 export function checksForView(character, mode = 'full') {
@@ -54,7 +55,7 @@ export function updateFocusView(content, character) {
   const checks = new Map(character.checks.map(check => [check.id, check]));
   content.querySelectorAll('.pp-check-row').forEach(row => {
     const check = checks.get(row.dataset.checkId);
-    if (check?.kind !== 'combat' || isCompanionCheck(check)) return;
+    if (check?.kind !== 'combat' || isCompanionCheck(check) || check.fixedCombat) return;
     const ratingField = row.querySelector('.pp-rating');
     if (!ratingField) return;
     ratingField.textContent = number(check.value);
@@ -127,7 +128,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const isFavorite = check => favorites.has(keyOf(check));
   const isRecent = check => recent.has(keyOf(check));
   const frozen = busy ? 'disabled' : '';
-  const options = actors.map(item => `<option value="${e(item.id)}" ${item.id === actor?.id ? 'selected' : ''}>${e(item.name)}${item.hasCharacter ? '' : ' · noch kein Import'}</option>`).join('');
+  const options = actors.map(item => `<option value="${e(item.id)}" ${item.id === actor?.id ? 'selected' : ''}>${e(item.name)}${item.npc?' [NSC]':''}${item.hasCharacter ? '' : ' · noch kein Import'}</option>`).join('');
   const image = safePortrait(actor?.img);
   const switches = character?.profile?.companionGroup?'':mode === 'full'
     ? `${button('battle', categoryIcon('combat'), 'class="pp-mode-button" aria-label="Kampfbrett öffnen" title="Kampfbrett öffnen"')}${button('ring', categoryIcon('favorites'), 'class="pp-mode-button" aria-label="Probenring öffnen" title="Probenring öffnen"')}`
@@ -164,7 +165,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
     return `<div class="pp-roll-buttons">${rollButton(check,rowDisabled,reason)}${rollButton(check,rowDisabled,reason,true)}</div>`;
   };
   const focus = characterFocus(character);
-  const focusControl = mode === 'battle' && focus !== null && checks.some(check => check.kind === 'combat' && !isCompanionCheck(check) && check.combat.type !== 'ranged')
+  const focusControl = mode === 'battle' && focus !== null && checks.some(check => check.kind === 'combat' && !isCompanionCheck(check) && !check.fixedCombat && check.combat.type !== 'ranged')
     ? `<div class="pp-focus" title="Nahkampffokus wird im Foundry-Charakter gespeichert. Ein erneuter JSON-Import übernimmt wieder den Fokus aus Pedipalpus."><span>Fokus</span><output data-focus="def">DEF ${signed(-focus)}</output><input name="focus" aria-label="Kampffokus" aria-valuetext="OFF ${signed(focus)}, DEF ${signed(-focus)}" type="range" min="-4" max="4" step="1" value="${focus}" ${!actor?.isOwner || busy ? 'disabled' : ''}><output data-focus="off">OFF ${signed(focus)}</output></div>` : '';
   const filters = mode === 'ring' ? '' : `<div class="pp-filters"><label><span class="pp-sr-only">Bereich</span><select name="category" aria-label="Probenbereich">${CATEGORIES.filter(([key]) => ['all','favorites'].includes(key) || available.has(key)).map(([key,label])=>`<option value="${key}" ${key===category?'selected':''}>${mode==='battle'?({all:'Alle Kampfproben',favorites:'Kampffavoriten'}[key]||label):label}</option>`).join('')}</select></label><label class="pp-search"><span class="pp-sr-only">Suche</span><input type="search" name="search" placeholder="${mode==='battle'?'Kampfprobe suchen …':'Probe suchen …'}" aria-label="${mode==='battle'?'Kampfproben durchsuchen':'Fertigkeiten durchsuchen'}" value="${e(search)}"></label></div><p class="pp-search-scope" ${search?'':'hidden'}>Suche in allen Bereichen</p>`;
   const modifierControl = `<div class="pp-modifier"><label><input name="modifier" aria-label="${modifier < 0 || modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis'}" title="Gilt für die nächste Probe, danach wieder 0" type="number" min="0" step="1" data-mode="${modifier === 0 ? 'neutral' : modifier < 0 ? 'relief' : 'difficulty'}" value="${e(Number.isSafeInteger(modifier) ? Math.abs(modifier) : '')}" ${!actor?.isOwner || busy ? 'disabled' : ''}></label><button type="button" name="modifierDirection" title="Zwischen Erschwernis und Erleichterung wechseln" ${!actor?.isOwner || busy ? 'disabled' : ''}>${modifier < 0 || modifierDirection < 0 ? 'Erleichterung' : 'Erschwernis'}</button><span class="pp-wheel-hint"><span class="pp-wheel-steps"><button type="button" data-modifier-step="1" aria-label="Um eins schwerer" ${!actor?.isOwner || busy ? 'disabled' : ''}>↑ schwerer</button><button type="button" data-modifier-step="-1" aria-label="Um eins leichter" ${!actor?.isOwner || busy ? 'disabled' : ''}>↓ leichter</button></span><span>Mausrad</span></span></div>`;
@@ -186,7 +187,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
       let heading='';
       if(group && !seen.has(group)) {
         seen.add(group);
-        heading=`<tr class="pp-weapon-header" data-weapon-group="${e(group)}" data-check-ids="${e(JSON.stringify(groups.get(group).map(item=>item.id)))}" data-category="${e(categoryOf(check))}"><th colspan="5">${categoryIcon(categoryOf(check))}<span>${e(check.combat.weaponName)}</span><small>${e(check.animalName ? check.animalName : `${foundation} · Talent ${number(check.combat.skillValue)}`)}</small></th></tr>`;
+        heading=`<tr class="pp-weapon-header" data-weapon-group="${e(group)}" data-check-ids="${e(JSON.stringify(groups.get(group).map(item=>item.id)))}" data-category="${e(categoryOf(check))}"><th colspan="5">${categoryIcon(categoryOf(check))}<span>${e(check.combat.weaponName)}</span><small>${e(check.fixedCombat ? 'Fertiger Probenwert' : check.companionName || (check.animalName ? check.animalName : `${foundation} · Talent ${number(check.combat.skillValue)}`))}</small></th></tr>`;
       }
       const title = group ? actionLabel(check) : checkDisplayName(check,language);
       const subtitle = group ? '' : language === 'ork' && ['skill','attribute'].includes(check.kind) ? check.name : foundation;
@@ -200,7 +201,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
 function renderBattleInventory(character,actor,busy,language) {
  const t=text=>e(uiText(language,text)),armors=armorItems(character),members=companionEntries(character);
  const checkbox=(item,field,label)=>`<label>${t(label)}<input type="checkbox" data-armor="${e(item.id)}" data-armor-field="${field}" data-armor-locked="${Boolean(item.carrierAnimalId)}" aria-label="${e(item.name)} · ${t(label)}" ${item[field]?'checked':''} ${!actor?.isOwner||busy||!character.sourceJSON||field==='equipped'&&item.carrierAnimalId?'disabled':''}></label>`;
- const armor=`<section class="pp-battle-inventory pp-armor-panel" data-inventory="armors" hidden><h3>${t('Rüstungen')}</h3>${armors.length?armors.map(item=>`<article class="pp-armor-card"><header><strong>${e(item.name)}</strong><span>RS ${number(item.armor)} · BE ${number(item.basePenalty??item.penalty)}</span></header><div>${checkbox(item,'carried','Dabei')}${checkbox(item,'equipped','Angelegt')}${item.carrierAnimalId?`<small>${t('Beim Gefolge')}</small>`:''}</div></article>`).join(''):`<p>${t('Keine Rüstungen vorhanden.')}</p>`}</section>`;
+ const armor=`<section class="pp-battle-inventory pp-armor-panel" data-inventory="armors" hidden><h3>${t('Rüstungen')}</h3>${armors.length?armors.map(item=>`<article class="pp-armor-card"><header><strong>${e(item.name)}</strong><span>RS ${number(item.armor)} · BE ${number(item.basePenalty??item.penalty)}</span></header><div>${item.carried===null?'':checkbox(item,'carried','Dabei')}${checkbox(item,'equipped','Angelegt')}${item.carrierAnimalId?`<small>${t('Beim Gefolge')}</small>`:''}</div></article>`).join(''):`<p>${t('Keine Rüstungen vorhanden.')}</p>`}</section>`;
  const panels=COMPANION_GROUPS.map(([_collection,group,label])=>`<section class="pp-animal-overview" data-inventory="${group}" hidden><h3>${t(label)}</h3>${members.map((member,index)=>{
   if(member._group!==group)return '';
   let key='';try{key=companionKey(character,index);}catch{}
@@ -210,5 +211,5 @@ function renderBattleInventory(character,actor,busy,language) {
 }
 
 export function renderImportOptions(actors, selectedId, canCreate, tokenFrame='concrete') {
-  return `<div class="pp-import"><button type="button" data-pick-character ${typeof globalThis.showOpenFilePicker==='function'?'':'hidden'}>Datei auswählen</button><label>Pedipalpus-Charakterdatei<input type="file" name="characterFile" ${typeof globalThis.showOpenFilePicker==='function'?'hidden':''} accept=".json,.zip,.png,.jpg,.jpeg,.bmp,.webp,application/json,application/zip" multiple></label><button type="button" data-pick-folder ${typeof globalThis.showDirectoryPicker==='function'?'':'hidden'}>Pedipalpus-Ordner auswählen</button><label ${typeof globalThis.showDirectoryPicker==='function'?'hidden':''}>Oder Pedipalpus-Ordner auswählen<input type="file" name="characterFolder" webkitdirectory multiple></label><label class="pp-folder-choice" hidden>Charakter aus Ordner<select name="folderCharacter"></select></label><p class="pp-import-preview">Bitte eine JSON-Datei auswählen.</p><label>In Foundry speichern als<select name="destination">${canCreate ? `<option value="" ${selectedId ? '' : 'selected'}>Neuen Charakter anlegen</option>` : ''}${actors.map(actor => `<option value="${e(actor.id)}" ${actor.id === selectedId ? 'selected' : ''}>${e(actor.name)}</option>`).join('')}</select></label><p class="pp-portrait-source">Optional ein Charakterbild auswählen.</p><label>Charakterbild (optional)<input type="file" name="portraitFile" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><p class="pp-portrait-preview">Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.</p><label>Tokenrahmen<select name="tokenFrame">${TOKEN_STYLES.map(([key,label])=>`<option value="${key}" ${key===tokenFrame?'selected':''}>${label}</option>`).join('')}</select></label><p class="pp-token-frame-info">${savedFrames()[tokenFrame]?'Der runde Token verwendet den Originalrahmen.':'Für die Originalrahmen einmal das private Rahmenpaket in den Einstellungen importieren. Ohne Rahmen entsteht ein rundes Token.'}</p><p>Beim Import werden die Pedipalpus-Daten ersetzt. Mit Bildauswahl werden Charakterbild, Token-Vorlage und bearbeitbare verknüpfte Tokens aktualisiert. Berechtigungen und übrige Foundry-Werte bleiben erhalten.</p></div>`;
+  return `<div class="pp-import"><button type="button" data-pick-character ${typeof globalThis.showOpenFilePicker==='function'?'':'hidden'}>Datei auswählen</button><label>Pedipalpus-Charakterdatei oder NSC-Datei<input type="file" name="characterFile" ${typeof globalThis.showOpenFilePicker==='function'?'hidden':''} accept=".json,.zip,.png,.jpg,.jpeg,.bmp,.webp,application/json,application/zip" multiple></label><button type="button" data-pick-folder ${typeof globalThis.showDirectoryPicker==='function'?'':'hidden'}>Pedipalpus-Ordner auswählen</button><label ${typeof globalThis.showDirectoryPicker==='function'?'hidden':''}>Oder Pedipalpus-Ordner auswählen<input type="file" name="characterFolder" webkitdirectory multiple></label><label class="pp-folder-choice" hidden>Charakter aus Ordner<select name="folderCharacter"></select></label><p class="pp-import-preview">Bitte eine JSON-Datei auswählen.</p><label>In Foundry speichern als<select name="destination">${canCreate ? `<option value="" ${selectedId ? '' : 'selected'}>Neuen Charakter anlegen</option>` : ''}${actors.map(actor => `<option value="${e(actor.id)}" ${actor.id === selectedId ? 'selected' : ''}>${e(actor.name)}${actor.getFlag?.('pedipalpus-foundry','character')?.sourceFormat==='Pedipalpus.Npc'?' [NSC]':''}</option>`).join('')}</select></label><p class="pp-portrait-source">Optional ein Charakterbild auswählen.</p><label>Charakterbild (optional)<input type="file" name="portraitFile" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><p class="pp-portrait-preview">Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.</p><label>Tokenrahmen<select name="tokenFrame">${TOKEN_STYLES.map(([key,label])=>`<option value="${key}" ${key===tokenFrame?'selected':''}>${label}</option>`).join('')}</select></label><p class="pp-token-frame-info">${savedFrames()[tokenFrame]?'Der runde Token verwendet den Originalrahmen.':'Für die Originalrahmen einmal das private Rahmenpaket in den Einstellungen importieren. Ohne Rahmen entsteht ein rundes Token.'}</p><p>Beim Import werden die Pedipalpus-Daten ersetzt. Mit Bildauswahl werden Charakterbild, Token-Vorlage und bearbeitbare verknüpfte Tokens aktualisiert. Berechtigungen und übrige Foundry-Werte bleiben erhalten.</p></div>`;
 }

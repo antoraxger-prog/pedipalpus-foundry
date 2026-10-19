@@ -1,5 +1,6 @@
 import { retinueEntries,companionProbes } from './retinue.js';
 import { combatChecks } from './combat.js';
+import { NPC_FORMAT,mapNpcFile } from './npc.js';
 export const MODULE_ID = 'pedipalpus-foundry';
 export const FLAG = 'character';
 export const SCHEMA_VERSION = 1;
@@ -13,7 +14,7 @@ const COMPLEX_GROUPS = {
 const SIMPLE_GROUPS = { HobbySkills: 'Hobbys', Spells: 'Zauber', Rituals: 'Rituale', Miracles: 'Wunder' };
 const EQUIPMENT_GROUPS = {
   MeleeWeapons: 'Nahkampfwaffen', RangedWeapons: 'Fernkampfwaffen', ParryWeapons: 'Parierwaffen',
-  Ammunitions: 'Munition', Armors: 'Rüstungen', GeneralItems: 'Gegenstände', Animals: 'Tiere', Demons:'Dämonen', Undead:'Untote'
+  Ammunitions: 'Munition', Armors: 'Rüstungen', GeneralItems: 'Gegenstände', Animals: 'Tiere', Demons:'Dämonen', Undead:'Untote', Chimeras:'Chimären', Persons:'Personen', Elementals:'Elementare', Golems:'Golems'
 };
 export const text = value => typeof value === 'string' ? value : '';
 const list = value => Array.isArray(value) ? value.filter(x => x && typeof x === 'object' && !Array.isArray(x)) : [];
@@ -39,6 +40,16 @@ export function parseCharacter(json, importedAt = new Date().toISOString()) {
 }
 
 export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
+  if(raw&&typeof raw==='object'&&'Format' in raw){
+    const mapped=mapNpcFile(raw),snapshot=normalizeBaseCharacter(mapped.raw,importedAt,true);
+    const checks=[...snapshot.checks,...mapped.skillRows,{id:'combat:NpcDodge:0:parry',name:'Ausweichen · Parade',group:'Ausweichen',kind:'combat',value:mapped.dodge,attributes:[],reason:'',fixedCombat:true,combat:{type:'parry',weaponName:'Ausweichen',skillName:'Ausweichen',skillValue:mapped.dodge,baseValue:0,focusValue:0,weaponModifier:0,mobilityPenalty:0}}]
+      .map(check=>({...check,sourceFormat:NPC_FORMAT,...(check.npcChoice&&(!check.name.trim()||/[|\r\n]/.test(check.name)||check.name.length>160)?{reason:'Der Probenname ist ungültig.'}:{})}));
+    return {...snapshot,sourceFormat:NPC_FORMAT,sourceVersion:1,npcSchemaVersion:1,profile:{...snapshot.profile,npc:true},checks,warnings:[...snapshot.warnings,...mapped.warnings]};
+  }
+  return normalizeBaseCharacter(raw,importedAt);
+}
+
+function normalizeBaseCharacter(raw,importedAt,npcRules=false) {
   if (!raw || Array.isArray(raw) || typeof raw !== 'object' || !text(raw.Name).trim()
       || !Array.isArray(raw.PrimaryAttributes) || !raw.PrimaryAttributes.length || integer(raw.Version) === null) {
     throw new Error('Das ist keine vollständige Pedipalpus-Charakterdatei. Name, Version und Attribute werden benötigt.');
@@ -77,8 +88,8 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
       key === 'Rituals' && entry.HasCheck === false ? 'Für dieses Ritual ist keine Probe erforderlich.' : ''));
   }
   const equipment = [];
-  const combat = combatChecks(raw);
-  checks.push(...combat,...companionProbes(raw));
+  const combat = combatChecks(raw,{npcRules});
+  checks.push(...combat,...companionProbes(raw,{npcRules}));
   if (combat.some(check => check.reason)) warnings.push('Einige Kampfproben sind unvollständig. Bitte den Charakter in Pedipalpus speichern und erneut importieren.');
   for (const [key, group] of Object.entries(EQUIPMENT_GROUPS)) list(raw[key]).forEach((entry, i) => equipment.push({
     id: `${key}:${i}`, name: text(entry.Name), group, quantity: number(entry.Quantity) ?? 1,

@@ -4,12 +4,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
-import { fixture, combatFixture, retinueFixture } from '../tests/fixture.js';
+import { fixture, combatFixture, retinueFixture, npcFixture } from '../tests/fixture.js';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PEDIPALPUS_PLAYWRIGHT || 'playwright');
 const root = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
 const checksVersion = process.env.PEDIPALPUS_CHECKS_VERSION || '1.0.14';
-const pageHTML = `<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Pedipalpus – lokale Oberflächenprüfung</title><link rel="stylesheet" href="/styles/pedipalpus.css"><link rel="stylesheet" href="/styles/workbench.css"><link rel="stylesheet" href="/styles/feedback.css"><link rel="stylesheet" href="/styles/atmosphere.css"><style>body{background:#11151a;color:#f0eee9;font:14px system-ui;margin:0;padding:26px}#app{max-width:540px;margin:auto;border:1px solid #414751;border-radius:9px;overflow:hidden}.preview-label{max-width:540px;margin:0 auto 14px;color:#aaa;font-size:12px}#notice{margin:8px auto;max-width:540px}.mock-dialog{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(520px,90vw);max-height:80vh;overflow:auto;padding:24px;background:#272d34;border:1px solid #c9aa6e;box-shadow:0 12px 70px #000;border-radius:8px;z-index:99}.mock-dialog label{display:block}.mock-dialog button{margin:10px 5px;padding:8px}.mock-dialog input,.mock-dialog select{padding:8px;max-width:100%}.mock-dialog h2{font-size:20px}.mock-dialog footer{display:flex;justify-content:flex-end}</style><p class="preview-label">Pedipalpus 1.1.0 · Vorschau mit simulierter Foundry-Umgebung</p><main id="app"></main><div id="notice"></div><script>window.previewChecksVersion=${JSON.stringify(checksVersion)}</script><script type="module" src="/tools/browser-runtime.js"></script></html>`;
+const pageHTML = `<!DOCTYPE html><html lang="de"><meta charset="utf-8"><title>Pedipalpus – lokale Oberflächenprüfung</title><link rel="stylesheet" href="/styles/pedipalpus.css"><link rel="stylesheet" href="/styles/workbench.css"><link rel="stylesheet" href="/styles/feedback.css"><link rel="stylesheet" href="/styles/atmosphere.css"><style>body{background:#11151a;color:#f0eee9;font:14px system-ui;margin:0;padding:26px}#app{max-width:540px;margin:auto;border:1px solid #414751;border-radius:9px;overflow:hidden}.preview-label{max-width:540px;margin:0 auto 14px;color:#aaa;font-size:12px}#notice{margin:8px auto;max-width:540px}.mock-dialog{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(520px,90vw);max-height:80vh;overflow:auto;padding:24px;background:#272d34;border:1px solid #c9aa6e;box-shadow:0 12px 70px #000;border-radius:8px;z-index:99}.mock-dialog label{display:block}.mock-dialog button{margin:10px 5px;padding:8px}.mock-dialog input,.mock-dialog select{padding:8px;max-width:100%}.mock-dialog h2{font-size:20px}.mock-dialog footer{display:flex;justify-content:flex-end}</style><p class="preview-label">Pedipalpus 1.2.0 · Vorschau mit simulierter Foundry-Umgebung</p><main id="app"></main><div id="notice"></div><script>window.previewChecksVersion=${JSON.stringify(checksVersion)}</script><script type="module" src="/tools/browser-runtime.js"></script></html>`;
 const uploadedImages = new Map();
 const server = http.createServer(async (request, response) => {
   try {
@@ -124,7 +124,7 @@ try {
   assert.equal(categoryColor.icon,'rgb(52, 120, 188)');assert.equal(categoryColor.stripe,categoryColor.icon);
   assert.equal(await page.locator('.pp-blind-button .pp-blind-eye').count(),await page.locator('.pp-blind-button').count());
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/favoriten-1.1.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/favoriten-1.2.0.png')});
   console.log('PASS: Compact quickbar removal, Ork attributes/original names, unmodified theme names, colored category stripe and blind-eye icons.');
   await page.locator('[data-action="battle"]').click();
   await page.locator('[name="search"]').fill('Rapier');
@@ -252,7 +252,7 @@ try {
   }
   await page.locator('[data-action="battle"]').click();assert.equal(await page.locator('.pp-root').getAttribute('data-mode'),'battle');
   assert.equal(await visible().evaluateAll(rows=>rows.every(row=>['combat','animals'].includes(row.dataset.category))),true);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/kampfbrett-1.1.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/kampfbrett-1.2.0.png')});
   await page.locator('[data-action="full"]').click();
   await page.locator('[data-action="ring"]').click();assert.equal(await page.locator('.pp-root').getAttribute('data-mode'),'ring');
   assert.equal(await page.locator('.pp-ring-card').count(),6);
@@ -264,7 +264,7 @@ try {
       overlaps:cards.flatMap((a,i)=>cards.slice(i+1).filter(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2)).length};
   });
   assert.deepEqual(ringGeometry,{clipped:0,overlaps:0},'Six ring cards must be visible and must not cover each other');
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.1.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.2.0.png')});
   await pref({language:'ork'});await theme('ork');
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
   assert.equal(await page.locator('.pp-ring-card[data-check-id^="AcademicSkills"] .pp-original-name').textContent(),'Geographie');
@@ -273,7 +273,7 @@ try {
     return bounds.flatMap((a,i)=>bounds.slice(i+1).filter(b=>Math.min(a.right,b.right)-Math.max(a.left,b.left)>2&&Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>2)).length;
   });
   assert.equal(orkOverlap,0,'Original-name captions must not make ring cards cover each other');
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.1.0-ork.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/probenring-1.2.0-ork.png')});
   await pref({language:'standard'});await theme('fantasy');
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
   await page.locator('[data-action="full"]').first().click();assert.equal(await page.locator('.pp-root').getAttribute('data-mode'),'full');
@@ -326,13 +326,13 @@ try {
     await theme(mode);if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
     if(await page.locator('.pp-root').getAttribute('data-mode')!=='battle')await page.locator('[data-action="battle"]').click();
     await page.locator('[name="category"]').selectOption('combat');
-    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.1.0-${mode}.png`)});
+    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.2.0-${mode}.png`)});
     await page.setViewportSize({width:440,height:760});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     const app=await page.locator('.pedipalpus-app').boundingBox(),footer=await page.locator('.pp-check-list').boundingBox();
     assert.ok(footer.y+footer.height<=app.y+app.height+1,`${mode} footer fits`);
     assert.ok((await page.locator('.pp-check-list').boundingBox()).height>150,`${mode} leaves useful scroll area`);
-    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.1.0-${mode}-schmal.png`)});
+    await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,`../pedipalpus-checks/foundry-ui/workbench-1.2.0-${mode}-schmal.png`)});
     await page.setViewportSize({width:1460,height:1000});
   }
   assert.deepEqual(errors,[]);
@@ -457,13 +457,13 @@ try {
   assert.equal(await page.locator('[data-armor="Armors:1"][data-armor-field="carried"]').isChecked(),true);
   await page.locator('[data-armor="Armors:0"][data-armor-field="carried"]').uncheck();
   await page.waitForFunction(()=>document.querySelector('[data-armor="Armors:0"][data-armor-field="equipped"]')?.checked===false);
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ruestungen-1.1.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ruestungen-1.2.0.png')});
   await page.locator('[name="category"]').selectOption('combat');await theme('sneaky');assert.equal(await page.locator('[name="theme"] option[value="sneaky"]').textContent(),'Alchemy');
   const bubbles=page.locator('.pp-acid-bubbles').first();assert.equal(await bubbles.evaluate(el=>getComputedStyle(el).animationName),'pp-acid-bubble');
   await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await bubbles.evaluate(el=>getComputedStyle(el).animationName),'none');
   await page.emulateMedia({reducedMotion:'no-preference'});await pref({animations:'none'});assert.equal(await bubbles.evaluate(el=>getComputedStyle(el).animationName),'none');await pref({animations:'subtle'});
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/alchemy-1.1.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/alchemy-1.2.0.png')});
   console.log('PASS: Click/wheel hints, animal companions without attacks, imported armor states with live BE updates and bubbling Alchemy with motion off.');
   for(const design of ['fantasy','ork','dark','light','demonic','aristocrat','warrior','arcane','sneaky']){
     await theme(design);await page.locator('[name="category"]').selectOption('armors');
@@ -472,7 +472,7 @@ try {
     assert.equal(colors.appearance,'none');assert.equal(colors.background,colors.accent);assert.notEqual(colors.background,'rgb(0, 117, 255)');
   }
   await theme('sneaky');if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/checkboxen-1.1.0-alchemy.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/checkboxen-1.2.0-alchemy.png')});
   console.log('PASS: Checkbox backgrounds and ticks follow all nine designs.');
 
   if(process.env.PEDIPALPUS_PRIVATE_FRAMES){
@@ -490,7 +490,7 @@ try {
       }
       return results;
     });
-    for(const item of pixels){assert.equal(item.corner,0);assert.equal(item.center,255);assert.equal(item.hasFrame,true);await fs.writeFile(path.resolve(root,`../pedipalpus-checks/foundry-ui/token-1.1.0-${item.style}.png`),Buffer.from(item.png.split(',')[1],'base64'));}
+    for(const item of pixels){assert.equal(item.corner,0);assert.equal(item.center,255);assert.equal(item.hasFrame,true);await fs.writeFile(path.resolve(root,`../pedipalpus-checks/foundry-ui/token-1.2.0-${item.style}.png`),Buffer.from(item.png.split(',')[1],'base64'));}
     const directory=path.resolve(root,'../token-work/test-character-folder');await fs.mkdir(path.join(directory,'SavedCharacters'),{recursive:true});await fs.mkdir(path.join(directory,'CharacterPortraits'),{recursive:true});
     await fs.writeFile(path.join(directory,'SavedCharacters','Rüstungsprüfung.json'),JSON.stringify({...equipped,PortraitFileName:'synthetic.png'}));
     const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOYmWb8HwAFAAIyPExoIAAAAABJRU5ErkJggg==','base64');await fs.writeFile(path.join(directory,'CharacterPortraits','synthetic.png'),png);
@@ -557,7 +557,7 @@ try {
   await page.locator('[name="category"]').selectOption('all');
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
   assert.ok((await page.locator('.pp-companion-overviews').boundingBox()).height>=45,'Companion cards must not collapse to their heading');
-  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/gefolge-1.1.0.png')});
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/gefolge-1.2.0.png')});
   await page.locator('[name="search"]').fill('Wache');
   assert.equal(await page.locator('[data-inventory="undead"]').isVisible(),true);assert.equal(await page.locator('[data-inventory="demons"]').isVisible(),false);
   await page.locator('[name="search"]').fill('');
@@ -592,6 +592,109 @@ try {
   assert.equal(await page.evaluate(()=>testMessages.length),beforeClosed+1);assert.equal(await page.locator('.mock-dialog').count(),0);
   assert.deepEqual(errors,[]);
   console.log('PASS: Closed-window ability macro still offers remembered attributes and posts one normal roll without an extra modifier dialog.');
+
+
+  // The standalone NPC format shares controls but never the main-character data model.
+  await page.evaluate(async()=>game.modules.get('pedipalpus-foundry').api.open('actor-1'));await idle();
+  const originalParent=await page.evaluate(()=>JSON.stringify(game.actors.get('actor-1').getFlag('pedipalpus-foundry','character')));
+  const beforeNpc=await page.evaluate(()=>game.actors.contents.length),npc=npcFixture();
+  await action('import');await page.locator('[name="characterFile"]').setInputFiles({name:'Alrik.nsc.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(npc))});
+  await page.waitForFunction(()=>document.querySelector('.pp-import-preview')?.textContent.includes('NSC · Dateiversion 1'));
+  assert.equal(await page.locator('[name="destination"]').inputValue(),'');assert.equal(await page.locator('[name="destination"] option[value="actor-1"]').evaluate(option=>option.disabled),true);
+  const npcPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOYmWb8HwAFAAIyPExoIAAAAABJRU5ErkJggg==','base64');
+  await page.locator('[name="portraitFile"]').setInputFiles({name:'npc.png',mimeType:'image/png',buffer:npcPng});await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);
+  await page.locator('.mock-dialog [data-action="import"]').click();await idle();
+  assert.equal(await page.evaluate(()=>game.actors.contents.length),beforeNpc+1);
+  const npcId=await page.evaluate(()=>game.actors.contents.find(actor=>actor.getFlag('pedipalpus-foundry','character')?.profile.npc).id);
+  assert.equal(await page.evaluate(()=>JSON.stringify(game.actors.get('actor-1').getFlag('pedipalpus-foundry','character'))),originalParent);
+  assert.equal(await page.evaluate(id=>game.actors.get(id).prototypeToken.actorLink,npcId),true);
+  if(process.env.PEDIPALPUS_PRIVATE_FRAMES)assert.equal(await page.evaluate(id=>game.actors.get(id).img!==game.actors.get(id).prototypeToken.texture.src,npcId),true);
+  if(await page.locator('.pp-root').getAttribute('data-mode')!=='full')await page.locator('[data-action="full"]').first().click();
+  await page.locator('[name="category"]').selectOption('NpcAbilities');await page.locator('[name="search"]').fill('');
+  const npcRow=()=>page.locator('[data-check-id="NpcAbilities:0"]');const beforeNpcAbility=await page.evaluate(()=>testMessages.length);
+  await page.locator('[name="modifier"]').fill('4');await npcRow().locator('.pp-check-name').click();
+  await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();assert.equal(await page.locator('[name="modifier"]').inputValue(),'4');assert.equal(await page.evaluate(()=>testMessages.length),beforeNpcAbility);
+  await npcRow().locator('[data-blind="true"]').click();for(let index=0;index<3;index++)await page.locator(`[name="companionAttribute${index}"]`).selectOption('MU');
+  assert.equal(await page.locator('[data-action="companion-check"]').isDisabled(),true);
+  await page.locator('[name="companionAttribute2"]').selectOption('KO');await page.locator('[name="companionCheckName"]').fill('Tür öffnen');
+  await page.locator('.mock-dialog').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-attributwahl-1.2.0.png')});
+  await page.locator('[data-action="companion-check"]').click();await page.waitForFunction(before=>testMessages.length===before+1,beforeNpcAbility);await idle();
+  assert.equal(await page.evaluate(()=>testMessages.at(-1).testMode),'blind');assert.match(await page.evaluate(()=>testMessages.at(-1).content),/Tür öffnen/);
+  assert.equal(await page.locator('[name="modifier"]').inputValue(),'0');
+  await npcRow().locator('[data-action="favorite"]').click();await idle();
+  await page.locator('[name="category"]').selectOption('magic');await page.locator('[data-check-id="Spells:0"] .pp-rating').click();
+  assert.equal(await page.locator('[name="companionAttribute0"]').inputValue(),'KL');assert.equal(await page.locator('[name="companionAttribute1"]').inputValue(),'FF');assert.equal(await page.locator('[name="companionAttribute2"]').inputValue(),'KO');
+  for(const [index,key]of ['MU','MU','IN'].entries())await page.locator(`[name="companionAttribute${index}"]`).selectOption(key);
+  const beforePower=await page.evaluate(()=>testMessages.length);await page.locator('[data-action="companion-check"]').click();await page.waitForFunction(before=>testMessages.length===before+1,beforePower);await idle();
+  assert.equal(await page.evaluate(id=>JSON.parse(game.actors.get(id).getFlag('pedipalpus-foundry','character').sourceJSON).Npc.Powers[0].FirstAttribute,npcId),'KL');
+  assert.deepEqual(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='Spells:0').attributes.map(a=>a.short),npcId),['KL','FF','KO']);
+  assert.equal(await page.locator('[data-check-id="Spells:2"]').count(),0);
+  console.log('PASS: NPC file creates a separate owned token actor, wrong-format import targets disabled, old character untouched, general ability cancellation/blind cast/triple restriction and temporary spell attributes.');
+
+  await page.locator('[data-action="battle"]').click();await page.locator('[name="category"]').selectOption('combat');
+  const dodge=page.locator('[data-check-id="combat:NpcDodge:0:parry"] .pp-rating'),oldDodge=await dodge.textContent();
+  await page.locator('[name="focus"]').focus();await page.keyboard.press('End');await idle();
+  assert.equal(await dodge.textContent(),oldDodge);assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),4);
+  const beforeDodge=await page.evaluate(()=>testMessages.length);await dodge.click();await page.waitForFunction(before=>testMessages.length===before+1,beforeDodge);await idle();
+  await page.locator('[data-check-id="combat:RangedWeapons:0:ranged"] .pp-rating').click();await idle();
+  assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='combat:RangedWeapons:0:ranged').combat.mobilityPenalty,npcId),1);
+  await page.locator('[name="category"]').selectOption('armors');assert.equal(await page.locator('[data-armor-field="carried"]').count(),0);
+  await page.locator('[data-armor-field="equipped"]').uncheck();await idle();
+  assert.equal(await page.evaluate(id=>JSON.parse(game.actors.get(id).getFlag('pedipalpus-foundry','character').sourceJSON).Npc.Armors[0].Equipped,npcId),false);
+  assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='combat:RangedWeapons:0:ranged').combat.mobilityPenalty,npcId),0);
+  console.log('PASS: NPC dodge ignores focus, ranged uses NPC tolerance, armor has only its actual Equipped field and updates NPC combat values.');
+
+  let npcChildId;
+  if(process.env.PEDIPALPUS_PRIVATE_FRAMES){
+    for(const category of ['animals','demons','undead','chimeras','persons','elementals','golems']){await page.locator('[name="category"]').selectOption(category);assert.equal(await page.locator(`[data-inventory="${category}"] [data-action="animal-portrait"]`).isEnabled(),true);}
+    await page.locator('[name="category"]').selectOption('undead');await page.locator('[data-inventory="undead"] [data-action="animal-portrait"]').click();
+    await page.locator('[name="portraitFile"]').setInputFiles({name:'npc-companion.png',mimeType:'image/png',buffer:npcPng});await page.waitForFunction(()=>document.querySelector('[data-action="animal-image"]')?.disabled===false);await page.locator('[name="tokenFrame"]').selectOption('undead');await page.locator('[data-action="animal-image"]').click();await idle();
+    npcChildId=await page.evaluate(parent=>game.actors.contents.find(actor=>actor.getFlag('pedipalpus-foundry','companion')?.sourceActorId===parent).id,npcId);
+    assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').sourceFormat,npcChildId),'Pedipalpus.Npc');
+  }
+  npc.Npc.Abilities.unshift({Name:'Neue Fähigkeit',Grade:'Amateur'});npc.Npc.Abilities[1].Grade='Meister';npc.Npc.Retinue.find(member=>member.Kind==='Untoter').Attacks[0].AttackValue=9;npc.Npc.Retinue.reverse();
+  const totalBeforeNpcUpdate=await page.evaluate(()=>game.actors.contents.length);await upload(npc,{destination:npcId,keepFocus:true});
+  assert.equal(await page.evaluate(()=>game.actors.contents.length),totalBeforeNpcUpdate);assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),4);
+  assert.deepEqual(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='NpcAbilities:1').npcChoice.keys,npcId),['MU','MU','KO']);
+  if(npcChildId)assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='undead:0:0:attack').value,npcChildId),9);
+  await page.locator('[data-action="full"]').first().click();await page.locator('[name="category"]').selectOption('NpcAbilities');
+  assert.equal(await page.locator('[data-check-id="NpcAbilities:1"] [data-action="favorite"]').getAttribute('aria-pressed'),'true');
+  await page.evaluate(()=>{for(const app of foundry.applications.api.ApplicationV2.instances())app.setPosition({width:540,height:520});});
+  if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
+  await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-proben-1.2.0.png')});
+  const npcZipDownload=page.waitForEvent('download');await action('export');const npcZip=await npcZipDownload;const zipBytes=await fs.readFile(await npcZip.path());
+  const exportedNpc=await page.evaluate(async bytes=>{const {readCharacterFile}=await import('/scripts/bundle.js');const bundle=await readCharacterFile(new File([new Uint8Array(bytes)],'npc.zip'));return {file:JSON.parse(bundle.json),portrait:Boolean(bundle.portrait)};},Array.from(zipBytes));
+  assert.equal(exportedNpc.file.Format,'Pedipalpus.Npc');assert.equal(exportedNpc.file.Npc.Focus,4);assert.equal('OffOffset' in exportedNpc.file,false);assert.equal('PortraitFileName' in exportedNpc.file,false);assert.equal(exportedNpc.portrait,true);
+  console.log('PASS: NPC reimport retains actor/token identity, attribute choices and favorites after reordering, refreshes linked undead and exports the original NPC format with current focus.');
+
+  await page.evaluate(raw=>{window.liveNpc=raw;window.showOpenFilePicker=async()=>[{kind:'file',name:'live.nsc.json',queryPermission:async()=> 'granted',getFile:async()=>new File([JSON.stringify(window.liveNpc)],'live.nsc.json',{type:'application/json'})}];},npc);
+  await action('import');await page.locator('[data-pick-character]').click();await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);await page.locator('.mock-dialog [data-action="import"]').click();await page.waitForFunction(()=>!document.querySelector('.mock-dialog')||document.querySelector('.pp-import-diff'));if(await page.locator('.pp-import-diff').count())await page.locator('.mock-dialog [data-action="accept"]').click();await idle();
+  await page.evaluate(()=>{window.liveNpc.Npc.Features[1].Grade='Legende';});await action('refresh');await page.locator('.pp-import-diff').waitFor();assert.match(await page.locator('.pp-import-diff').textContent(),/Testzauber/);await page.locator('.mock-dialog [data-action="accept"]').click();await idle();
+  assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='Spells:0').value,npcId),20);
+  assert.equal(await page.evaluate(()=>JSON.stringify(game.actors.get('actor-1').getFlag('pedipalpus-foundry','character'))),originalParent);
+  // Another edit during the import comparison must not be silently overwritten.
+  const changed=structuredClone(npc);changed.Npc.Abilities[1].Grade='Legende';await action('import');await page.locator('[name="characterFile"]').setInputFiles({name:'changed.nsc.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(changed))});await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);await page.locator('.mock-dialog [data-action="import"]').click();await page.locator('.pp-import-diff').waitFor();
+  await page.evaluate(async id=>{const {withFocus}=await import('/scripts/combat.js'),actor=game.actors.get(id);await actor.setFlag('pedipalpus-foundry','character',withFocus(actor.getFlag('pedipalpus-foundry','character'),-2));},npcId);
+  await page.locator('.mock-dialog [data-action="accept"]').click();await idle();assert.match(await page.evaluate(()=>notifications.at(-1).message),/inzwischen geändert/);
+  assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),-2);
+  console.log('PASS: NPC refresh reads fresh source bytes; a concurrent edit during comparison is rejected and never touches the existing player character.');
+  if(await page.locator('.pp-root').getAttribute('data-mode')!=='full')await page.locator('[data-action="full"]').first().click();await page.locator('[name="category"]').selectOption('NpcAbilities');
+  const macroRef=await page.evaluate(async id=>{const {checkReference}=await import('/scripts/workbench.js');return checkReference(game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='NpcAbilities:1'));},npcId);
+  const beforeNpcMacro=await page.evaluate(()=>testMessages.length);await page.evaluate(async({id,reference})=>{for(const app of foundry.applications.api.ApplicationV2.instances())await app.close();window.npcMacro=game.modules.get('pedipalpus-foundry').api.roll({actorId:id,reference});},{id:npcId,reference:macroRef});
+  await page.locator('[name="companionAttribute0"]').waitFor();assert.equal(await page.locator('[name="companionAttribute0"]').inputValue(),'MU');await page.locator('[data-action="companion-check"]').click();await page.evaluate(()=>window.npcMacro);
+  assert.equal(await page.evaluate(()=>testMessages.length),beforeNpcMacro+1);
+  assert.deepEqual(errors,[]);console.log('PASS: Closed-window NPC macro uses remembered own attributes and posts exactly one roll.');
+
+  await page.evaluate(async id=>{const actor=game.actors.get(id);actor.isOwner=false;actor.canUserModify=()=>false;await game.modules.get('pedipalpus-foundry').api.open(id);},npcId);await idle();
+  assert.equal(await page.locator('[data-action="roll"]:enabled').count(),0);
+  const observerError=await page.evaluate(async({id,reference})=>{try{await game.modules.get('pedipalpus-foundry').api.roll({actorId:id,reference});return null;}catch(error){return error.message;}},{id:npcId,reference:macroRef});
+  assert.match(observerError,/Besitzerrechte/);assert.equal(await page.locator('.mock-dialog').count(),0);
+  await page.evaluate(async id=>{const actor=game.actors.get(id);actor.isOwner=true;actor.canUserModify=()=>true;await game.modules.get('pedipalpus-foundry').api.open(id);},npcId);await idle();
+  await pref({language:'ork'});await page.locator('[name="category"]').selectOption('NpcAbilities');await page.locator('[data-check-id="NpcAbilities:1"] .pp-check-name').click();
+  assert.equal(await page.locator('.mock-dialog h2').textContent(),'Anderer tut Ding');assert.match(await page.locator('.mock-dialog').textContent(),/Zwei Werte gleich geht/);
+  await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();await pref({language:'standard'});
+  assert.deepEqual(errors,[]);console.log('PASS: Read-only NPC users cannot roll or alter data; NPC attribute selection supports the independent Ork language.');
+
 
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 
