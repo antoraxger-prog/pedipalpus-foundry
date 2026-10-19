@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 1.3.0
+# Pedipalpus – Proben · 1.3.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
