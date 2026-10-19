@@ -30,7 +30,20 @@ export function visibleActors() {
     .sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
-export async function saveCharacter(snapshot, actorId = null, portrait = null, warn,expected) {
+export function ownerAssignment(ownerId=''){
+ if(!ownerId)return {};
+ if(!game.user.isGM)throw new Error('Nur der Spielleiter darf einen Import einem Spieler zuweisen.');
+ const users=game.users?.contents??Array.from(game.users??[]);
+ if(typeof ownerId!=='string'||!/^[a-zA-Z0-9_-]+$/.test(ownerId)||!users.some(user=>user.id===ownerId))throw new Error('Der gewählte Spieler ist nicht mehr vorhanden.');
+ return {[ownerId]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER};
+}
+export async function assignOwner(actor,ownerId=''){
+ const ownership=ownerAssignment(ownerId);
+ if(ownerId)await actor.update(Object.fromEntries(Object.entries(ownership).map(([id,level])=>[`ownership.${id}`,level])));
+}
+
+export async function saveCharacter(snapshot, actorId = null, portrait = null, warn,expected,{ownerId=''}={}) {
+  const ownership=ownerAssignment(ownerId);
   if (!validSnapshot(snapshot)) throw new Error('Die importierten Charakterdaten sind unvollständig.');
   if (game.system.id !== 'worldbuilding') throw new Error('Diese erste Version unterstützt Simple Worldbuilding.');
   if (actorId) {
@@ -50,6 +63,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     verify();
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
     if (image) await applyPortrait(actor,image,warn,tokenImage);
+    await assignOwner(actor,ownerId);
     return actor;
   }
   if (!foundry.documents.Actor.canUserCreate(game.user)) throw new Error('Du darfst keine Charaktere anlegen. Dein Meister kann einen anlegen und dir Besitzerrechte geben.');
@@ -57,7 +71,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     const tokenImage=portrait?.token?await uploadPortrait(portrait.token):image;
   return foundry.documents.Actor.create({
     name: snapshot.profile.name, type: 'character', img: image || 'icons/svg/mystery-man.svg',
-    ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER },
+    ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,...ownership },
     prototypeToken: { name: snapshot.profile.name, actorLink: true, ...(image ? {texture:{src:tokenImage}} : {}) },
     flags: { [MODULE_ID]: { [FLAG]: snapshot } }
   });

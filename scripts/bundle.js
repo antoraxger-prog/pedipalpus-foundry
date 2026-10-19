@@ -159,7 +159,7 @@ async function unpack(entry) {
   return bytes;
 }
 
-export async function readCharacterFile(file) {
+export async function readCharacterFile(file,{includePortrait=true}={}) {
   if (!file || !Number.isSafeInteger(file.size) || file.size <= 0) fail('Bitte eine Charakter-JSON oder ein Charakter-ZIP auswählen.');
   const ext = extension(file.name);
   if (ext === 'json') {
@@ -183,7 +183,7 @@ export async function readCharacterFile(file) {
     const bytes = await unpack(entry);
     if (entry === jsonEntries[0]) {
       try { json = decoder.decode(bytes); } catch { fail('Die Charakterdatei enthält ungültiges UTF-8.'); }
-    } else if (entry === images[0]) {
+    } else if (entry === images[0]&&includePortrait) {
       const imageExt = extension(entry.name);
       checkImage(bytes, imageExt);
       portrait = new File([bytes], entry.name.split('/').at(-1), { type: IMAGE_TYPES[imageExt] });

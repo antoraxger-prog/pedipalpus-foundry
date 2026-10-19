@@ -281,3 +281,6 @@
 .pedipalpus-app .pp-companion-overviews [data-companion-card] { display:flex; flex-wrap:wrap; gap:4px 8px; }
 .pedipalpus-app .pp-companion-overviews [data-companion-card] strong { flex:1 1 100px; }
 .pedipalpus-app .pp-companion-overviews [data-companion-card] span { font-size:10px; }
+.pedipalpus-app .pp-root .pp-companion-overviews { max-height:none; overflow:visible; }
+.pedipalpus-app .pp-root .pp-companion-section > summary[data-companion-card] { display:list-item; padding:8px; }
+.pedipalpus-app .pp-root .pp-companion-section > summary strong { display:inline; }

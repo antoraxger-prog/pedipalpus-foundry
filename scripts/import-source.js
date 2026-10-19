@@ -35,12 +35,12 @@ export async function directoryCharacters(directory,kind='all'){
  if(files.length>200)throw new Error('Bitte einen Charakterordner mit höchstens 200 Dateien auswählen.');
  return files.sort((a,b)=>a.name.localeCompare(b.name,'de'));
 }
-export async function readLiveSource(source){
+export async function readLiveSource(source,{includePortrait=true}={}){
  if(!source?.fileHandle||!await permit(source.fileHandle))throw new Error('Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.');
- const file=await source.fileHandle.getFile(),imported=await readCharacterFile(file),parsed=parseCharacter(imported.json);
+ const file=await source.fileHandle.getFile(),imported=await readCharacterFile(file,{includePortrait}),parsed=parseCharacter(imported.json);
  let portrait=imported.portrait;
  const filename=parsed.profile.portraitFileName;
- if(!portrait&&filename&&source.directoryHandle&&await permit(source.directoryHandle)){
+ if(includePortrait&&!portrait&&filename&&source.directoryHandle&&await permit(source.directoryHandle)){
   if(/[\\/\u0000-\u001f]/.test(filename)||filename==='.'||filename==='..')throw new Error('Der gespeicherte Bilddateiname ist ungültig.');
   let portraits=source.directoryHandle;try{portraits=await portraits.getDirectoryHandle('CharacterPortraits');}catch{}
   try{portrait=await(await portraits.getFileHandle(filename)).getFile();}catch(error){if(error.name!=='NotFoundError')throw error;}

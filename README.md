@@ -1,4 +1,4 @@
-# Pedipalpus – Proben · 1.2.1
+# Pedipalpus – Proben · 1.3.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
@@ -35,6 +35,16 @@ In der Welt **Pedipalpus – Proben** und **Ucurifunke – Proben** aktivieren. 
 5. Einen Bereich auswählen oder über die Suche eine Probe finden. Ein Klick auf den Fähigkeitsnamen, den Probenwert oder das Würfelsymbol würfelt direkt; **durchgestrichenes Auge + Würfelsymbol** würfelt verdeckt. Das Ergebnis erscheint ohne weitere Modifikator-Abfrage im Chat.
 
 Zum Import und Würfeln werden Besitzerrechte benötigt. Neue Charaktere benötigen zusätzlich die entsprechende Foundry-Berechtigung. Beobachter können die Proben lesen.
+
+## Importoptionen und Begleiter
+
+**Bilder übernehmen** und **Begleiter übernehmen** lassen sich unabhängig ausschalten. Ohne Bilder bleiben bestehendes Portrait und Tokenbilder erhalten; die optionale Bilddatei wird nicht gelesen. Ohne Begleiter bleiben vorhandene Begleiterdaten und deren Token-Einträge unverändert. Bei einem neuen Charakter werden dann keine Begleiter übernommen. **Aktualisieren** merkt sich diese beiden Entscheidungen zur gewählten Datei; es legt keine zusätzlichen Begleiter an und vergibt keine neuen Spielerrechte.
+
+Bei eingeschaltetem Begleiterimport kann für jedes Wesen **Keinen Token ändern**, **Neuen Token-Eintrag anlegen** oder ein vorhandener eigener Begleiter bzw. leerer Foundry-Eintrag gewählt werden. Die erste Option übernimmt die Proben beim Hauptcharakter, lässt einen separaten Token-Eintrag aber unangetastet. Ein bereits eindeutig verknüpfter Begleiter ist als Aktualisierungsziel vorausgewählt. Hauptcharaktere, NSCs und Begleiter anderer Hauptcharaktere können hier nicht überschrieben werden. Ein Ziel darf nur einmal gewählt werden. Wer statt des alten Eintrags einen neuen wählt, behält den alten Actor samt Bild; seine automatische Verbindung zum Hauptcharakter endet. Neue Einträge ohne verfügbares Bild verwenden Foundrys Standardsymbol und können später über **Bild / Token** gestaltet werden. Neue Token-Einträge aus dem Charakterverzeichnis auf die Karte ziehen; es wird keine Szene automatisch befüllt.
+
+Der Spielleiter kann über **Spieler zuweisen** zusätzliche Besitzerrechte am importierten Hauptcharakter und den ausgewählten Begleiter-Einträgen vergeben. Andere Rechte bleiben erhalten; nicht ausgewählte Begleiter erhalten keine neue Zuweisung.
+
+Im Kampfbereich hat jedes Gefolgsmitglied einen eigenen aufklappbaren Abschnitt mit allen seinen Proben und **Bild / Token**. Die Abschnitte starten geschlossen; manuell geöffnete Abschnitte bleiben während der Sitzung für diesen Charakter gemerkt. Eine Suche öffnet passende Abschnitte vorübergehend. Die drei Spezialisierungen eines Haupttalents stehen unter einer gemeinsamen Überschrift mit Basiswert und Einfassung. Der Button zum Kampfbereich zeigt zwei gekreuzte Schwerter.
 
 ## NSC-Generator: eigener Import
 

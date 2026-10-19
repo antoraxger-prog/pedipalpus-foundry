@@ -22,7 +22,7 @@ export function matchingPortrait(files,filename) {
   if(matches.length>1)throw new Error('Das Charakterbild ist im ausgewählten Ordner mehrfach vorhanden. Bitte das richtige Bild einzeln auswählen.');
   return matches[0]??null;
 }
-export async function readCharacterWithPortrait(file,files=[]) {
-  const imported=await readCharacterFile(file),character=parseCharacter(imported.json);
-  return {...imported,portrait:imported.portrait??matchingPortrait(files,character.profile.portraitFileName)};
+export async function readCharacterWithPortrait(file,files=[],{includePortrait=true}={}) {
+  const imported=await readCharacterFile(file,{includePortrait}),character=parseCharacter(imported.json);
+  return {...imported,portrait:includePortrait?(imported.portrait??matchingPortrait(files,character.profile.portraitFileName)):null};
 }

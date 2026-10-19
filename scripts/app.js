@@ -2,8 +2,8 @@ import { NPC_FORMAT,retainNpcChoices,withNpcAttributes } from './npc.js';
 import { rememberImportSource,importSource,directoryCharacters,readLiveSource } from './import-source.js';
 import { parseCharacter, MODULE_ID } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
-import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState } from './storage.js';
-import { renderView, renderImportOptions, updateFocusView, escapeHTML, checksForView } from './view.js';
+import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment } from './storage.js';
+import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, checksForView } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
@@ -11,8 +11,8 @@ import { uiText, localizeSurface, localizeDialog } from './language.js';
 import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
-import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices } from './retinue.js';
-import { companionEntries,companionKey,companionActor,saveCompanion,refreshCompanions } from './companions.js';
+import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices,withCompanionImport } from './retinue.js';
+import { companionEntries,companionKey,companionActor,saveCompanion,prepareCompanionImport,verifyCompanionImport,applyCompanionImport } from './companions.js';
 import { characterFiles, readCharacterWithPortrait } from './character-folder.js';
 import { TOKEN_STYLES, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames } from './tokens.js';
 import { writeCharacterBundle } from './bundle.js';
@@ -99,6 +99,8 @@ export class PedipalpusApp extends ApplicationV2 {
   _replaceHTML(result, content) {
     this.element.dataset.ppTheme = this.theme;
     content.innerHTML = result;
+    this.companionOpen??=new Map();
+    content.querySelectorAll('[data-companion-section]').forEach(section=>{const key=JSON.stringify([this.actorId,section.dataset.companionSection]);section.open=this.companionOpen.get(key)??Boolean(getCharacter(this.actor)?.profile.companionGroup);section.querySelector('summary').addEventListener('click',()=>requestAnimationFrame(()=>this.companionOpen.set(key,section.open)));});
     if(this.audioElement!==content){
       this.audioElement=content;
       const prepare=()=>{prepareFeedback(this.effects);};
@@ -272,13 +274,7 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelector('.pp-check-list')?.toggleAttribute('hidden',armorView);
     content.querySelector('.pp-focus')?.toggleAttribute('hidden',armorView);
     let visibleMembers=0;
-    content.querySelectorAll('[data-inventory]').forEach(panel=>{
-      if(panel.dataset.inventory==='armors'){panel.hidden=!armorView;return;}
-      const permitted=this.mode==='battle'&&(query||this.category==='all'||this.category===panel.dataset.inventory);
-      let shown=0;panel.querySelectorAll('[data-companion-card]').forEach(card=>{card.hidden=!permitted||Boolean(query&&!card.dataset.search.includes(query));if(!card.hidden)shown++;});
-      panel.hidden=!shown;visibleMembers+=shown;
-    });
-    const overviews=content.querySelector('.pp-companion-overviews');if(overviews)overviews.hidden=!visibleMembers;
+    content.querySelector('[data-inventory="armors"]')?.toggleAttribute('hidden',!armorView);
     let count = 0;
     const scales = new Set();
     content.querySelectorAll('.pp-check-row').forEach(row => {
@@ -286,10 +282,23 @@ export class PedipalpusApp extends ApplicationV2 {
         : this.category === 'recent' ? row.dataset.recent !== 'true' : this.category !== 'all' && row.dataset.category !== this.category;
       if (!row.hidden) { count++; scales.add(row.dataset.scale); }
     });
-    content.querySelectorAll('.pp-weapon-header').forEach(header => {
+    content.querySelectorAll('.pp-weapon-header,.pp-talent-header').forEach(header => {
       const ids=JSON.parse(header.dataset.checkIds || '[]');
       header.hidden=!Array.from(content.querySelectorAll('.pp-check-row')).some(row => ids.includes(row.dataset.checkId) && !row.hidden);
     });
+    content.querySelectorAll('.pp-talent-child').forEach(row=>row.classList.remove('pp-talent-first','pp-talent-last'));
+    content.querySelectorAll('.pp-talent-header:not([hidden])').forEach(header=>{const rows=Array.from(content.querySelectorAll('.pp-talent-child')).filter(row=>!row.hidden&&row.dataset.talentGroup===header.dataset.talentGroup);rows[0]?.classList.add('pp-talent-first');rows.at(-1)?.classList.add('pp-talent-last');});
+    content.querySelectorAll('[data-companion-section]').forEach(section=>{
+      const card=section.querySelector('[data-companion-card]'),rows=Array.from(section.querySelectorAll('.pp-check-row'));
+      const match=Boolean(query&&card.dataset.search.includes(query));
+      if(match)rows.forEach(row=>{row.hidden=false;});
+      section.hidden=armorView||!(rows.some(row=>!row.hidden)||!query&&(this.category==='all'||this.category===section.dataset.inventory));
+      card.hidden=false;
+      if(!section.hidden)visibleMembers++;
+      section.open=query&&!section.hidden?true:(this.companionOpen?.get(JSON.stringify([this.actorId,section.dataset.companionSection]))??Boolean(getCharacter(this.actor)?.profile.companionGroup));
+      section.querySelectorAll('.pp-weapon-header').forEach(header=>{const ids=JSON.parse(header.dataset.checkIds||'[]');header.hidden=!rows.some(row=>!row.hidden&&ids.includes(row.dataset.checkId));});
+    });
+    const overviews=content.querySelector('.pp-companion-overviews');if(overviews)overviews.hidden=!visibleMembers;
     const scope = content.querySelector('.pp-search-scope');
     if (scope) scope.hidden = !query;
     const empty = content.querySelector('.pp-no-results');
@@ -513,6 +522,7 @@ export class PedipalpusApp extends ApplicationV2 {
     let portraitError = false;
     let portraitSequence = 0;
     let readSequence = 0;
+    let lastRead=null;
     let importKind=getCharacter(this.actor)?.sourceFormat===NPC_FORMAT?'npc':'character';
     this.importFolders??={};this.importSelections??={};
     const answer = await DialogV2.wait({
@@ -521,16 +531,22 @@ export class PedipalpusApp extends ApplicationV2 {
       buttons: [{ action: 'import', label:this.t('Importieren'), icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
           if (!pending) { this.notify('warn', 'Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }
-          if (portraitBusy || portraitError) throw new Error('Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.');
-          return { snapshot: pending, portrait, source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
+          const includeImages=dialog.element.querySelector('[name="includeImages"]').checked,includeCompanions=dialog.element.querySelector('[name="includeCompanions"]').checked,actorId=dialog.element.querySelector('[name="destination"]').value||null;
+          const ownerId=dialog.element.querySelector('[name="ownerId"]')?.value||'';ownerAssignment(ownerId);
+          const companionPlan=includeCompanions?prepareCompanionImport(pending,actorId,Array.from(dialog.element.querySelectorAll('[data-companion-import-index]')).map(field=>({index:Number(field.dataset.companionImportIndex),targetId:field.value}))):[];
+          if (includeImages&&(portraitBusy || portraitError)) throw new Error('Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.');
+          return { snapshot: pending, portrait:includeImages?portrait:null, includeImages,includeCompanions,companionPlan,ownerId,source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
         } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => null }],
       render: (_event, dialog) => {
         localizeDialog(dialog.element,this.theme);
         const destination=dialog.element.querySelector('[name="destination"]');
         const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled; };
-        destination.addEventListener('change',syncButton);
+        const images=dialog.element.querySelector('[name="includeImages"]'),companions=dialog.element.querySelector('[name="includeCompanions"]'),companionOptions=dialog.element.querySelector('[data-companion-import-options]');
+        const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.theme);};
+        destination.addEventListener('change',()=>{syncButton();renderCompanions();});companions.addEventListener('change',()=>{companionOptions.hidden=!companions.checked;});
         const imageInput = dialog.element.querySelector('[name="portraitFile"]');
         imageInput.addEventListener('change', async () => {
+          if(!images.checked)return;
           const sequence = ++portraitSequence;
           portraitManual = null; portrait = portraitPackaged; portraitError = false; portraitBusy = true; syncButton();
           const preview = dialog.element.querySelector('.pp-portrait-preview');
@@ -545,7 +561,7 @@ export class PedipalpusApp extends ApplicationV2 {
         });
         const folderContext=kind=>this.importFolders[kind]??this.importFolders[kind==='npc'?'character':'npc']??null;
         const resetSelection=(clearImage=false)=>{
-          ++readSequence;pending=null;pendingSource=null;portraitPackaged=null;portrait=portraitManual;
+          ++readSequence;pending=null;pendingSource=null;lastRead=null;companionOptions.innerHTML='';portraitPackaged=null;portrait=portraitManual;
           if(clearImage){++portraitSequence;portraitManual=null;portrait=null;portraitBusy=false;portraitError=false;imageInput.value='';}
           dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(portrait?`Bild ausgewählt: ${portrait.file.name}`:'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.');
           dialog.element.querySelector('.pp-portrait-source').textContent=this.t('Optional ein Charakterbild auswählen.');
@@ -558,8 +574,8 @@ export class PedipalpusApp extends ApplicationV2 {
           dialog.element.querySelectorAll('[data-import-panel]').forEach(panel=>{panel.hidden=panel.dataset.importPanel!==kind;});
         };
         const readFile=async (file,source=null,live=null,{expectedKind=null,files=[]}={}) => {
-          const sequence = ++readSequence;
-          pending = null;pendingSource=null;
+          const sequence = ++readSequence,imageTicket=portraitSequence;
+          pending = null;pendingSource=null;lastRead={file,source,files,expectedKind};
           portraitPackaged = null; portrait = portraitManual;
           dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(portrait ? `Bild ausgewählt: ${portrait.file.name}` : 'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.');
           const submit = dialog.element.querySelector('button[data-action="import"]');
@@ -568,26 +584,41 @@ export class PedipalpusApp extends ApplicationV2 {
           preview.textContent = this.t('Datei wird gelesen …');
           try {
             if (!file) throw new Error('Bitte eine JSON-Datei auswählen.');
-            const imported=live??await readCharacterWithPortrait(file,files);
+            const imported=live??await readCharacterWithPortrait(file,files,{includePortrait:images.checked});
             const parsed = parseCharacter(imported.json);
             const actualKind=parsed.sourceFormat===NPC_FORMAT?'npc':'character';
             if(expectedKind&&actualKind!==expectedKind)throw new Error(expectedKind==='npc'?'Bitte eine gespeicherte NSC-Datei (.nsc.json) auswählen.':'Bitte eine Pedipalpus-Charakterdatei auswählen.');
             parsed.sourceJSON=imported.json;
-            const packagedPortrait=imported.portrait?await preparePortrait(imported.portrait):null;
+            const packagedPortrait=images.checked&&imported.portrait?await preparePortrait(imported.portrait):null;
             if (sequence !== readSequence) return;
             selectKind(actualKind);
-            portraitPackaged=packagedPortrait;portrait=portraitManual || portraitPackaged;
+            portraitPackaged=images.checked&&imageTicket===portraitSequence?packagedPortrait:null;portrait=images.checked?(portraitManual || portraitPackaged):null;
             if(portrait && !portraitBusy && !portraitError)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${portrait.file.name}`);
-            pending = parsed;pendingSource=source??{fileName:file.name};
+            pending = parsed;pendingSource=source??{fileName:file.name};lastRead={file,source,files,expectedKind};
             for(const option of destination.options){const target=getCharacter(game.actors.get(option.value));option.disabled=Boolean(target&&(target.sourceFormat??'character')!==(parsed.sourceFormat??'character'));}
             if(destination.selectedOptions[0]?.disabled){const compatible=Array.from(destination.options).find(option=>!option.disabled);if(compatible)destination.value=compatible.value;}
-            syncButton();
+            renderCompanions();syncButton();
             preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} ${this.t('Proben')} · ${parsed.sourceFormat===NPC_FORMAT?'NSC · ':''}${this.t('Dateiversion')} ${parsed.sourceVersion}${parsed.warnings.length?' · '+parsed.warnings.join(' '):''}`;
             dialog.element.querySelector('.pp-portrait-source').textContent = parsed.profile.portraitFileName
               ? this.t(packagedPortrait?'Pedipalpus-Bild automatisch gefunden.':`Pedipalpus-Bild: CharacterPortraits/${parsed.profile.portraitFileName}. Den Pedipalpus-Ordner auswählen oder das Bild unten hinzufügen.`)
               : this.t('Optional ein Charakterbild auswählen.');
           } catch (error) { if (sequence === readSequence) preview.textContent = this.t(error.message); }
         };
+        images.addEventListener('change',async()=>{
+          const ticket=++portraitSequence,read=readSequence;portraitBusy=false;portraitError=false;portraitManual=null;portraitPackaged=null;portrait=null;imageInput.value='';
+          dialog.element.querySelector('[data-image-options]').hidden=!images.checked;syncButton();
+          if(!pending&&lastRead){const {file,source,files,expectedKind}=lastRead;await readFile(file,source,null,{files,expectedKind});return;}
+          if(!images.checked||!pending||!lastRead)return;
+          portraitBusy=true;syncButton();
+          try{const {file,source,files}=lastRead,imported=source?.fileHandle?await readLiveSource(source):await readCharacterWithPortrait(file,files);
+            if(ticket!==portraitSequence||read!==readSequence)return;
+            if(imported.json!==pending.sourceJSON)throw new Error('Die Quelldatei wurde inzwischen geändert. Bitte erneut auswählen.');
+            const prepared=imported.portrait?await preparePortrait(imported.portrait):null;
+            if(ticket!==portraitSequence||read!==readSequence)return;portrait=portraitPackaged=prepared;
+            dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(portrait?`Bild ausgewählt: ${portrait.file.name}`:'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.');
+          }catch(error){if(ticket===portraitSequence&&read===readSequence){portraitError=true;dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(error.message);}}
+          finally{if(ticket===portraitSequence){portraitBusy=false;syncButton();}}
+        });
         const entries=new Map();
         const fail=(error,ticket)=>{if(ticket===readSequence&&error.name!=='AbortError')dialog.element.querySelector('.pp-import-preview').textContent=this.t(error.message);};
         const readSelected=async kind=>{
@@ -597,7 +628,7 @@ export class PedipalpusApp extends ApplicationV2 {
           this.importSelections[kind]=item.webkitRelativePath||item.name;
           try{
             let file=item,source=null,live=null;
-            if(context?.handle){source={fileHandle:item,directoryHandle:context.handle,fileName:item.name};file=await item.getFile();live=await readLiveSource(source);}
+            if(context?.handle){source={fileHandle:item,directoryHandle:context.handle,fileName:item.name};file=await item.getFile();live=await readLiveSource(source,{includePortrait:images.checked});}
             if(ticket!==readSequence||kind!==importKind)return;
             await readFile(file,source,live,{expectedKind:kind,files:context?.files??[]});
           }catch(error){fail(error,ticket);}
@@ -632,7 +663,7 @@ export class PedipalpusApp extends ApplicationV2 {
             try{
               const [handle]=await globalThis.showOpenFilePicker({multiple:false,types:[{description:npc?'Pedipalpus-NSC':'Pedipalpus-Charakter',accept:{'application/json':['.json'],'application/zip':['.zip']}}]});
               if(ticket!==readSequence||kind!==importKind)return;
-              const source={fileHandle:handle,directoryHandle:folderContext(kind)?.handle??null,fileName:handle.name},file=await handle.getFile(),live=await readLiveSource(source);
+              const source={fileHandle:handle,directoryHandle:folderContext(kind)?.handle??null,fileName:handle.name},file=await handle.getFile(),live=await readLiveSource(source,{includePortrait:images.checked});
               if(ticket!==readSequence||kind!==importKind)return;
               await readFile(file,source,live,{expectedKind:npc?'npc':null});
             }catch(error){fail(error,ticket);}
@@ -659,7 +690,14 @@ export class PedipalpusApp extends ApplicationV2 {
   async acceptImport(answer) {
     if (!answer?.snapshot) return;
     const previous=getCharacter(game.actors.get(answer.actorId));
-    answer.snapshot=retainCompanionChoices(previous,retainNpcChoices(previous,answer.snapshot));
+    const includeCompanions=answer.includeCompanions??true,includeImages=answer.includeImages??true;
+    ownerAssignment(answer.ownerId);
+    answer.snapshot=retainNpcChoices(previous,answer.snapshot);
+    if(includeCompanions)answer.snapshot=retainCompanionChoices(previous,answer.snapshot);
+    answer.snapshot=withCompanionImport(previous,answer.snapshot,includeCompanions);
+    const plan=includeCompanions?(answer.companionPlan??prepareCompanionImport(answer.snapshot,answer.actorId,companionEntries(answer.snapshot).flatMap((_member,index)=>{try{const existing=companionActor(answer.actorId,companionKey(answer.snapshot,index));return existing?[{index,targetId:existing.id}]:[];}catch{return [];}}))):[];
+    if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
+    if(!includeImages)answer.portrait=null;
     if(previous){
       const differences=compareCharacters(previous,answer.snapshot);
       if(differences.length){
@@ -672,22 +710,23 @@ export class PedipalpusApp extends ApplicationV2 {
       }
     }
     if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame);
-    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous));
-    await refreshCompanions(actor,message=>this.notify('warn',message));
+    if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
+    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId});
+    if(includeCompanions)await applyCompanionImport(actor,plan,{includeImages,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
     this.selectActor(actor.id);
     await this.persist({...this.preferences,actorId:actor.id,category:'all'});
     await this.render({ force: true });
     this.notify('info', `${answer.snapshot.profile.name} wurde importiert.`);
     this.feedback('saved','Charakter importiert.');this.sound('import');
-    if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame});
+    if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame,includeImages,includeCompanions});
     return actor;
   }
   async refreshCharacter() {
     const actor=this.actor;if(!actor?.isOwner)throw new Error('Zum Aktualisieren werden Besitzerrechte benötigt.');
     const source=await importSource(actor.id);if(!source?.fileHandle)return this.importCharacter();
-    let imported;try{imported=await readLiveSource(source);}catch(error){this.notify('warn',this.t(error.message||'Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.'));return this.importCharacter();}
+    let imported;try{imported=await readLiveSource(source,{includePortrait:source.includeImages??true});}catch(error){this.notify('warn',this.t(error.message||'Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.'));return this.importCharacter();}
     const snapshot=parseCharacter(imported.json);snapshot.sourceJSON=imported.json;
-    return this.acceptImport({snapshot,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:source.tokenFrame??this.preferences.tokenFrame,source});
+    return this.acceptImport({snapshot,includeImages:source.includeImages??true,includeCompanions:source.includeCompanions??getCharacter(actor)?.retinueImportEnabled??true,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:source.tokenFrame??this.preferences.tokenFrame,source});
   }
   async configureCompanionAbility(actor,check){
     const character=getCharacter(actor),expected=JSON.stringify(character),root=Boolean(check.npcChoice);

@@ -6,6 +6,7 @@ export function retinueEntries(raw){
  return COMPANION_GROUPS.flatMap(([collection,group])=>objects(raw?.[collection]).map((member,index)=>({...member,_collection:collection,_group:group,_index:index})));
 }
 export function readCompanions(character){
+ if(character?.retinueImportEnabled===false)return character.retinue??[];
  if(character?.sourceFormat==='Pedipalpus.Npc'&&Array.isArray(character.retinue))return character.retinue;
  try{return retinueEntries(JSON.parse(character.sourceJSON.replace(/^\uFEFF/,'')));}catch{}
  if(Array.isArray(character?.retinue))return character.retinue;
@@ -47,7 +48,7 @@ export function withCompanionAttributes(character,checkId,keys){
  if(check.npcRules&&new Set(keys).size<2)throw new Error('Alle drei Attribute dürfen bei NSC-Proben nicht gleich sein.');
  const replacement={...check,attributes,needsAttributes:false,companionAbility:{...check.companionAbility,keys:[...keys]}};
  let sourceJSON=character.sourceJSON;
- if(sourceJSON&&character.sourceFormat!=='Pedipalpus.Npc'){
+ if(sourceJSON&&character.sourceFormat!=='Pedipalpus.Npc'&&character.retinueImportEnabled!==false){
   const raw=JSON.parse(sourceJSON.replace(/^\uFEFF/,'')),source=objects(raw[member._collection])[member._index],ability=objects(source?.[check.companionAbility.collection])[check.companionAbility.index];
   if(!ability||String(ability.Name??'Fähigkeit')!==check.companionAbility.name)throw new Error('Die Fähigkeit wurde inzwischen geändert.');
   [ability.FirstAttribute,ability.SecondAttribute,ability.ThirdAttribute]=keys;
@@ -55,6 +56,15 @@ export function withCompanionAttributes(character,checkId,keys){
  }
  return {...character,...(sourceJSON?{sourceJSON}:{}),checks:character.checks.map(entry=>entry.id===checkId?replacement:entry)};
 }
+
+export function withCompanionImport(previous,next,include=true){
+ if(include)return {...next,retinueImportEnabled:true};
+ const equipment=item=>COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`));
+ return {...next,retinueImportEnabled:false,retinueSchemaVersion:1,retinue:structuredClone(readCompanions(previous)),
+  checks:[...next.checks.filter(check=>!isCompanionCheck(check)),...structuredClone((previous?.checks??[]).filter(isCompanionCheck))],
+  equipment:[...next.equipment.filter(item=>!equipment(item)),...structuredClone((previous?.equipment??[]).filter(equipment))]};
+}
+export const retainCompanionImport=(previous,next)=>previous?.retinueImportEnabled===false?withCompanionImport(previous,next,false):next;
 
 export function retainCompanionChoices(previous,next){
  const identity=check=>JSON.stringify([check.companionGroup,check.companionId||check.companionName,check.companionAbility?.collection,check.companionAbility?.name]);

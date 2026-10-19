@@ -1,7 +1,7 @@
 import { normalizeCharacter } from './data.js';
 import { characterFocus } from './combat.js';
 import { NPC_FORMAT,mapNpcFile,retainNpcChoices } from './npc.js';
-import { retainCompanionChoices } from './retinue.js';
+import { retainCompanionChoices,retainCompanionImport } from './retinue.js';
 
 const list=value=>Array.isArray(value)?value.filter(item=>item&&typeof item==='object'):[];
 const finite=value=>typeof value==='number'&&Number.isFinite(value)?value:0;
@@ -43,7 +43,7 @@ export function withArmorState(character,id,field,value) {
     mapNpcFile(raw);
     const armor=raw.Npc.Armors[index];if(!armor)throw new Error('Die Rüstung ist im aktuellen NSC nicht mehr vorhanden.');
     armor.Equipped=value;const focus=characterFocus(character);if(focus!==null)raw.Npc.Focus=focus;
-    return retainCompanionChoices(character,retainNpcChoices(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)}));
+    return retainCompanionImport(character,retainCompanionChoices(character,retainNpcChoices(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)})));
   }
   const armor=list(raw.Armors)[index];
   if(!armor)throw new Error('Die Rüstung ist im aktuellen Charakter nicht mehr vorhanden.');
@@ -53,5 +53,5 @@ export function withArmorState(character,id,field,value) {
   const focus=characterFocus(character);
   if(focus!==null){raw.OffDefOffset=focus;raw.OffOffset=focus;raw.DefOffset=-focus;}
   recalculateArmor(raw);
-  return {...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)};
+  return retainCompanionImport(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)});
 }
