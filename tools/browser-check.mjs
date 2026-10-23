@@ -303,7 +303,7 @@ try {
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/ork-1.5.0-schmal.png')});
   await administration();await page.locator('[data-action="import"]').click();
-  assert.equal(await page.locator('.mock-dialog h2').textContent(),'Eigenes Blatt / andere Leute holen');
+  assert.equal(await page.locator('.mock-dialog h2').textContent(),'Blätter und Diener holen');
   assert.equal(await page.locator('.pp-import-preview').textContent(),'JSON-Blatt wählen. Kurz warten.');
   assert.equal(await page.locator('[name="destination"] option[value=""]').textContent(),'Neuen du machen');
   await page.locator('[name="characterFile"]').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{')});

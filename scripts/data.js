@@ -1,4 +1,4 @@
-import { retinueEntries,companionProbes } from './retinue.js';
+import { retinueEntries,companionProbes,COMPANION_GROUPS,COMPANION_ATTRIBUTES,memberAttributes } from './retinue.js';
 import { combatChecks } from './combat.js';
 import { NPC_FORMAT,mapNpcFile } from './npc.js';
 export const MODULE_ID = 'pedipalpus-foundry';
@@ -6,6 +6,7 @@ export const FLAG = 'character';
 export const SCHEMA_VERSION = 1;
 export const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const KNOWN_SAVE_VERSION = 17;
+export const RETINUE_FORMAT = 'Pedipalpus.Gefolge';
 const ATTRIBUTE_KEYS = ['FirstAttribute', 'SecondAttribute', 'ThirdAttribute'];
 const COMPLEX_GROUPS = {
   BodySkills: 'Körper', SocialSkills: 'Gesellschaft', NatureSkills: 'Natur',
@@ -40,6 +41,23 @@ export function parseCharacter(json, importedAt = new Date().toISOString()) {
 }
 
 export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
+  if(raw?.Format===RETINUE_FORMAT){
+    if(raw.Version!==1||'Npc' in raw||'PrimaryAttributes' in raw||typeof raw.Name!=='string'||!raw.Name.trim()||raw.Name.length>120||/[|\r\n]/.test(raw.Name))throw new Error('Gefolgsdatei: Name oder Version ist ungültig.');
+    for(const [collection] of COMPANION_GROUPS){
+      if(raw[collection]!==undefined&&(!Array.isArray(raw[collection])||raw[collection].some(row=>!row||typeof row!=='object'||Array.isArray(row))))throw new Error('Gefolgsdatei: Eine Gefolgsliste ist ungültig.');
+    }
+    const members=retinueEntries(raw),ids=new Set();
+    if(!members.length||members.length>200)throw new Error('Gefolgsdatei: Zwischen einem und 200 Wesen werden unterstützt.');
+    for(const member of members){
+      if(typeof member.Name!=='string'||!member.Name.trim()||member.Name.length>100||/[|\r\n]/.test(member.Name)||typeof member.InventoryId!=='string'||!member.InventoryId||ids.has(member.InventoryId))throw new Error('Gefolgsdatei: Namen und eindeutige Kennungen werden benötigt.');
+      ids.add(member.InventoryId);
+      if(COMPANION_ATTRIBUTES.some(([key])=>!Number.isSafeInteger(member[key])||Math.abs(member[key])>1000))throw new Error('Gefolgsdatei: Acht vollständige Attributswerte werden benötigt.');
+      for(const field of ['Attacks','MundaneAbilities','MagicalAbilities'])if(member[field]!==undefined&&(!Array.isArray(member[field])||member[field].some(row=>!row||typeof row!=='object'||Array.isArray(row))))throw new Error('Gefolgsdatei: Die Probenliste ist ungültig.');
+    }
+    const selected={Version:17,Name:raw.Name,PrimaryAttributes:[],Notes:text(raw.Notes),PortraitFileName:text(raw.PortraitFileName),...Object.fromEntries(COMPANION_GROUPS.map(([collection])=>[collection,raw[collection]??[]]))};
+    const snapshot=normalizeBaseCharacter(selected,importedAt,false,true),single=members.length===1?members[0]:null;
+    return {...snapshot,sourceFormat:RETINUE_FORMAT,sourceVersion:1,profile:{...snapshot.profile,retinueOnly:true,...(single?{companionGroup:single._group,race:text(single.Species)}:{})},attributes:single?memberAttributes(single):[],resources:single?[{name:'LE',value:single.CurrentLe??null,max:single.MaxLe??null},{name:'AE',value:single.CurrentAstralEnergy??null,max:single.AstralEnergy??null}]:[]};
+  }
   if(raw&&typeof raw==='object'&&'Format' in raw){
     const mapped=mapNpcFile(raw),snapshot=normalizeBaseCharacter(mapped.raw,importedAt,true);
     const checks=[...snapshot.checks,...mapped.skillRows,{id:'combat:NpcDodge:0:parry',name:'Ausweichen · Parade',group:'Ausweichen',kind:'combat',value:mapped.dodge,attributes:[],reason:'',fixedCombat:true,combat:{type:'parry',weaponName:'Ausweichen',skillName:'Ausweichen',skillValue:mapped.dodge,baseValue:0,focusValue:0,weaponModifier:0,mobilityPenalty:0}}]
@@ -49,15 +67,15 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
   return normalizeBaseCharacter(raw,importedAt);
 }
 
-function normalizeBaseCharacter(raw,importedAt,npcRules=false) {
+function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false) {
   if (!raw || Array.isArray(raw) || typeof raw !== 'object' || !text(raw.Name).trim()
-      || !Array.isArray(raw.PrimaryAttributes) || !raw.PrimaryAttributes.length || integer(raw.Version) === null) {
+      || !Array.isArray(raw.PrimaryAttributes) || !retinueOnly&&!raw.PrimaryAttributes.length || integer(raw.Version) === null) {
     throw new Error('Das ist keine vollständige Pedipalpus-Charakterdatei. Name, Version und Attribute werden benötigt.');
   }
   const warnings = [];
   if (raw.Version !== KNOWN_SAVE_VERSION) warnings.push(`Dateiversion ${raw.Version}: geprüft ist Version ${KNOWN_SAVE_VERSION}. Bitte die angezeigten Werte vergleichen.`);
   const attributes = list(raw.PrimaryAttributes).map(attribute).filter(Boolean);
-  if (!attributes.length) throw new Error('Die Datei enthält keine lesbaren Attributswerte.');
+  if (!retinueOnly&&!attributes.length) throw new Error('Die Datei enthält keine lesbaren Attributswerte.');
   const checks = [];
   function addCheck(id, name, group, value, trio, kind = 'skill', reason = '', extra = {}) {
     name = text(name).trim();

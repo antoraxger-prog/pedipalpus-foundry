@@ -768,7 +768,7 @@ try {
   await page.locator('[name="category"]').selectOption('all');await page.locator('[name="search"]').fill('');
   assert.equal(await page.locator('.pp-companion-section[open]').count(),0);assert.equal(await page.locator('.pp-companion-section:not([hidden])').count(),3);
   const compactHeight=await page.locator('.pp-companion-overviews').evaluate(el=>el.scrollHeight);
-  await page.locator('.pp-companion-section').first().locator('summary').click();assert.equal(await page.locator('.pp-companion-section[open]').count(),1);
+  await page.locator('.pp-companion-section').first().locator(':scope > summary').click();assert.equal(await page.locator('.pp-companion-section[open]').count(),1);
   assert.ok(await page.locator('.pp-companion-overviews').evaluate(el=>el.scrollHeight)>compactHeight+50);
   const beforeClick=await page.evaluate(()=>testMessages.length);await page.locator('[data-check-id="animals:0:0:attack"] .pp-check-name').click();await idle();assert.equal(await page.evaluate(()=>testMessages.length),beforeClick+1);assert.equal(await page.locator('.pp-companion-section[open]').count(),1);
   await page.locator('[name="search"]').fill('Testdämon');assert.equal(await page.locator('.pp-companion-section:not([hidden])[open]').count(),1);await page.locator('[name="search"]').fill('');assert.equal(await page.locator('.pp-companion-section[open]').count(),1);

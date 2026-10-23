@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.5.1
+# Pedipalpus – Proben · 1.6.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.5.1 behebt die leere Bildvorschau im Foundry-Bildeditor. Vorhandene Profilbilder lassen sich wieder laden und im Tokenrahmen ausrichten.
+1.6.0 ergänzt den direkten Import vorbereiteter Gefolgsdateien, Reaktionsproben und aufklappbare Spielwerte und Regeltexte für Begleiter. Vorhandene Charakter- und NSC-Importe bleiben getrennt.
 
 ## Pedipalpus als Grundlage
 
@@ -220,3 +220,13 @@ Die Originalrahmen werden separat importiert und sind nicht im öffentlichen Mod
 ## Begleiter ohne Angriffe
 
 Begleiter werden im Kampfbrett unter **Tierproben**, **Dämonen** bzw. **Untote** angezeigt, auch wenn noch keine Angriffe gespeichert sind. Eigene gespeicherte Attribute und Fähigkeiten bleiben unabhängig davon würfelbar. Angriff und Parade lassen sich erst würfeln, wenn diese Werte in der Pedipalpus-Datei enthalten sind. Nach Änderungen in Pedipalpus speichern und den vorhandenen Foundry-Charakter über **Aktualisieren** oder einen erneuten JSON-Import aktualisieren; ein Modulupdate alleine verändert die importierten Charakterdaten nicht.
+
+## Gefolge einzeln oder als Bibliothek importieren
+
+**Werkzeuge → JSON importieren → Gefolge importieren** nimmt vorbereitete Dateien im Format `Pedipalpus.Gefolge`, Version1, an. Ein einzelnes Wesen wird direkt als eigener Foundry-Eintrag mit seinen endgültigen Werten geöffnet. Bibliotheken enthalten mehrere Wesen in getrennten aufklappbaren Abschnitten; beim Import lassen sich zusätzliche Token-Einträge für ausgewählte Mitglieder anlegen und einem Spieler zuweisen. Hauptcharakter-/NSC-Dateien dürfen eine solche Bibliothek nicht überschreiben und umgekehrt. Vorbereitete JSONs können zusammen mit einem passenden Portrait als einzelnes ZIP importiert werden.
+
+Eine Gefolgsdatei enthält `Format`, `Version`, `Name` und mindestens eine der Listen `Animals`, `Demons`, `Undead`, `Chimeras`, `Persons`, `Elementals` oder `Golems`. Jedes Wesen benötigt `Name`, eine eindeutige `InventoryId` und die acht endgültigen Werte `MU`, `KL`, `IN`, `CH`, `FF`, `GE`, `KO`, `KK`. Angriffe und Fähigkeiten verwenden dieselben Datenfelder wie das gespeicherte Pedipalpus-Gefolge. Eine optionale Angabe `AttackOnly: true` unterdrückt einen nicht angegebenen Paradewurf für einen zusätzlichen Angriff. Dies ist ein eigenständiges Austauschformat für das Foundry-Modul, keine Windows-Charakterdatei.
+
+**Spielwerte und Regeln** zeigt bei jedem Begleiter vorhandene Angaben zu RS, gMR/kMR, Reaktion, Geschwindigkeit, Bindungslast, Beschwörung, Tragkraft, Angriffsschaden, Material und Besonderheiten. Reaktion wird mit MU/IN/GE und dem gespeicherten Probenwert gewürfelt. Breite Fähigkeiten ohne festgelegte Attributskombination bleiben beim Würfeln auswählbar. Fehlende Zahlenwerte werden nicht ergänzt. Passive Effekte, Schadenswürfe, Ressourcenverbrauch, Manöver und bedingte Boni aus Regeltexten werden nicht automatisch abgewickelt.
+
+Regelbücher, Charakterdateien und private Importbibliotheken sind nicht Bestandteil des öffentlichen Moduldownloads.

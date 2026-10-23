@@ -1,5 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Charakter / NSC / Gefolge importieren':'Blätter und Diener holen', 'Gefolge importieren':'Diener holen', 'Gefolgsdatei oder Einzelpaket':'Blatt mit Dienern', 'Spielwerte und Regeln':'Zahlen und Regeln',
   'Tokenbild erstellt.':'Figurenbild da.', 'Eigenen Rahmen hinzufügen':'Eigenen Ring holen', 'Eigener Rahmen':'Eigener Ring', 'Rahmenbild':'Bild vom Ring', 'Rahmen wird gespeichert …':'Ring wird gemerkt …', 'Rahmen gespeichert.':'Ring gemerkt.', 'Dein eigener Rahmen ist gespeichert.':'Dein Ring ist gemerkt.', 'Transparentes PNG oder WebP mit geschlossenem Rand und freier Mitte. Rechteckige Bilder sind möglich. Neue Rahmen bleiben für spätere Verwendung gespeichert.':'Ring muss zu sein. Mitte muss frei sein. PNG oder WebP. Rechteck geht auch. Ring bleibt für später.',
 
   'Bildausschnitt bearbeiten':'Gesicht richtig hin', 'Bild auswählen oder vorhandenes Bild ausrichten.':'Neues Gesicht wählen. Oder altes schieben.', 'Bild im Rahmen ziehen. Zum Vergrößern den Regler verwenden.':'Gesicht im Ring schieben. Regler macht größer.', 'Vergrößerung':'Größer machen', 'Ausschnitt zurücksetzen':'Gesicht wieder Mitte', 'Bild wird geladen …':'Gesicht kommt …', 'Bildausschnitt. Bild mit der Maus verschieben oder Pfeiltasten verwenden.':'Gesicht schieben. Maus oder Pfeiltasten nehmen.',
@@ -214,5 +215,5 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
 
 export function localizeDialog(root, theme) {
   if (theme !== 'ork') return;
-  root.querySelectorAll('.window-title, label, .pp-import-preview, .pp-portrait-preview, .pp-portrait-source, .pp-import > p, [name="destination"] option[value=""]').forEach(element => copyText(element,theme));
+  root.querySelectorAll('.window-title, label, .pp-import-kinds button, .pp-import-preview, .pp-portrait-preview, .pp-portrait-source, .pp-import > p, [name="destination"] option[value=""]').forEach(element => copyText(element,theme));
 }

@@ -1,6 +1,6 @@
 import { NPC_FORMAT,retainNpcChoices,withNpcAttributes } from './npc.js';
 import { rememberImportSource,importSource,directoryCharacters,readLiveSource } from './import-source.js';
-import { parseCharacter, MODULE_ID } from './data.js';
+import { parseCharacter, MODULE_ID, RETINUE_FORMAT } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
 import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment } from './storage.js';
 import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, checksForView } from './view.js';
@@ -81,7 +81,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const actors = visibleActors();
     const actor = actors.find(actor => actor.id === this.actorId) ?? null;
     if (!actor) this.actorId = null;
-    if(actor?.getFlag(MODULE_ID,'companion')?.sourceActorId)this.mode='battle';
+    if(actor?.getFlag(MODULE_ID,'companion')?.sourceActorId||getCharacter(actor)?.profile.retinueOnly)this.mode='battle';
     const current = getCharacter(actor);
     if(this.mode==='full' && !['all','favorites'].includes(this.category)){
       const available=new Set(checksForView(current,'full').map(check=>['primary','secondary'].includes(check.id.split(':')[0])?'attributes':['Spells','Rituals'].includes(check.id.split(':')[0])?'magic':check.id.split(':')[0]));
@@ -531,10 +531,10 @@ export class PedipalpusApp extends ApplicationV2 {
     let portraitSequence = 0;
     let readSequence = 0;
     let lastRead=null;
-    let importKind=getCharacter(this.actor)?.sourceFormat===NPC_FORMAT?'npc':'character';
+    let importKind=getCharacter(this.actor)?.profile.retinueOnly?'retinue':getCharacter(this.actor)?.sourceFormat===NPC_FORMAT?'npc':'character';
     this.importFolders??={};this.importSelections??={};
     const answer = await DialogV2.wait({
-      window: { title: this.t('Charakter / NSC importieren') }, position: { width: 550 },
+      window: { title: this.t('Charakter / NSC / Gefolge importieren') }, position: { width: 550 },
       classes: this.dialogClasses, content: renderImportOptions(actors, this.actorId, canCreate, this.preferences.tokenFrame,importKind), modal:true, rejectClose: false,
       buttons: [{ action: 'import', label:this.t('Importieren'), icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
@@ -550,7 +550,7 @@ export class PedipalpusApp extends ApplicationV2 {
         const destination=dialog.element.querySelector('[name="destination"]');
         const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled; };
         const images=dialog.element.querySelector('[name="includeImages"]'),companions=dialog.element.querySelector('[name="includeCompanions"]'),companionOptions=dialog.element.querySelector('[data-companion-import-options]');
-        const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.theme);};
+        const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending&&!(pending.profile.retinueOnly&&pending.profile.companionGroup)?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.theme);};
         destination.addEventListener('change',()=>{syncButton();renderCompanions();});companions.addEventListener('change',()=>{companionOptions.hidden=!companions.checked;});
         const imageInput = dialog.element.querySelector('[name="portraitFile"]');
         imageInput.addEventListener('change', async () => {
@@ -594,8 +594,8 @@ export class PedipalpusApp extends ApplicationV2 {
             if (!file) throw new Error('Bitte eine JSON-Datei auswählen.');
             const imported=live??await readCharacterWithPortrait(file,files,{includePortrait:images.checked});
             const parsed = parseCharacter(imported.json);
-            const actualKind=parsed.sourceFormat===NPC_FORMAT?'npc':'character';
-            if(expectedKind&&actualKind!==expectedKind)throw new Error(expectedKind==='npc'?'Bitte eine gespeicherte NSC-Datei (.nsc.json) auswählen.':'Bitte eine Pedipalpus-Charakterdatei auswählen.');
+            const actualKind=parsed.sourceFormat===RETINUE_FORMAT?'retinue':parsed.sourceFormat===NPC_FORMAT?'npc':'character';
+            if(expectedKind&&actualKind!==expectedKind)throw new Error(expectedKind==='npc'?'Bitte eine gespeicherte NSC-Datei (.nsc.json) auswählen.':expectedKind==='retinue'?'Bitte eine Gefolgsdatei (Pedipalpus.Gefolge) auswählen.':'Bitte eine Pedipalpus-Charakterdatei auswählen.');
             parsed.sourceJSON=imported.json;
             const packagedPortrait=images.checked&&imported.portrait?await preparePortrait(imported.portrait):null;
             if (sequence !== readSequence) return;
@@ -605,6 +605,7 @@ export class PedipalpusApp extends ApplicationV2 {
             pending = parsed;pendingSource=source??{fileName:file.name};lastRead={file,source,files,expectedKind};
             for(const option of destination.options){const target=getCharacter(game.actors.get(option.value));option.disabled=Boolean(target&&(target.sourceFormat??'character')!==(parsed.sourceFormat??'character'));}
             if(destination.selectedOptions[0]?.disabled){const compatible=Array.from(destination.options).find(option=>!option.disabled);if(compatible)destination.value=compatible.value;}
+            companions.disabled=Boolean(parsed.profile.retinueOnly);if(parsed.profile.retinueOnly)companions.checked=true;
             renderCompanions();syncButton();
             preview.textContent = `${parsed.profile.name} · ${parsed.checks.filter(check => !check.reason).length} ${this.t('Proben')} · ${parsed.sourceFormat===NPC_FORMAT?'NSC · ':''}${this.t('Dateiversion')} ${parsed.sourceVersion}${parsed.warnings.length?' · '+parsed.warnings.join(' '):''}`;
             dialog.element.querySelector('.pp-portrait-source').textContent = parsed.profile.portraitFileName
@@ -643,6 +644,7 @@ export class PedipalpusApp extends ApplicationV2 {
         };
         const loadFolder=async kind=>{
           const entry=entries.get(kind),context=folderContext(kind),ticket=readSequence;
+          if(!entry)return;
           entry.items=[];entry.choice.innerHTML='';entry.choice.parentElement.hidden=true;entry.hint.textContent='';
           if(!context)return;
           try{
@@ -687,6 +689,7 @@ export class PedipalpusApp extends ApplicationV2 {
           });
           entry.choice.addEventListener('change',()=>{readSelected(kind);});
         }
+        dialog.element.querySelector('[name="retinueFile"]').addEventListener('change',event=>{const ticket=resetSelection(),file=event.target.files?.[0];if(importKind==='retinue')readFile(file,null,null,{expectedKind:'retinue'}).catch(error=>fail(error,ticket));});
         dialog.element.querySelectorAll('[data-import-kind]').forEach(button=>button.addEventListener('click',()=>{
           const kind=button.dataset.importKind;if(kind===importKind)return;resetSelection(true);selectKind(kind);loadFolder(kind);
         }));
@@ -698,7 +701,7 @@ export class PedipalpusApp extends ApplicationV2 {
   async acceptImport(answer) {
     if (!answer?.snapshot) return;
     const importActor=game.actors.get(answer.actorId),previous=getCharacter(importActor),previousFraming=savedPortraitFraming(importActor),portraitExpected=importActor?JSON.stringify({img:importActor.img,framing:importActor.getFlag(MODULE_ID,'portraitFraming')}):undefined;
-    const includeCompanions=answer.includeCompanions??true,includeImages=answer.includeImages??true;
+    const includeCompanions=answer.snapshot.profile.retinueOnly?true:answer.includeCompanions??true,includeImages=answer.includeImages??true;
     ownerAssignment(answer.ownerId);
     answer.snapshot=retainNpcChoices(previous,answer.snapshot);
     if(includeCompanions)answer.snapshot=retainCompanionChoices(previous,answer.snapshot);
@@ -784,6 +787,7 @@ export class PedipalpusApp extends ApplicationV2 {
   async importAnimalPortrait(button){
     const source=this.actor,index=Number(button.dataset.animal),character=getCharacter(source),key=companionKey(character,index);
     if(button.dataset.animalKey!==key)throw new Error('Das Gefolgsmitglied wurde inzwischen geändert. Bitte erneut auswählen.');
+    if(character.profile.retinueOnly&&character.profile.companionGroup)return this.importPortrait();
     const animal=companionEntries(character)[index],existing=source.getFlag(MODULE_ID,'companion')?.sourceActorId?source:companionActor(source.id,key),style=existing?.getFlag(MODULE_ID,'companion')?.tokenStyle||this.preferences.tokenFrame;
     const expected=JSON.stringify({img:existing?.img,framing:existing?.getFlag(MODULE_ID,'portraitFraming')}),expectedTarget={id:existing?.id,state:companionTargetState(existing),source:JSON.stringify(character)},answer=await this.editPortrait(existing,{title:`${animal.Name} · ${this.t('Bild / Token')}`,style,action:'animal-image',label:'Token erstellen'});
     if(!answer)return;

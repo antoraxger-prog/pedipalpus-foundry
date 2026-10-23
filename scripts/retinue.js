@@ -27,7 +27,7 @@ export function companionProbes(raw,{npcRules=false}={}){
    result.push({id:`${prefix}:${suffix}`,name,group:String(member.Name??''),category:`${member._group}-${suffix.split(':')[0]}`,kind,value,attributes,reason,...extra,...(npcRules?{npcRules:true}:{}),...(ability?{companionAbility:ability,needsAttributes}:{} )});
   };
   for(const attr of attrs)add(`attribute:${attr.short}`,attr.name,attr.value,[],'attribute');
-  for(const [field,label,keys] of [['MentalMagicResistance','Geistige Magieresistenz',['MU','KL','IN']],['PhysicalMagicResistance','Körperliche Magieresistenz',['GE','KO','KK']]]){
+  for(const [field,label,keys] of [['MentalMagicResistance','Geistige Magieresistenz',['MU','KL','IN']],['PhysicalMagicResistance','Körperliche Magieresistenz',['GE','KO','KK']],['Reaction','Reaktionsvermögen',['MU','IN','GE']]]){
    if(Number.isSafeInteger(member[field]))add(`resistance:${field}`,label,member[field],keys.flatMap(key=>attrs.filter(attr=>attr.short===key)),'skill',npcRules?{collection:'Resistance',index:0,name:label,keys}:null);
   }
   for(const [collection,type] of [['MundaneAbilities','mundane'],['MagicalAbilities','magical']])objects(member[collection]).forEach((ability,index)=>{

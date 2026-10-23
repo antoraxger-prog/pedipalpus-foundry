@@ -58,7 +58,7 @@ export function combatChecks(raw,{npcRules=false}={}) {
   }
   retinueEntries(raw).forEach(animal => list(animal.Attacks).forEach((attack,j) => {
     const i=animal._index,group=animal._group;
-    for (const type of attack.IsRanged===true?['ranged']:['attack','parry']) add(`${group}:${i}:${j}:${type}`,`${text(animal.Name) || 'Tier'} – ${text(attack.Name) || 'Tierangriff'}`,
+    for (const type of attack.IsRanged===true?['ranged']:attack.AttackOnly===true?['attack']:['attack','parry']) add(`${group}:${i}:${j}:${type}`,`${text(animal.Name) || 'Tier'} – ${text(attack.Name) || 'Tierangriff'}`,
       text(attack.Name) || 'Tierangriff',type,integer(attack[type === 'parry' ? 'ParryValue' : 'AttackValue']),0,0,0,0,{...(group==='animals'?{animalName:text(animal.Name)}:{}),companionName:text(animal.Name),companionGroup:group,companionIndex:i,companionId:text(animal.InventoryId),ranges:text(attack.Ranges)});
   }));
   return checks;
