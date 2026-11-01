@@ -29,6 +29,19 @@ export function frameWindowMask(pixels,width,height){
  return {pixels:mask,window:{x:minX,y:minY,width:maxX-minX+1,height:maxY-minY+1}};
 }
 const png=async(canvas,name)=>{const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('Der Rahmen konnte nicht gespeichert werden.');return {file:new File([blob],name,{type:'image/png'}),extension:'png'};};
+const frameWrites=new Map();
+export async function saveCustomFrame(value){
+ const entry=validateCustomFrame(value);if(!entry)throw new Error('Der gespeicherte Tokenrahmen ist ungültig.');
+ const key=JSON.stringify([game.world.id,game.user.id]),settings=game.settings;
+ // Mehrere Bilddialoge teilen dieselbe persönliche Sammlung. Erst beim Schreiben neu einlesen.
+ const write=(frameWrites.get(key)??Promise.resolve()).catch(()=>{}).then(async()=>{
+  const latest=savedCustomFrames();if(latest[entry.id])return latest[entry.id];
+  if(Object.keys(latest).length>=50)throw new Error('Es sind bereits 50 eigene Rahmen gespeichert.');
+  await settings.set(MODULE_ID,'customTokenFrames',{...latest,[entry.id]:entry});return entry;
+ });
+ frameWrites.set(key,write);
+ try{return await write;}finally{if(frameWrites.get(key)===write)frameWrites.delete(key);}
+}
 export async function importCustomFrame(file){
  const prepared=await preparePortrait(file);if(!['png','webp'].includes(prepared.extension))throw new Error('Eigene Rahmen bitte als transparentes PNG oder WebP auswählen.');
  const image=await createImageBitmap(prepared.file);
@@ -39,7 +52,6 @@ export async function importCustomFrame(file){
   const overlayPng=await png(overlay,'frame.png'),clipPng=await png(clip,'clip.png'),digest=await crypto.subtle.digest('SHA-256',await overlayPng.file.arrayBuffer()),hash=Array.from(new Uint8Array(digest)).map(n=>n.toString(16).padStart(2,'0')).join(''),id=`custom-${hash}`;
   const current=savedCustomFrames();if(current[id])return current[id];if(Object.keys(current).length>=50)throw new Error('Es sind bereits 50 eigene Rahmen gespeichert.');
   const entry={id,name:String(file.name??'Eigener Rahmen').replace(/\.[^.]+$/,'').trim().slice(0,64)||'Eigener Rahmen',overlay:await uploadPortrait(overlayPng),clip:await uploadPortrait(clipPng),width,height,window:result.window};
-  const latest=savedCustomFrames();if(!latest[id]&&Object.keys(latest).length>=50)throw new Error('Es sind bereits 50 eigene Rahmen gespeichert.');
-  await game.settings.set(MODULE_ID,'customTokenFrames',{...latest,[id]:entry});return entry;
+  return await saveCustomFrame(entry);
  }finally{image.close();}
 }

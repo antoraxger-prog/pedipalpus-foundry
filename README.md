@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.10.0
+# Pedipalpus – Proben · 1.10.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.10.0 sichert Würfe ersetzter oder nicht mehr zugeordneter Begleiter ab und ergänzt verdeckte Würfelmakros sowie die Pflege nicht mehr verfügbarer Favoriten. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.10.1 sichert gleichzeitig gespeicherte eigene Tokenrahmen ab und ergänzt die Rückkehr zum letzten gültigen Bild im Bildeditor. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Bildeditor und eigene Rahmen in 1.10.1
+
+Schlägt das Laden einer neuen Bilddatei oder eines anderen Rahmens fehl, bleibt die Übernahme gesperrt. **Letztes gültiges Bild** stellt auf Wunsch die vorherige gültige Vorschau mit Ausschnitt, Vergrößerung und Rahmen wieder her. Das lädt nichts hoch und ändert keine gespeicherte Figur. Erst **Bild übernehmen** speichert wie gewohnt; **Abbrechen** erhält das bisherige Bild. Ohne vorherige gültige Vorschau wird keine Wiederherstellung angeboten.
+
+Das Abbrechen einer Dateiauswahl lässt die Vorschau bestehen. Dieselbe Datei kann erneut gewählt werden, etwa nach einem vorübergehenden Ladefehler. Hinweise und Knöpfe des Bildeditors berücksichtigen die gewählte Ork-Sprache.
+
+Mehrere gleichzeitig geöffnete Dialoge speichern eigene Rahmen im selben Browser nacheinander. Die persönliche Sammlung wird vor jeder Speicherung frisch gelesen, vorhandene Rahmen bleiben erhalten, doppelte Bilder werden wiederverwendet und die Grenze von 50 eigenen Rahmen bleibt wirksam. Ein fehlgeschlagener Speicherversuch blockiert spätere Importe nicht. Eine Synchronisationssperre zwischen verschiedenen Browsern ist damit nicht verbunden.
+
+Bestehende Bilder, Ausschnitte und Figuren benötigen keinen Neuimport.
 
 ## Würfelmakros, Begleiter und Favoriten in 1.10.0
 

@@ -1,5 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Letztes gültiges Bild':'Letztes heiles Gesicht', 'Letztes gültiges Bild wiederhergestellt.':'Heiles Gesicht wieder da.',
   'Spielstand · Zustände und Energien':'Kraft und was weh tut', 'Zustände':'Was weh tut', 'Unterdrückt':'Gilt gerade nicht', 'Unterdrückung':'Wie viel gilt nicht?', 'Eine Stufe':'Eine weniger', 'Zwei Stufen':'Zwei weniger', 'Ganz':'Alles', 'Keine':'Nichts', 'Alle Begleiter aufklappen':'Alle Freunde auf', 'Alle Begleiter zuklappen':'Alle Freunde zu', 'Alle Begleiter zuklappen und Suche leeren':'Alle Freunde zu. Suche weg.', 'Änderungen gelten in Foundry. Die Quelldatei bleibt unverändert.':'Neue Zahlen nur hier. Altes Blatt bleibt.', 'Nur geänderte Werte werden gespeichert. Plus und Minus werden erst mit Speichern übernommen.':'Nur neue Zahlen merken. Plus und Minus erst bei Merken fest.',
   'Spielstand':'Wie geht es?', 'Schriftgröße':'Schrift größer', 'Kräftige Werte':'Zahlen stark', 'Ruhige Zeilenflächen':'Hinter Zahlen ruhig', 'Design für diese Figur merken':'Aussehen für den merken', 'Waffensets':'Waffen zusammen', 'Alle Waffen':'Alle Waffen', 'Meine Spielnotiz':'Mein Merktext', 'Notiz speichern':'Merktext merken', 'Quelldaten verwenden':'Zahlen vom Blatt nehmen',
   'Charakter / NSC / Gefolge importieren':'Blätter und Diener holen', 'Gefolge importieren':'Diener holen', 'Gefolgsdatei oder Einzelpaket':'Blatt mit Dienern', 'Spielwerte und Regeln':'Zahlen und Regeln',
@@ -236,5 +237,5 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
 
 export function localizeDialog(root, theme) {
   if (theme !== 'ork') return;
-  root.querySelectorAll('.window-title, label, .pp-import-kinds button, .pp-import-preview, .pp-portrait-preview, .pp-portrait-source, .pp-import > p, [name="destination"] option[value=""]').forEach(element => copyText(element,theme));
+  root.querySelectorAll('.window-title, label, .pp-portrait-editor button, .pp-portrait-editor .pp-hint, .pp-import-kinds button, .pp-import-preview, .pp-portrait-preview, .pp-portrait-source, .pp-import > p, [name="destination"] option[value=""]').forEach(element => copyText(element,theme));
 }
