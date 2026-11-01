@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.7
+# Pedipalpus – Proben · 1.9.8
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.7 verbessert den Abgleich gespeicherter Begleiterwerte: Einzelne Speicherfehler blockieren die übrigen Begleiter nicht mehr, und eine zwischenzeitliche Änderung am Hauptcharakter stoppt weitere veraltete Übernahmen. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.8 sichert den Charakterwechsel bei Speicherfehlern ab und erleichtert Suche und Tastaturbedienung. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Suche, Tastatur und Charakterwechsel in 1.9.8
+
+Beim Wechsel über die Charakterauswahl sind weitere Aktionen gesperrt, bis die Ansicht zur gewählten Figur gehört. Auch bei einem Fehler der persönlichen Speicherung wird die neue Figur angezeigt; dafür erscheint eine Warnung. Eine alte Ansicht bleibt dadurch nicht mehr für eine intern bereits gewechselte Figur bedienbar.
+
+Die Suche akzeptiert Umlaute auch als **ae/oe/ue** oder **a/o/u** sowie **ss** für **ß**. Mehrere Wörter müssen alle vorkommen, ihre Reihenfolge ist frei. Bei Begleitern kann die Suche Angaben aus der Überschrift und einer Probe kombinieren, etwa **Träger Hieb**. Namen und Quelldaten werden dabei nicht geändert.
+
+Innerhalb des Modulfensters führt **Strg+F** zur Suche. **Pfeil runter** wechselt von dort zur ersten sichtbaren, freigegebenen normalen Würfelaktion. **Pfeil hoch/runter** bewegt sich zwischen den sichtbaren Proben; gesperrte Aktionen und eingeklappte Tabellen werden übersprungen. Vom ersten Treffer führt Pfeil hoch zurück zur Suche. **Esc** kehrt aus der Liste zur Suche zurück und leert beim nächsten Drücken das Suchfeld. Die Navigation selbst würfelt nicht; **Enter** oder **Leertaste** aktiviert erst den fokussierten Knopf. In geschlossenen Begleiterkarten bleiben deren sichtbare Schnellwürfe erreichbar.
+
+Kein erneuter Import oder Datenumbau erforderlich.
 
 ## Begleiterwerte und Wiederholungsversuche in 1.9.7
 

@@ -21,6 +21,7 @@ import { checkDisplayName } from './ork-talents.js';
 import {rollDamage,damageFormula} from './check-details.js';
 import {retainPlayState} from './play-state.js';
 import {figurePreferences,figureTheme,playStateDialog,infoDialog,weaponSetDialog,activateWeaponSet} from './play-tools.js';
+import {searchTerms,matchesSearch,handleProbeKeys} from './search.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
 export class PedipalpusApp extends ApplicationV2 {
@@ -124,17 +125,15 @@ export class PedipalpusApp extends ApplicationV2 {
     if (root) { root.dataset.language = this.language; root.dataset.animation = this.preferences.animations;root.dataset.ppAnimations=this.effects.animations; }
     if(root && this.characterChanged){if(this.preferences.animations!=='none')root.classList.add('pp-sheet-changed');this.characterChanged=false;}
     localizeSurface(this.element, this.language === 'ork' ? 'ork' : 'fantasy', getCharacter(this.actor), this.actor, this.token);
-    content.querySelector('[name="actor"]').addEventListener('change', async event => {
-      if (this.busy || this.referenceBusy) return;
-      this.selectActor(event.target.value || null);
-      await this.persist({...this.preferences,actorId:this.actorId,category:this.category});
-      await this.render({ force: true });
+    content.querySelector('[name="actor"]').addEventListener('change', event => {
+      this.changeActor(event.target.value || null).catch(error=>this.notify('error',error.message));
     });
     content.querySelector('[name="search"]')?.addEventListener('input', event => {
       this.search = event.target.value;
       this.filterChecks(content);
     });
     content.querySelector('[name="theme"]')?.addEventListener('change', event => {
+      if(this.busy||this.referenceBusy)return;
       this.theme = THEMES.includes(event.target.value) ? event.target.value : 'fantasy';
       const theme = this.theme;
       const actorId=this.actorId,rememberTheme=figurePreferences(this.preferences,actorId).rememberTheme;
@@ -153,6 +152,7 @@ export class PedipalpusApp extends ApplicationV2 {
     });
     content.querySelectorAll('.pp-companion-quick button,.pp-companion-energy').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();}));
     content.querySelector('[name="category"]')?.addEventListener('change', event => {
+      if(this.busy||this.referenceBusy)return;
       this.category = event.target.value;
       this.search = '';
       content.querySelector('[name="search"]').value = '';
@@ -172,13 +172,9 @@ export class PedipalpusApp extends ApplicationV2 {
     });
     this.surfaceEvents?.abort();this.surfaceEvents=new AbortController();
     content.addEventListener('keydown',event => {
-      if (event.target.name !== 'search') return;
-      if (event.key === 'Escape') { event.preventDefault(); event.target.value='';this.search='';this.filterChecks(content); }
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        const candidates=content.querySelectorAll('.pp-check-row:not([hidden]) [data-action="roll"]:not([disabled]), .pp-companion-section:not([hidden]) .pp-companion-quick [data-action="roll"]:not([disabled])');
-        Array.from(candidates).find(button=>button.getClientRects().length)?.focus();
-      }
+      if(this.busy||this.referenceBusy||event.isComposing)return;
+      if(event.target.name==='search'&&event.key==='Escape'&&!event.altKey&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey){event.preventDefault();event.target.value='';this.search='';this.filterChecks(content);return;}
+      handleProbeKeys(event,content);
     },{signal:this.surfaceEvents.signal});
     const focus = content.querySelector('[name="focus"]');
     let previousFocus=Number(focus?.value);
@@ -254,6 +250,16 @@ export class PedipalpusApp extends ApplicationV2 {
     this.actorId=id; this.search=''; this.category='all';this.focusError=null;this.modifier=0;this.modifierDirection=1;
     this.theme=figureTheme(this.preferences,id,savedDesign());
   }
+  async changeActor(id){
+    if(this.busy||this.referenceBusy)return;
+    this.busy=true;
+    this.element.querySelectorAll('[name="actor"], [name="theme"], [name="category"]').forEach(field=>{field.disabled=true;});
+    try{
+      this.selectActor(id);
+      try{await this.persist({...this.preferences,actorId:this.actorId,category:this.category});}
+      catch(error){console.warn(MODULE_ID,error);this.notify('warn','Die Figur wurde gewechselt. Die persönliche Auswahl konnte nicht gespeichert werden.');}
+    }finally{this.busy=false;await this.render({force:true});}
+  }
   safePosition(position) {
     const width=Math.max(360,Math.min(Number(position.width)||540,Math.max(360,globalThis.innerWidth||1280)));
     const height=Math.max(320,Math.min(Number(position.height)||520,Math.max(320,globalThis.innerHeight||800)));
@@ -291,7 +297,7 @@ export class PedipalpusApp extends ApplicationV2 {
     if (direction) direction.textContent = label;
   }
   filterChecks(content = this.element) {
-    const query = this.search.trim().toLocaleLowerCase('de');
+    const query = this.search.trim(),terms=searchTerms(query);
     const armorView=this.mode==='battle'&&this.category==='armors'&&!query;
     content.querySelector('.pp-check-list')?.toggleAttribute('hidden',armorView);
     content.querySelector('.pp-focus')?.toggleAttribute('hidden',armorView);
@@ -301,9 +307,9 @@ export class PedipalpusApp extends ApplicationV2 {
     const scales = new Set();
     const allRows=Array.from(content.querySelectorAll('.pp-check-row'));
     allRows.forEach(row => {
-      row.hidden = query ? !row.dataset.search.includes(query) : this.mode==='ring' ? false : this.category === 'favorites' ? row.dataset.favorite !== 'true'
+      const context=row.closest('[data-companion-section]')?.querySelector('[data-companion-card]')?.dataset.search??'';
+      row.hidden = query ? !matchesSearch(`${row.dataset.search} ${context}`,terms) : this.mode==='ring' ? false : this.category === 'favorites' ? row.dataset.favorite !== 'true'
         : this.category === 'recent' ? row.dataset.recent !== 'true' : this.category !== 'all' && row.dataset.category !== this.category;
-      if (!row.hidden) { count++; scales.add(row.dataset.scale); }
     });
     const visibleIds=new Set(allRows.filter(row=>!row.hidden).map(row=>row.dataset.checkId));
     content.querySelectorAll('.pp-weapon-header,.pp-talent-header').forEach(header => {
@@ -315,7 +321,7 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelectorAll('.pp-talent-header:not([hidden])').forEach(header=>{const rows=talents.get(header.dataset.talentGroup)??[];rows[0]?.classList.add('pp-talent-first');rows.at(-1)?.classList.add('pp-talent-last');});
     content.querySelectorAll('[data-companion-section]').forEach(section=>{
       const card=section.querySelector('[data-companion-card]'),rows=Array.from(section.querySelectorAll('.pp-check-row'));
-      const match=Boolean(query&&card.dataset.search.includes(query));
+      const match=Boolean(query&&matchesSearch(card.dataset.search,terms));
       if(match)rows.forEach(row=>{row.hidden=false;});
       section.hidden=armorView||!(rows.some(row=>!row.hidden)||!query&&(this.category==='all'||this.category===section.dataset.inventory));
       card.hidden=false;
@@ -324,6 +330,7 @@ export class PedipalpusApp extends ApplicationV2 {
       section.querySelectorAll('.pp-weapon-header').forEach(header=>{const ids=JSON.parse(header.dataset.checkIds||'[]');header.hidden=!rows.some(row=>!row.hidden&&ids.includes(row.dataset.checkId));});
     });
     const overviews=content.querySelector('.pp-companion-overviews');if(overviews)overviews.hidden=!visibleMembers;
+    allRows.filter(row=>!row.hidden).forEach(row=>{count++;scales.add(row.dataset.scale);});
     const scope = content.querySelector('.pp-search-scope');
     if (scope) scope.hidden = !query;
     const empty = content.querySelector('.pp-no-results');

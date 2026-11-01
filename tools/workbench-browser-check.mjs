@@ -246,7 +246,7 @@ try {
   await page.locator('[name="category"]').selectOption('all');await page.locator('[name="search"]').fill('Geographie');
   const keyboard=await page.evaluate(()=>game.keybindings.bindings.get('pedipalpus-foundry.ring').onDown());
   assert.equal(keyboard,false);assert.equal(await page.locator('.pp-root').getAttribute('data-mode'),'full');
-  await page.keyboard.press('ArrowDown');assert.equal(await page.locator('.pp-check-row:not([hidden]) [data-action="roll"]').first().evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('ArrowDown');assert.equal(await page.locator('.pp-check-row:not([hidden]) .pp-dice-button[data-blind="false"]').first().evaluate(el=>el===document.activeElement),true);
   await page.locator('[name="search"]').focus();await page.keyboard.press('Escape');assert.equal(await page.locator('[name="search"]').inputValue(),'');
   await fs.mkdir(path.resolve(root,'../pedipalpus-checks/foundry-ui'),{recursive:true});
   for(const name of ['Mut','Klugheit','Intuition','Gewandtheit','Konstitution']){

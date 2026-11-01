@@ -17,6 +17,8 @@ const words = {
   'Die Fensterposition konnte nicht gespeichert werden.':'Fenster geht. Platz merken ging nicht.',
   'Das Fenster ist geöffnet. Die persönliche Auswahl konnte nicht gespeichert werden.':'Fenster auf. Auswahl merken ging nicht.',
   'Der Charakter wurde importiert. Die persönliche Auswahl konnte nicht gespeichert werden.':'Figur ist da. Auswahl merken ging nicht.',
+  'Die Figur wurde gewechselt. Die persönliche Auswahl konnte nicht gespeichert werden.':'Anderer du ist da. Auswahl merken ging nicht.',
+  'Mehrere Wörter; Umlaute auch als ae/oe/ue oder a/o/u. Strg+F zur Suche, Pfeiltasten zu Proben, Esc zurück.':'Mehr Wörter gehen. Umlaute ohne Punkte gehen auch. Strg+F suchen. Pfeile wählen. Esc zurück.',
   'Der Hauptcharakter wurde inzwischen geändert, entfernt oder ist nicht mehr bearbeitbar. Weitere Begleiterwerte wurden nicht übernommen. Bitte den aktuellen Spielstand erneut öffnen und speichern.':'Großes Blatt anders, weg oder gehört dir nicht mehr. Andere Freunde bleiben wie vorher. Kraftfenster neu auf. Noch mal merken.',
   'Eine ausgewählte Waffe ist inzwischen entfernt oder mehrdeutig. Bitte das Waffenset erneut öffnen.':'Gewählte Waffe weg oder doppelt. Waffenfenster neu auf.',
   'Die Figur wurde inzwischen gewechselt oder entfernt. Bitte das Waffenset erneut öffnen.':'Figur anders oder weg. Waffenfenster neu auf.',
