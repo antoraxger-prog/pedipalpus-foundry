@@ -17,6 +17,7 @@ const words = {
   'Die Fensterposition konnte nicht gespeichert werden.':'Fenster geht. Platz merken ging nicht.',
   'Das Fenster ist geöffnet. Die persönliche Auswahl konnte nicht gespeichert werden.':'Fenster auf. Auswahl merken ging nicht.',
   'Der Charakter wurde importiert. Die persönliche Auswahl konnte nicht gespeichert werden.':'Figur ist da. Auswahl merken ging nicht.',
+  'Der Hauptcharakter wurde inzwischen geändert, entfernt oder ist nicht mehr bearbeitbar. Weitere Begleiterwerte wurden nicht übernommen. Bitte den aktuellen Spielstand erneut öffnen und speichern.':'Großes Blatt anders, weg oder gehört dir nicht mehr. Andere Freunde bleiben wie vorher. Kraftfenster neu auf. Noch mal merken.',
   'Eine ausgewählte Waffe ist inzwischen entfernt oder mehrdeutig. Bitte das Waffenset erneut öffnen.':'Gewählte Waffe weg oder doppelt. Waffenfenster neu auf.',
   'Die Figur wurde inzwischen gewechselt oder entfernt. Bitte das Waffenset erneut öffnen.':'Figur anders oder weg. Waffenfenster neu auf.',
   'Bilder übernehmen':'Gesichter mitnehmen', 'Begleiter übernehmen':'Freunde mitnehmen', 'Spieler zuweisen':'Wem gehört das?', 'Bisherige Rechte behalten':'Gehört weiter denen', 'Keinen Token ändern':'Figur lassen', 'Neuen Token-Eintrag anlegen':'Neue Figur machen', 'Keine Begleiter in dieser Datei.':'Keine Freunde auf Blatt.', 'Ohne Begleiterimport bleiben bisherige Begleiter und ihre Tokens unverändert.':'Freunde nicht holen? Alte Freunde bleiben wie sind.', 'Der Spieler erhält Besitzerrechte am Charakter und an den ausgewählten Begleiter-Einträgen. Bestehende Rechte bleiben erhalten.':'Spieler kriegt Blatt und gewählte Freunde. Alte Besitzer bleiben.',
@@ -144,6 +145,7 @@ export function uiText(theme, text) {
   if (theme !== 'ork') return text;
   if (Object.hasOwn(words, text)) return words[text];
   let match;
+  if ((match = text.match(/^(.*): Die gespeicherten Begleiterwerte konnten nicht übertragen werden\. Bitte den Spielstand erneut öffnen und speichern, um es erneut zu versuchen\.$/))) return `${match[1]}: Neue Zahlen gingen nicht rüber. Kraftfenster neu auf. Noch mal merken.`;
   if ((match = text.match(/^Ucurifunke – Proben ([\d.]+) verbunden$/))) return `Ucurifunke ${match[1]} da. Würfeln geht.`;
   if ((match = text.match(/^Vorlage angewendet: (.*)$/))) return `Ding hilft: ${match[1]}`;
   if ((match = text.match(/^Bild ausgewählt: (.*)$/))) return `Gesicht da: ${match[1]}`;

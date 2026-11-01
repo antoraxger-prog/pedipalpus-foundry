@@ -36,16 +36,23 @@ export async function saveCompanion(source,index,expectedKey,portrait,warn,expec
  return foundry.documents.Actor.create({name:snapshot.profile.name,type:'character',img:image,ownership:{...source.ownership,[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER},prototypeToken:{name:snapshot.profile.name,actorLink:true,texture:{src:token}},flags:{[MODULE_ID]:{[FLAG]:snapshot,companion:link,...(framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{})}}});
 }
 export async function refreshCompanions(source,warn=message=>ui.notifications.warn(message),{skipKeys=[],localState=false}={}){
- const character=getCharacter(source);if(!character||source.getFlag(MODULE_ID,'companion')?.sourceActorId)return;
- if(character.retinueImportEnabled===false&&!localState)return;
+ const result={updated:0,failed:0,stopped:false},character=getCharacter(source);if(!character||source.getFlag(MODULE_ID,'companion')?.sourceActorId)return result;
+ if(character.retinueImportEnabled===false&&!localState)return result;
+ const expected=JSON.stringify(character),registered=typeof game.actors.get==='function';
+ const current=()=>source.isOwner&&source.canUserModify(game.user,'update')&&(!registered||game.actors.get(source.id)===source)&&!source.getFlag(MODULE_ID,'companion')?.sourceActorId&&JSON.stringify(getCharacter(source))===expected;
  const keys=companionEntries(character).map((_member,index)=>{try{return companionKey(character,index);}catch{return null;}});
- for(const actor of game.actors.contents){
+ for(const actor of [...game.actors.contents]){
   const link=actor.getFlag(MODULE_ID,'companion');if(link?.sourceActorId!==source.id||link.active===false||skipKeys.includes(link.key))continue;
-  if(!actor.canUserModify(game.user,'update')){warn(`${actor.name}: Gefolgewerte konnten wegen fehlender Bearbeitungsrechte nicht aktualisiert werden.`);continue;}
+  if(!current()){result.stopped=true;warn('Der Hauptcharakter wurde inzwischen geändert, entfernt oder ist nicht mehr bearbeitbar. Weitere Begleiterwerte wurden nicht übernommen. Bitte den aktuellen Spielstand erneut öffnen und speichern.');break;}
+  if(registered&&game.actors.get(actor.id)!==actor)continue;
+  if(!actor.canUserModify(game.user,'update')){result.failed++;warn(`${actor.name}: Gefolgewerte konnten wegen fehlender Bearbeitungsrechte nicht aktualisiert werden.`);continue;}
   const index=keys.indexOf(link.key),previous=getCharacter(actor);
-  if(index<0){if(previous)await actor.setFlag(MODULE_ID,FLAG,{...previous,checks:[],warnings:['Dieses Gefolgsmitglied ist im aktuellen Import nicht eindeutig enthalten.']});continue;}
-  await actor.setFlag(MODULE_ID,FLAG,retainCompanionChoices(previous,companionSnapshot(character,index)));
+  try{
+   if(index<0){if(previous){await actor.setFlag(MODULE_ID,FLAG,{...previous,checks:[],warnings:['Dieses Gefolgsmitglied ist im aktuellen Import nicht eindeutig enthalten.']});result.updated++;}continue;}
+   await actor.setFlag(MODULE_ID,FLAG,retainCompanionChoices(previous,companionSnapshot(character,index)));result.updated++;
+  }catch(error){console.warn(MODULE_ID,error);result.failed++;warn(`${actor.name}: Die gespeicherten Begleiterwerte konnten nicht übertragen werden. Bitte den Spielstand erneut öffnen und speichern, um es erneut zu versuchen.`);}
  }
+ return result;
 }
 
 export function companionImportTargets(sourceActorId){

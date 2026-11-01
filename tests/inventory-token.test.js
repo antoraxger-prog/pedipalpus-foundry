@@ -71,7 +71,7 @@ test('Companions retain stable identity across reordering and reject ambiguous o
 test('Parent reimport refreshes animal probes without replacing portraits; removed pets keep their actor but no stale rolls',async()=>{
  const raw=combatFixture();raw.Animals[0].InventoryId='wolf-id';const character={...normalizeCharacter(raw),sourceJSON:JSON.stringify(raw)},changes=[];
  const child={img:'portrait.png',name:'Wolf',getFlag:(_ns,key)=>key==='companion'?{sourceActorId:'parent',key:'id:wolf-id'}:companionSnapshot(character,0),canUserModify:()=>true,setFlag:async(_ns,_key,value)=>changes.push(value)};
- globalThis.game={user:{id:'owner'},actors:{contents:[child]}};const source={id:'parent',getFlag:()=>character};await refreshCompanions(source);assert.equal(changes[0].checks.length,2);assert.equal(child.img,'portrait.png');
+ globalThis.game={user:{id:'owner'},actors:{contents:[child]}};const source={id:'parent',isOwner:true,canUserModify:()=>true,getFlag:()=>character};await refreshCompanions(source);assert.equal(changes[0].checks.length,2);assert.equal(child.img,'portrait.png');
  const removed={...character,sourceJSON:JSON.stringify({...raw,Animals:[]})};source.getFlag=()=>removed;await refreshCompanions(source);assert.equal(changes[1].checks.length,0);
 });
 test('Animal creation permission and stale references fail before image upload',async()=>{

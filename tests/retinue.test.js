@@ -93,7 +93,7 @@ test('Reimport refreshes all linked creature kinds while retaining portraits and
  const raw=retinueFixture();let character=snapshot(raw);
  const children=readCompanions(character).map((member,index)=>({id:`child-${index}`,img:'kept.png',flags:{companion:{sourceActorId:'parent',key:companionKey(character,index)},character:companionSnapshot(character,index)},getFlag(_ns,key){return this.flags[key];},canUserModify:()=>true,async setFlag(_ns,key,value){this.flags[key]=value;}}));
  children[1].flags.character=withCompanionAttributes(children[1].flags.character,'demons:0:mundane:0',['MU','MU','KO']);
- globalThis.game={user:{id:'owner'},actors:{contents:children}};const parent={id:'parent',getFlag:(_ns,key)=>key==='character'?character:undefined};
+ globalThis.game={user:{id:'owner'},actors:{contents:children}};const parent={id:'parent',isOwner:true,canUserModify:()=>true,getFlag:(_ns,key)=>key==='character'?character:undefined};
  raw.Demons[0].Attacks[0].AttackValue=21;raw.Undead[0].CurrentLe=9;character=snapshot(raw);
  await refreshCompanions(parent);assert.equal(find(children[1].flags.character,'demons:0:0:attack').value,21);assert.equal(children[2].flags.character.resources[0].value,9);
  assert.deepEqual(find(children[1].flags.character,'demons:0:mundane:0').companionAbility.keys,['MU','MU','KO']);assert.ok(children.every(child=>child.img==='kept.png'));

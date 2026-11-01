@@ -3,7 +3,7 @@ import {getCharacter,savePlayState} from './storage.js';
 import {conditionRows,stateResources,memberStateKey} from './play-state.js';
 import {readCompanions} from './retinue.js';
 import {checkReference,referenceKey,resolveCheck} from './workbench.js';
-import {companionKey} from './companions.js';
+import {companionKey,refreshCompanions} from './companions.js';
 const e=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const figurePreferences=(prefs,id)=>prefs.figures?.[id]??{theme:'',rememberTheme:false,notes:{},weaponSets:[],activeSet:''};
 export const figureTheme=(prefs,id,fallback)=>{const figure=figurePreferences(prefs,id);return figure.rememberTheme&&figure.theme?figure.theme:fallback;};
@@ -32,12 +32,13 @@ export async function playStateDialog(app,{memberKey=null}={}){
  if(!conditions&&!resources.length)throw new Error('Für diese Figur sind keine bearbeitbaren Spielwerte vorhanden.');
  const draft=structuredClone(character.localState??{version:1});
  const t=value=>app.t?.(value)??value;
+ const warn=message=>{if(app.notify)app.notify('warn',message);else ui.notifications.warn(message);};
  const content=`<p>${e(targetKey?resources[0].name:source.name)} · ${e(t('Änderungen gelten in Foundry. Die Quelldatei bleibt unverändert.'))}</p>${conditions?`<h3>${e(t('Zustände'))}</h3>${conditions.simple.map((row,i)=>`<div class="pp-state-row"><label><input type="checkbox" data-simple="${i}" ${row.IsActive?'checked':''}> ${e(row.Name)}</label><label><input type="checkbox" data-simple-suppression="${i}" ${row.IsSuppressed?'checked':''}> ${e(t('Unterdrückt'))}</label></div>`).join('')}${conditions.complex.map((row,i)=>`<div class="pp-state-row"><label>${e(row.Name)} <input data-complex="${i}" type="number" min="0" max="4" step="1" value="${row.Level}"></label><label>${e(t('Unterdrückung'))} <select data-suppression="${i}">${[[0,'Keine'],[1,'Ganz'],[2,'Eine Stufe'],[3,'Zwei Stufen']].map(([value,label])=>`<option value="${value}" ${row.Suppression===value?'selected':''}>${e(t(label))}</option>`).join('')}</select></label></div>`).join('')}`:''}${resources.map((entry,i)=>`<fieldset><legend>${e(entry.name)}</legend>${entry.resources.map(row=>`<label>${e(row.name)} / ${e(row.max)} <span class="pp-energy-editor"><button type="button" data-energy-step="-1" data-energy-row="${i}" data-energy-name="${row.name}" aria-label="${e(entry.name)} ${row.name} um eins verringern">−</button><input data-resource-row="${i}" data-energy="${row.name}" aria-label="${e(entry.name)} ${row.name}" type="number" min="-100000" max="100000" step="1" value="${e(row.value)}"><button type="button" data-energy-step="1" data-energy-row="${i}" data-energy-name="${row.name}" aria-label="${e(entry.name)} ${row.name} um eins erhöhen">+</button></span></label>`).join('')}</fieldset>`).join('')}<p>${e(t('Nur geänderte Werte werden gespeichert. Plus und Minus werden erst mit Speichern übernommen.'))}</p>`;
  const answer=await foundry.applications.api.DialogV2.wait({window:{title:t('Spielstand · Zustände und Energien')},classes:app.dialogClasses,position:{width:520},modal:true,rejectClose:false,content,
   buttons:[{action:'save',label:t('Speichern'),callback:(_ev,_button,dialog)=>{
    let changed=false;
    if(conditions){const selected=structuredClone(conditions);selected.simple.forEach((row,i)=>{row.IsActive=dialog.element.querySelector(`[data-simple="${i}"]`).checked;row.IsSuppressed=dialog.element.querySelector(`[data-simple-suppression="${i}"]`).checked;});selected.complex.forEach((row,i)=>{row.Level=Number(dialog.element.querySelector(`[data-complex="${i}"]`).value);row.Suppression=Number(dialog.element.querySelector(`[data-suppression="${i}"]`).value);});if(JSON.stringify(selected)!==JSON.stringify(conditions)){draft.conditions=selected;changed=true;}}
-   dialog.element.querySelectorAll('[data-resource-row]').forEach(field=>{const entry=resources[Number(field.dataset.resourceRow)],name=field.dataset.energy,value=field.value===''?NaN:Number(field.value);if(value===entry.resources.find(row=>row.name===name).value)return;draft.resources??={};draft.resources[entry.key]??={};draft.resources[entry.key][name]=value;changed=true;});return changed?draft:false;
+   dialog.element.querySelectorAll('[data-resource-row]').forEach(field=>{const entry=resources[Number(field.dataset.resourceRow)],name=field.dataset.energy,value=field.value===''?NaN:Number(field.value);if(value===entry.resources.find(row=>row.name===name).value)return;draft.resources??={};draft.resources[entry.key]??={};draft.resources[entry.key][name]=value;changed=true;});return changed?draft:{refreshOnly:true};
   }},{action:'reset',label:t('Quelldaten verwenden'),callback:()=>{
     if(!targetKey)return {version:1};
     const reset=structuredClone(draft);if(reset.resources)delete reset.resources[targetKey];return reset;
@@ -47,7 +48,12 @@ export async function playStateDialog(app,{memberKey=null}={}){
  if(!answer||typeof answer!=='object')return;
  if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Ändern werden Besitzerrechte benötigt.');
  if(linkState(actor.getFlag(MODULE_ID,'companion'))!==expectedLink||linked&&(game.actors.get(actor.id)!==actor||game.actors.get(link.sourceActorId)!==source))throw new Error('Die Begleiterzuordnung wurde inzwischen geändert. Bitte den Spielstand erneut öffnen.');
- await savePlayState(source,answer,expected);await app.render({force:true});
+ if(answer.refreshOnly){
+  if(!source.isOwner||!source.canUserModify(game.user,'update'))throw new Error('Zum Ändern wird Besitzerrecht am Hauptcharakter benötigt.');
+  if(game.actors.get(source.id)!==source||JSON.stringify(getCharacter(source))!==expected)throw new Error('Die Daten wurden inzwischen geändert. Bitte den Spielstand erneut öffnen.');
+  await refreshCompanions(source,warn,{localState:true});
+ }else await savePlayState(source,answer,expected,warn);
+ await app.render({force:true});
 }
 export async function infoDialog(app,checkId){
  const character=getCharacter(app.actor),check=character?.checks.find(row=>row.id===checkId);if(!check)throw new Error('Die Fähigkeit ist nicht mehr vorhanden.');

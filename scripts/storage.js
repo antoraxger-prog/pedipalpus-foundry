@@ -26,7 +26,7 @@ export async function saveFocus(actor, focus) {
   await actor.setFlag(MODULE_ID, FLAG, withFocus(character, focus));
 }
 
-export async function savePlayState(actor,state,expected){
+export async function savePlayState(actor,state,expected,warn=message=>ui.notifications.warn(message)){
  if(!actor?.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Ändern des Spielstands werden Besitzerrechte benötigt.');
  const before=getCharacter(actor);
  if(!before||JSON.stringify(before)!==expected)throw new Error('Die Daten wurden inzwischen geändert. Bitte den Spielstand erneut öffnen.');
@@ -34,7 +34,7 @@ export async function savePlayState(actor,state,expected){
  if(JSON.stringify(getCharacter(actor))!==expected)throw new Error('Die Daten wurden inzwischen geändert. Bitte erneut öffnen.');
  await actor.setFlag(MODULE_ID,FLAG,next);
  const {refreshCompanions}=await import('./companions.js');
- await refreshCompanions(actor,message=>ui.notifications.warn(message),{localState:true});
+ await refreshCompanions(actor,warn,{localState:true});
  return next;
 }
 
