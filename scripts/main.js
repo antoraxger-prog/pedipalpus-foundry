@@ -2,7 +2,7 @@ import { registerTokenSettings } from './tokens.js';
 import { MODULE_ID } from './data.js';
 import { PedipalpusApp } from './app.js';
 import { registerDesignSettings } from './design.js';
-import { loadWorkbench, registerWorkbenchSettings, checkReference, resolveCheck, recordRecent, saveWorkbench } from './workbench.js';
+import { loadWorkbench, registerWorkbenchSettings, checkReference, resolveCheck, recordRecent, updateWorkbench } from './workbench.js';
 import { getCharacter } from './storage.js';
 import { executeCheck } from './commands.js';
 import { playFeedback } from './feedback.js';
@@ -25,8 +25,7 @@ export async function rollPedipalpus({actorId,reference,blind=false,modifier}={}
     if(check.companionAbility||check.npcChoice){application??=new PedipalpusApp();check=await application.configureCompanionAbility(actor,check);if(!check)return;}
     const token=canvas.tokens?.controlled?.map(placeable=>placeable.document).find(token=>token.actorId===actorId&&token.actorLink) || null;
     await executeCheck(actor,check,token,{modifier:modifier??0,blind});
-    const prefs=recordRecent(loadWorkbench(),actorId,original);
-    await saveWorkbench(prefs);
+    const previous=loadWorkbench(),prefs=await updateWorkbench(previous,recordRecent(previous,actorId,original));
     playFeedback('roll',{...prefs,theme:game.settings.get(MODULE_ID,'design')||'fantasy'}).catch(error=>console.warn(MODULE_ID,error));
   }finally{macroBusy=false;}
 }

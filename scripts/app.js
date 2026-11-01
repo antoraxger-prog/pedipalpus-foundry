@@ -8,7 +8,7 @@ import { withFocus, characterFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
 import { uiText, localizeSurface, localizeDialog } from './language.js';
-import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
+import { loadWorkbench, updateWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
 import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices,withCompanionImport } from './retinue.js';
@@ -137,9 +137,10 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelector('[name="theme"]')?.addEventListener('change', event => {
       this.theme = THEMES.includes(event.target.value) ? event.target.value : 'fantasy';
       const theme = this.theme;
+      const actorId=this.actorId,rememberTheme=figurePreferences(this.preferences,actorId).rememberTheme;
       this.designSave = this.designSave.then(async() => {
-        const figure=figurePreferences(this.preferences,this.actorId);
-        if(figure.rememberTheme)await this.persist({...this.preferences,figures:{...(this.preferences.figures??{}),[this.actorId]:{...figure,theme}}});
+        const figure=figurePreferences(this.preferences,actorId);
+        if(rememberTheme)await this.persist({...this.preferences,figures:{...(this.preferences.figures??{}),[actorId]:{...figure,theme}}});
         else await saveDesign(theme);
         await this.render({force:true});
       }).catch(error => {
@@ -169,6 +170,7 @@ export class PedipalpusApp extends ApplicationV2 {
       });
       name.addEventListener('dragend',()=>setTimeout(()=>delete name.dataset.dragging,0));
     });
+    this.surfaceEvents?.abort();this.surfaceEvents=new AbortController();
     content.addEventListener('keydown',event => {
       if (event.target.name !== 'search') return;
       if (event.key === 'Escape') { event.preventDefault(); event.target.value='';this.search='';this.filterChecks(content); }
@@ -177,7 +179,7 @@ export class PedipalpusApp extends ApplicationV2 {
         const candidates=content.querySelectorAll('.pp-check-row:not([hidden]) [data-action="roll"]:not([disabled]), .pp-companion-section:not([hidden]) .pp-companion-quick [data-action="roll"]:not([disabled])');
         Array.from(candidates).find(button=>button.getClientRects().length)?.focus();
       }
-    });
+    },{signal:this.surfaceEvents.signal});
     const focus = content.querySelector('[name="focus"]');
     let previousFocus=Number(focus?.value);
     focus?.addEventListener('input', () => {
@@ -241,9 +243,10 @@ export class PedipalpusApp extends ApplicationV2 {
   feedback(event,text) { notifyFeedback(this.element.querySelector('.pp-root') || this.element,event,`${['saved','focusChanged'].includes(event)?'✓ ':''}${this.t(text)}`,this.effects); }
   sound(event) { playFeedback(event,this.effects).catch(error => console.warn(MODULE_ID,error)); }
   persist(prefs) {
+    const previous=this.preferences;
     this.preferences = validateWorkbench(prefs);
     const snapshot = this.preferences;
-    this.preferenceSave = this.preferenceSave.catch(() => {}).then(() => saveWorkbench(snapshot));
+    this.preferenceSave = this.preferenceSave.catch(() => {}).then(() => updateWorkbench(previous,snapshot)).then(saved=>{if(this.preferences===snapshot)this.preferences=saved;return saved;}).catch(error=>{if(this.preferences===snapshot)this.preferences=loadWorkbench();throw error;});
     return this.preferenceSave;
   }
   selectActor(id) {

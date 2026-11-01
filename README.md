@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.1
+# Pedipalpus – Proben · 1.9.2
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.1 korrigiert Begleiterenergien, NSC-Schaden, Bildkonflikte und die Bedienung der Schnellleiste. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.2 schützt persönliche Einstellungen bei mehreren Fenstern und korrigiert verzögertes Design- und Bildspeichern. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Mehrere Fenster und verzögertes Speichern in 1.9.2
+
+Mehrere Modulfenster im selben Browser speichern persönliche Änderungen nacheinander und übernehmen nur die tatsächlich bearbeiteten Einstellungen. Unabhängig ergänzte Favoriten und Notizen bleiben erhalten; andernorts entfernte Favoriten werden nicht durch einen älteren Fensterstand zurückgebracht. Favoriten lassen sich weiterhin gezielt ordnen. Gleichzeitig unterschiedlich bearbeitete Waffenset-Listen werden vor dem Überschreiben abgewiesen; den Dialog dann erneut öffnen. Eine fehlgeschlagene Speicherung blockiert spätere Versuche nicht.
+
+Ein verzögert gespeichertes Figurendesign gehört weiterhin zur ursprünglich gewählten Figur, auch wenn inzwischen eine andere ausgewählt wurde. Wiederholtes Neuzeichnen derselben Oberfläche vervielfacht die Such-Tastaturaktionen nicht mehr. Beim Charakterimport wird unmittelbar vor der Bildübernahme geprüft, ob Portrait oder Ausschnitt zwischenzeitlich geändert wurden. Verlorene Bearbeitungsrechte stoppen den Import vor dem nächsten Charakterschreibschritt. Bereits geschriebene Charakterdaten werden bei einem späteren Bildkonflikt nicht automatisch zurückgerollt.
+
+Die Abstimmung der persönlichen Speicheraktionen gilt für Fenster derselben Browser-Sitzung. Sie ist keine weltweite Sperre über mehrere Browser oder Foundry-Dokumente. An Quelldateien oder Würfelregeln ändert sich nichts.
 
 ## Fehlerkorrekturen in 1.9.1
 

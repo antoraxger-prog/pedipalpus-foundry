@@ -1,5 +1,5 @@
 import { MODULE_ID, FLAG, validSnapshot,normalizeCharacter } from './data.js';
-import { uploadPortrait, applyPortrait, framingFor } from './portraits.js';
+import { uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
 import { withArmorState } from './equipment.js';
 import { isCompanionCheck,COMPANION_GROUPS } from './retinue.js';
 import { withFocus } from './combat.js';
@@ -62,7 +62,9 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
   if (actorId) {
     const actor = game.actors.get(actorId);
     if (!actor?.canUserModify(game.user, 'update')) throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
+    const expectedPortrait=portraitState(actor);
     const verify=()=>{
+      if(!actor.canUserModify(game.user,'update'))throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
       const current=getCharacter(actor);
       if(portrait&&portraitExpected!==undefined&&JSON.stringify({img:actor.img,framing:actor.getFlag(MODULE_ID,'portraitFraming')})!==portraitExpected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte den Import erneut öffnen.');
       if(actor.getFlag(MODULE_ID,'companion')?.sourceActorId)throw new Error('Ein verknüpfter Begleiter kann nicht als Hauptcharakter überschrieben werden. Bitte einen neuen Eintrag anlegen.');
@@ -76,7 +78,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     // Andere Flags, Foundry-Werte, Besitzerrechte und die Actor-ID bleiben erhalten.
     verify();
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
-    if (image) await applyPortrait(actor,image,warn,tokenImage,framingFor(portrait));
+    if (image) await applyPortrait(actor,image,warn,tokenImage,framingFor(portrait),expectedPortrait);
     await assignOwner(actor,ownerId);
     return actor;
   }

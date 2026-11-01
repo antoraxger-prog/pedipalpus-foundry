@@ -172,6 +172,45 @@ export async function saveWorkbench(prefs) {
   return clean;
 }
 
+const equal=(left,right)=>JSON.stringify(left)===JSON.stringify(right);
+export function mergeWorkbench(previous,next,current){
+  const merge=(before,after,latest,path=[])=>{
+    if(before===undefined&&path[0]==='figures'&&path.length===2)before=figures({[path[1]]:{}})[path[1]];
+    if(equal(before,after))return structuredClone(latest);
+    if((plain(before)||before===undefined)&&plain(after)&&plain(latest)){
+      before??={};
+      const result=structuredClone(latest);
+      for(const key of new Set([...Object.keys(before),...Object.keys(after)])){
+        if(equal(before[key],after[key]))continue;
+        if(!Object.hasOwn(after,key))delete result[key];
+        else result[key]=merge(before[key],after[key],latest[key],[...path,key]);
+      }
+      return result;
+    }
+    if(path.length===2&&['favorites','recent'].includes(path[0])&&Array.isArray(after)){
+      const old=Array.isArray(before)?before:[],now=Array.isArray(latest)?latest:[],wanted=new Set(after.map(referenceKey));
+      if(path[0]==='recent')return [...after,...now.filter(ref=>!wanted.has(referenceKey(ref)))].slice(0,12);
+      const oldKeys=new Set(old.map(referenceKey)),removed=new Set([...oldKeys].filter(key=>!wanted.has(key))),result=now.filter(ref=>!removed.has(referenceKey(ref))),present=new Set(result.map(referenceKey));
+      for(const ref of after)if(!oldKeys.has(referenceKey(ref))&&!present.has(referenceKey(ref))){result.push(ref);present.add(referenceKey(ref));}
+      const oldOrder=old.map(referenceKey).filter(key=>wanted.has(key)),nextOrder=after.map(referenceKey).filter(key=>oldKeys.has(key));
+      if(!equal(oldOrder,nextOrder)){const order=new Map(after.map((ref,index)=>[referenceKey(ref),index]));result.sort((a,b)=>(order.get(referenceKey(a))??Infinity)-(order.get(referenceKey(b))??Infinity));}
+      return result;
+    }
+    if(Array.isArray(after)&&!equal(before,latest)&&!equal(after,latest))throw new Error('Diese Liste wurde inzwischen in einem anderen Fenster geändert. Bitte erneut öffnen.');
+    return structuredClone(after);
+  };
+  return validateWorkbench(merge(validateWorkbench(previous),validateWorkbench(next),validateWorkbench(current)));
+}
+let preferenceUpdates=Promise.resolve();
+export function updateWorkbench(previous,next){
+  const before=validateWorkbench(previous),after=validateWorkbench(next),userId=game.user.id,worldId=game.world?.id;
+  const pending=preferenceUpdates.catch(()=>{}).then(()=>{
+    if(game.user.id!==userId||game.world?.id!==worldId)throw new Error('Benutzer oder Welt wurden inzwischen gewechselt. Bitte erneut öffnen.');
+    return saveWorkbench(mergeWorkbench(before,after,loadWorkbench()));
+  });
+  preferenceUpdates=pending;return pending;
+}
+
 function asReference(checkOrRef) {
   return checkOrRef?.id || checkOrRef?.combat || !checkOrRef?.category ? checkReference(checkOrRef) : canonicalReference(checkOrRef);
 }
