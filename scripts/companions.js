@@ -99,6 +99,7 @@ export async function applyCompanionImport(source,plan=[],{includeImages=true,ow
  ownerAssignment(ownerId);
  const character=getCharacter(source),sourceState=JSON.stringify(character);
  const verify=selection=>{
+  if(game.actors.get(source?.id)!==source)throw new Error('Die Importfigur wurde inzwischen entfernt oder ersetzt. Bitte erneut auswählen.');
   if(!source?.isOwner||!source.canUserModify(game.user,'update'))throw new Error('Zum Importieren von Begleitern werden Besitzerrechte am Hauptcharakter benötigt.');
   if(JSON.stringify(getCharacter(source))!==sourceState)throw new Error('Der Hauptcharakter wurde inzwischen geändert. Bitte den Import erneut öffnen.');
   verifyCompanionImport(character,source.id,selection);

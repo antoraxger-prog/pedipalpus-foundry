@@ -2,7 +2,7 @@ import { NPC_FORMAT,retainNpcChoices,withNpcAttributes } from './npc.js';
 import { rememberImportSource,importSource,directoryCharacters,readLiveSource } from './import-source.js';
 import { parseCharacter, MODULE_ID, RETINUE_FORMAT } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
-import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment } from './storage.js';
+import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment,matchesWrittenSnapshot } from './storage.js';
 import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, viewCategories } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
@@ -596,12 +596,16 @@ export class PedipalpusApp extends ApplicationV2 {
       content:`<textarea readonly rows="8" aria-label="${escapeHTML(this.t('Versionsinformationen'))}">${escapeHTML(JSON.stringify(data,null,2))}</textarea>`,buttons:[{action:'close',label:this.t('Schließen')}]});
   }
   async exportBundle() {
-    const character=getCharacter(this.actor);
-    if(!this.actor?.isOwner || !character?.sourceJSON)throw new Error('Für das Austauschpaket bitte die Originaldatei einmal erneut importieren.');
+    const actor=this.actor,character=getCharacter(actor);
+    if(!actor?.isOwner || !character?.sourceJSON)throw new Error('Für das Austauschpaket bitte die Originaldatei einmal erneut importieren.');
+    const expected=JSON.parse(JSON.stringify(character)),name=actor.name,image=actor.img;
+    const verify=()=>{
+      if(game.actors.get(actor.id)!==actor||this.actorId!==actor.id||!actor.isOwner)throw new Error('Die Exportfigur wurde inzwischen gewechselt, entfernt oder ist nicht mehr zugänglich. Bitte erneut auswählen.');
+      if(!matchesWrittenSnapshot(getCharacter(actor),expected)||actor.img!==image||actor.name!==name)throw new Error('Die Figur oder ihr Bild wurde inzwischen geändert. Bitte das Austauschpaket erneut erstellen.');
+    };
     const raw=JSON.parse(character.sourceJSON.replace(/^\uFEFF/,'')),focus=characterFocus(character);
     if(focus!==null){if(character.sourceFormat===NPC_FORMAT)raw.Npc.Focus=focus;else{raw.OffDefOffset=focus;raw.OffOffset=focus;raw.DefOffset=-focus;}}
     let portrait=null;
-    const image=this.actor.img;
     if(image && /\.(png|jpe?g|bmp|webp)(?:[?#].*)?$/i.test(image)){
       const url=new URL(image,location.href);
       if(url.origin===location.origin){
@@ -611,8 +615,9 @@ export class PedipalpusApp extends ApplicationV2 {
       }
     }
     if(portrait&&character.sourceFormat!==NPC_FORMAT)raw.PortraitFileName=portrait.name;
-    const blob=await writeCharacterBundle(JSON.stringify(raw,null,2),portrait),url=URL.createObjectURL(blob),link=document.createElement('a');
-    link.href=url;link.download=`${this.actor.name.replace(/[^\p{L}\p{N} _-]/gu,'').slice(0,70)||'Charakter'}.zip`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    const blob=await writeCharacterBundle(JSON.stringify(raw,null,2),portrait);verify();
+    const url=URL.createObjectURL(blob),link=document.createElement('a');
+    try{link.href=url;link.download=`${name.replace(/[^\p{L}\p{N} _-]/gu,'').slice(0,70)||'Charakter'}.zip`;link.click();}finally{setTimeout(()=>URL.revokeObjectURL(url),1000);}
     this.feedback('saved','Austauschpaket gespeichert.');
   }
   async importCharacter() {
@@ -883,14 +888,14 @@ export class PedipalpusApp extends ApplicationV2 {
       if(linkState()!==expectedLink)throw new Error('Die Begleiterzuordnung wurde inzwischen geändert. Bitte die Probe erneut öffnen.');
       if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
       const fresh=getCharacter(actor),now=fresh?.checks.find(entry=>entry.id===check.id);
-      if(JSON.stringify(fresh)!==expectedState||sourceState()!==expectedSource||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
+      if((typeof expectedState==='string'?JSON.stringify(fresh)!==expectedState:!matchesWrittenSnapshot(fresh,expectedState))||sourceState()!==expectedSource||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
       return fresh;
     };
     const fresh=verify(expected);
     const label=answer.name.trim()||choice.name,name=(root?label:`${member.Name} – ${label}`).trim();
     if(/[|\r\n]/.test(name)||name.length>160)throw new Error('Der Probenname ist zu lang oder enthält ungültige Zeichen.');
     const updated=root?withNpcAttributes(fresh,check.id,answer.keys):withCompanionAttributes(fresh,check.id,answer.keys);
-    if(!root||check.npcChoice.remember){const expectedUpdated=JSON.stringify(updated);await actor.setFlag(MODULE_ID,'character',updated);verify(expectedUpdated);}
+    if(!root||check.npcChoice.remember){const expectedUpdated=JSON.parse(JSON.stringify(updated));await actor.setFlag(MODULE_ID,'character',updated);verify(expectedUpdated);}
     return {...updated.checks.find(entry=>entry.id===check.id),name};
   }
   async editPortrait(actor,{title='Charakterbild importieren',style=this.preferences.tokenFrame,action='image',label='Bild übernehmen'}={}){

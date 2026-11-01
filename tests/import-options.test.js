@@ -63,6 +63,13 @@ test('Updating an existing companion or empty actor keeps actor identity and art
  const plan=prepareCompanionImport(character,parent.id,[{index:0,targetId:first.id},{index:1,targetId:empty.id}]);
  await applyCompanionImport(parent,plan,{includeImages:false});assert.equal(first.img,'first.webp');assert.equal(empty.img,'empty.webp');assert.equal(empty.prototypeToken.texture.src,'kept.webp');assert.equal(empty.flags.companion.key,companionKey(character,1));
 });
+
+test('Removing the main import actor prevents companion creation and keeps old linked actors untouched',async()=>{
+ const {parent,child,character}=runtime(),old=child(0),before=structuredClone(old.flags),plan=prepareCompanionImport(character,parent.id,[{index:0,targetId:'new'}]);
+ game.actors.contents.splice(game.actors.contents.indexOf(parent),1);
+ await assert.rejects(applyCompanionImport(parent,plan,{includeImages:false}),/Importfigur.*entfernt/);
+ assert.equal(game.actors.contents.length,1);assert.equal(game.actors.contents[0],old);assert.deepEqual(old.flags,before);
+});
 test('Talent headers share actual parent identity; all companions render as closed native disclosures',()=>{
  const raw=retinueFixture();raw.AcademicSkills[0].Subskills.push({Name:'Geschichte',TotalValue:5},{Name:'Götterkunde',TotalValue:6});const character=snapshot(raw);
  const full=renderView({actor:{isOwner:true},character,status:{ready:true}}),battle=renderView({actor:{isOwner:true},character,status:{ready:true},mode:'battle'});

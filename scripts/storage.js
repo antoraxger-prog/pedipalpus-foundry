@@ -54,22 +54,30 @@ export async function assignOwner(actor,ownerId=''){
  const ownership=ownerAssignment(ownerId);
  if(ownerId)await actor.update(Object.fromEntries(Object.entries(ownership).map(([id,level])=>[`ownership.${id}`,level])));
 }
+export function matchesWrittenSnapshot(current,expected){
+  if(Array.isArray(expected))return Array.isArray(current)&&current.length===expected.length&&expected.every((value,index)=>matchesWrittenSnapshot(current[index],value));
+  // Objektflags können zusätzliche, unberührte Felder behalten; Arrays werden vollständig übernommen.
+  if(expected&&typeof expected==='object')return Boolean(current)&&typeof current==='object'&&!Array.isArray(current)&&Object.keys(expected).every(key=>Object.hasOwn(current,key)&&matchesWrittenSnapshot(current[key],expected[key]));
+  return Object.is(current,expected);
+}
 
 export async function saveCharacter(snapshot, actorId = null, portrait = null, warn,expected,{ownerId='',portraitExpected}={}) {
-  const ownership=ownerAssignment(ownerId);
+  ownerAssignment(ownerId);
   if (!validSnapshot(snapshot)) throw new Error('Die importierten Charakterdaten sind unvollständig.');
   if (game.system.id !== 'worldbuilding') throw new Error('Diese erste Version unterstützt Simple Worldbuilding.');
   if (actorId) {
     const actor = game.actors.get(actorId);
     if (!actor?.canUserModify(game.user, 'update')) throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
     const expectedPortrait=portraitState(actor);
-    const verify=()=>{
+    const verify=(expectedState=expected,checkPortrait=true)=>{
+      if(game.actors.get(actorId)!==actor)throw new Error('Die Importfigur wurde inzwischen entfernt oder ersetzt. Bitte erneut auswählen.');
       if(!actor.canUserModify(game.user,'update'))throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
+      ownerAssignment(ownerId);
       const current=getCharacter(actor);
-      if(portrait&&portraitExpected!==undefined&&portraitState(actor)!==portraitExpected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte den Import erneut öffnen.');
+      if(checkPortrait&&portrait&&portraitExpected!==undefined&&portraitState(actor)!==portraitExpected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte den Import erneut öffnen.');
       if(actor.getFlag(MODULE_ID,'companion')?.sourceActorId)throw new Error('Ein verknüpfter Begleiter kann nicht als Hauptcharakter überschrieben werden. Bitte einen neuen Eintrag anlegen.');
       if(current&&(current.sourceFormat??'character')!==(snapshot.sourceFormat??'character'))throw new Error('Charakter- und NSC-Import dürfen einander nicht überschreiben. Bitte einen passenden oder neuen Foundry-Eintrag wählen.');
-      if(expected!==undefined&&JSON.stringify(current)!==expected)throw new Error('Die Foundry-Daten wurden inzwischen geändert. Bitte den Import erneut vergleichen.');
+      if(expectedState!==undefined&&(typeof expectedState==='string'?JSON.stringify(current)!==expectedState:!matchesWrittenSnapshot(current,expectedState)))throw new Error('Die Foundry-Daten wurden inzwischen geändert. Bitte den Import erneut vergleichen.');
     };
     verify();
     const image = portrait ? await uploadPortrait(portrait) : null;
@@ -77,14 +85,20 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     // Das Flag besitzt ein festes Schema; Arrays werden vollständig ersetzt.
     // Andere Flags, Foundry-Werte, Besitzerrechte und die Actor-ID bleiben erhalten.
     verify();
+    const savedSnapshot=JSON.parse(JSON.stringify(snapshot));
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
+    verify(savedSnapshot);
     if (image) await applyPortrait(actor,image,warn,tokenImage,framingFor(portrait),expectedPortrait);
+    verify(savedSnapshot,false);
     await assignOwner(actor,ownerId);
+    verify(savedSnapshot,false);
     return actor;
   }
   if (!foundry.documents.Actor.canUserCreate(game.user)) throw new Error('Du darfst keine Charaktere anlegen. Dein Meister kann einen anlegen und dir Besitzerrechte geben.');
   const image = portrait ? await uploadPortrait(portrait) : null;
     const tokenImage=portrait?.token?await uploadPortrait(portrait.token):image;
+  if (!foundry.documents.Actor.canUserCreate(game.user)) throw new Error('Du darfst keine Charaktere anlegen. Dein Meister kann einen anlegen und dir Besitzerrechte geben.');
+  const ownership=ownerAssignment(ownerId);
   return foundry.documents.Actor.create({
     name: snapshot.profile.name, type: 'character', img: image || 'icons/svg/mystery-man.svg',
     ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,...ownership },

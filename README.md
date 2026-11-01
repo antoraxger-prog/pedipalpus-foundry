@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.1
+# Pedipalpus – Proben · 1.11.2
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.1 verhindert überholte Schadenswürfe und prüft NSC-/Begleiterproben nach dem Speichern der Attributwahl erneut. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.2 sichert Import und Austauschpaket gegen zwischenzeitlich entfernte Figuren, geänderte Daten und verlorene Rechte ab. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Import und Export absichern in 1.11.2
+
+Ein Import prüft seine Zielfigur erneut vor und nach dem Speichern der Werte sowie vor späteren Bild-/Besitzeraktionen. Wurde die Figur entfernt, ersetzt, erneut geändert oder ist sie nicht mehr bearbeitbar, stoppen die verbleibenden Aktionen mit einem Hinweis. Ein gelöschter Hauptcharakter kann keine neuen Begleiter-Einträge mehr erzeugen; bestehende Begleiter bleiben erhalten. Bei neuen Figuren werden nach einem Bildupload die Erstellungsrechte und eine gewählte Spielerzuweisung erneut geprüft.
+
+Beim Austauschpaket werden Figur, Besitzerzugriff, Daten, Name und Originalbild vor dem Download erneut abgeglichen. Eine inzwischen gewechselte, entfernte oder veränderte Figur erzeugt kein veraltetes Paket. Eine reine Änderung des Tokenbilds blockiert den Export des unveränderten Originalportraits nicht. Der Dateiname stammt aus derselben Figur wie die exportierten Daten.
+
+Nach einer Speicherung zählen die tatsächlich übernommenen Felder und Arrayeinträge. Eine andere Reihenfolge von Objektfeldern und zusätzliche unberührte Metadaten verursachen keinen falschen Konflikt; diese Prüfung gilt auch nach einer gespeicherten NSC-/Begleiter-Attributwahl.
+
+Bereits abgeschlossene Teilaktionen werden bei einem späteren Konflikt nicht zurückgerollt. Es gibt keine gemeinsame Transaktion über Charakter, Bilder und Begleiter. Neuere Werte werden erhalten; ein Hinweis fordert zum erneuten Vergleichen auf. Kein Neuimport vorhandener Figuren und keine Datenmigration nötig.
 
 ## Laufende Würfe absichern in 1.11.1
 
