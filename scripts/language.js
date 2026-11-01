@@ -7,6 +7,11 @@ const words = {
 
   'Bildausschnitt bearbeiten':'Gesicht richtig hin', 'Bild auswählen oder vorhandenes Bild ausrichten.':'Neues Gesicht wählen. Oder altes schieben.', 'Bild im Rahmen ziehen. Zum Vergrößern den Regler verwenden.':'Gesicht im Ring schieben. Regler macht größer.', 'Vergrößerung':'Größer machen', 'Ausschnitt zurücksetzen':'Gesicht wieder Mitte', 'Bild wird geladen …':'Gesicht kommt …', 'Bildausschnitt. Bild mit der Maus verschieben oder Pfeiltasten verwenden.':'Gesicht schieben. Maus oder Pfeiltasten nehmen.',
 
+  'Dieser Begleiter wurde ersetzt. Bitte den aktuellen Begleiter öffnen.':'Freund ersetzt. Neuen Freund öffnen.',
+  'Der Hauptcharakter dieses Begleiters ist nicht mehr vorhanden.':'Großes Blatt von Freund ist weg.',
+  'Dieser Begleiter ist dem Hauptcharakter nicht mehr eindeutig zugeordnet. Bitte den Import prüfen.':'Freund passt nicht mehr zum Blatt. Import prüfen.',
+  'Die Begleiterzuordnung wurde inzwischen geändert. Bitte den Spielstand erneut öffnen.':'Freund gehört jetzt anders. Kraftfenster neu auf.',
+  'Bitte den Hauptcharakter erneut importieren, bevor du den Spielstand änderst.':'Großes Blatt neu holen. Dann Kraft ändern.',
   'Bilder übernehmen':'Gesichter mitnehmen', 'Begleiter übernehmen':'Freunde mitnehmen', 'Spieler zuweisen':'Wem gehört das?', 'Bisherige Rechte behalten':'Gehört weiter denen', 'Keinen Token ändern':'Figur lassen', 'Neuen Token-Eintrag anlegen':'Neue Figur machen', 'Keine Begleiter in dieser Datei.':'Keine Freunde auf Blatt.', 'Ohne Begleiterimport bleiben bisherige Begleiter und ihre Tokens unverändert.':'Freunde nicht holen? Alte Freunde bleiben wie sind.', 'Der Spieler erhält Besitzerrechte am Charakter und an den ausgewählten Begleiter-Einträgen. Bestehende Rechte bleiben erhalten.':'Spieler kriegt Blatt und gewählte Freunde. Alte Besitzer bleiben.',
 
   'Pedipalpus-Charakterdatei':'Dein Pedipalpus-Blatt',

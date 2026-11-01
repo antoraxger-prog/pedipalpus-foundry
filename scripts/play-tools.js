@@ -14,11 +14,18 @@ export function weaponChoices(character){
  const values=[...groups.values()];return values.filter(row=>values.filter(other=>other.key===row.key).length===1);
 }
 const setFigure=async(app,figure)=>app.persist({...app.preferences,figures:{...(app.preferences.figures??{}),[app.actorId]:figure}});
+const linkState=link=>JSON.stringify(link?.sourceActorId?[link.sourceActorId,link.key,link.active!==false]:null);
 export async function playStateDialog(app,{memberKey=null}={}){
- const actor=app.actor,link=actor?.getFlag(MODULE_ID,'companion'),source=link?.sourceActorId&&link.active!==false?game.actors.get(link.sourceActorId):actor;
+ const actor=app.actor,link=actor?.getFlag(MODULE_ID,'companion'),expectedLink=linkState(link),linked=Boolean(link?.sourceActorId);
+ if(linked&&link.active===false)throw new Error('Dieser Begleiter wurde ersetzt. Bitte den aktuellen Begleiter öffnen.');
+ const source=linked?game.actors.get(link.sourceActorId):actor;
+ if(linked&&!source)throw new Error('Der Hauptcharakter dieses Begleiters ist nicht mehr vorhanden.');
+ if(!actor?.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Ändern werden Besitzerrechte benötigt.');
  if(!source?.isOwner||!source.canUserModify(game.user,'update'))throw new Error('Zum Ändern wird Besitzerrecht am Hauptcharakter benötigt.');
- const character=getCharacter(source),expected=JSON.stringify(character),conditions=source===actor&&!memberKey?conditionRows(character):null;
- const members=readCompanions(character),member=link?.sourceActorId?members.find((_row,index)=>{try{return companionKey(character,index)===link.key;}catch{return false;}}):null;
+ const character=getCharacter(source);if(!character)throw new Error('Bitte den Hauptcharakter erneut importieren, bevor du den Spielstand änderst.');
+ const expected=JSON.stringify(character),conditions=source===actor&&!memberKey?conditionRows(character):null;
+ const members=readCompanions(character),member=linked?members.find((_row,index)=>{try{return companionKey(character,index)===link.key;}catch{return false;}}):null;
+ if(linked&&!member)throw new Error('Dieser Begleiter ist dem Hauptcharakter nicht mehr eindeutig zugeordnet. Bitte den Import prüfen.');
  const targetKey=memberKey??(source!==actor&&member?memberStateKey(member):null);
  const resources=stateResources(character).filter(row=>targetKey?row.key===targetKey:source===actor);
  if(memberKey&&!resources.length)throw new Error('Die Begleiterenergien sind nicht eindeutig zugeordnet. Bitte die Liste aktualisieren.');
@@ -38,6 +45,8 @@ export async function playStateDialog(app,{memberKey=null}={}){
    dialog.element.querySelectorAll('[data-energy-step]').forEach(button=>button.addEventListener('click',()=>{const field=dialog.element.querySelector(`[data-resource-row="${button.dataset.energyRow}"][data-energy="${button.dataset.energyName}"]`),value=Number(field.value);if(field.value!==''&&Number.isSafeInteger(value))field.value=String(Math.max(-100000,Math.min(100000,value+Number(button.dataset.energyStep))));}));
   }});
  if(!answer||typeof answer!=='object')return;
+ if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Ändern werden Besitzerrechte benötigt.');
+ if(linkState(actor.getFlag(MODULE_ID,'companion'))!==expectedLink||linked&&(game.actors.get(actor.id)!==actor||game.actors.get(link.sourceActorId)!==source))throw new Error('Die Begleiterzuordnung wurde inzwischen geändert. Bitte den Spielstand erneut öffnen.');
  await savePlayState(source,answer,expected);await app.render({force:true});
 }
 export async function infoDialog(app,checkId){

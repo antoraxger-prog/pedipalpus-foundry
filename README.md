@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.2
+# Pedipalpus – Proben · 1.9.3
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.2 schützt persönliche Einstellungen bei mehreren Fenstern und korrigiert verzögertes Design- und Bildspeichern. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.3 prüft Begleiterzuordnungen vor Energieänderungen und korrigiert die Sprachwahl in Dialogen sowie Direktwürfe nach der Attributsauswahl. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Begleiterdialoge und Sprache in 1.9.3
+
+Energieänderungen eines verknüpften Begleiters prüfen vor dem Öffnen seine aktuelle eindeutige Zuordnung zum Hauptcharakter. Bei ersetzten Begleitern, fehlendem Hauptcharakter oder nicht mehr enthaltenem Wesen erscheint ein passender Hinweis. Ändert sich die Zuordnung oder gehen Bearbeitungsrechte während eines geöffneten Dialogs verloren, wird die Übernahme gestoppt. **Abbrechen** bleibt ohne Übernahme möglich. Eine reine Änderung des Tokenrahmens unterbricht einen ansonsten gültigen Energiedialog nicht. Bestehende Actors und Bilder bleiben erhalten.
+
+Die ausdrücklich gewählte Sprache gilt jetzt auch für Import-, Attributsauswahl- und Bilddialoge unabhängig vom Design: normale Sprache im Ork-Design und Ork-Sprache in anderen Designs funktionieren entsprechend der Einstellung. Äußere Leerzeichen im Begleiternamen verhindern den Direktwurf auch nach der Attributsauswahl nicht mehr. Originalname, Kennung und gespeicherte Probenwerte bleiben erhalten.
 
 ## Mehrere Fenster und verzögertes Speichern in 1.9.2
 

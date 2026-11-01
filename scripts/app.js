@@ -599,11 +599,11 @@ export class PedipalpusApp extends ApplicationV2 {
           return { snapshot: pending, portrait:includeImages?portrait:null, companionPictures:includeImages&&includeCompanions?Array.from(companionPictures.values()):[], includeImages,includeCompanions,companionPlan,ownerId,source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
         } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => false }],
       render: (_event, dialog) => {
-        localizeDialog(dialog.element,this.theme);
+        localizeDialog(dialog.element,this.language==='ork'?'ork':'fantasy');
         const destination=dialog.element.querySelector('[name="destination"]');
         const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled; };
         const images=dialog.element.querySelector('[name="includeImages"]'),companions=dialog.element.querySelector('[name="includeCompanions"]'),companionOptions=dialog.element.querySelector('[data-companion-import-options]');
-        const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending&&!(pending.profile.retinueOnly&&pending.profile.companionGroup)?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.theme);
+        const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending&&!(pending.profile.retinueOnly&&pending.profile.companionGroup)?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.language==='ork'?'ork':'fantasy');
           companionOptions.querySelectorAll('[data-companion-picture-index]').forEach(field=>field.addEventListener('change',()=>{const index=Number(field.dataset.companionPictureIndex),file=field.files?.[0];if(!file){companionPictures.delete(index);return;}companionPictures.set(index,{index,key:companionKey(pending,index),file});const select=companionOptions.querySelector(`[data-companion-import-index="${index}"]`);if(!select.value&&Array.from(select.options).some(row=>row.value==='new'))select.value='new';dialog.element.querySelector('[data-companion-picture-status]').textContent=`${companionPictures.size} Begleiterbilder zugeordnet.`;}));
         };
         dialog.element.querySelector('[name="companionPictures"]').addEventListener('change',event=>{
@@ -822,7 +822,7 @@ export class PedipalpusApp extends ApplicationV2 {
       content:`<p>${e(member.Name)} · ${e(choice.name)} · PW ${e(check.value)}</p>${[0,1,2].map(index=>`<label>${index+1}. ${e(this.t('Attribut'))}<select name="companionAttribute${index}"><option value="">${e(this.t('Attribut auswählen …'))}</option>${attrs.map(attr=>`<option value="${attr.short}" ${keys[index]===attr.short?'selected':''}>${e(attr.name)} ${e(attr.value)}</option>`).join('')}</select></label>`).join('')}<label>${e(this.t('Probenname'))}<input name="companionCheckName" maxlength="100" value="${e(choice.name)}"></label>${npcRules?`<p>${e(this.t('Zwei gleiche Attribute sind erlaubt; alle drei dürfen nicht gleich sein.'))}</p>`:''}`,
       buttons:[{action:'companion-check',label:this.t('Würfeln'),disabled:keys.length!==3,callback:(_event,_button,dialog)=>({keys:[0,1,2].map(index=>dialog.element.querySelector(`[name="companionAttribute${index}"]`).value),name:dialog.element.querySelector('[name="companionCheckName"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>false}],
       render:(_event,dialog)=>{
-        localizeDialog(dialog.element,this.theme);
+        localizeDialog(dialog.element,this.language==='ork'?'ork':'fantasy');
         const update=()=>{const values=Array.from(dialog.element.querySelectorAll('select')).map(field=>field.value);dialog.element.querySelector('[data-action="companion-check"]').disabled=values.some(value=>!value)||npcRules&&new Set(values).size<2;};
         dialog.element.querySelectorAll('select').forEach(field=>field.addEventListener('change',update));update();
       }});
@@ -830,7 +830,7 @@ export class PedipalpusApp extends ApplicationV2 {
     if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
     const fresh=getCharacter(actor),now=fresh?.checks.find(entry=>entry.id===check.id);
     if(JSON.stringify(fresh)!==expected||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
-    const label=answer.name.trim()||choice.name,name=root?label:`${member.Name} – ${label}`;
+    const label=answer.name.trim()||choice.name,name=(root?label:`${member.Name} – ${label}`).trim();
     if(/[|\r\n]/.test(name)||name.length>160)throw new Error('Der Probenname ist zu lang oder enthält ungültige Zeichen.');
     const updated=root?withNpcAttributes(fresh,check.id,answer.keys):withCompanionAttributes(fresh,check.id,answer.keys);
     if(!root||check.npcChoice.remember)await actor.setFlag(MODULE_ID,'character',updated);
@@ -842,7 +842,7 @@ export class PedipalpusApp extends ApplicationV2 {
     try{return await DialogV2.wait({window:{title:this.t(title)},classes:this.dialogClasses,position:{width:450},modal:true,rejectClose:false,
       content:portraitEditorHTML(initialStyle,saved?.frame),buttons:[{action,label:this.t(label),disabled:true,callback:()=>editor.value()},{action:'cancel',label:this.t('Abbrechen'),callback:()=>false}],
       render:(_event,dialog)=>{
-        localizeDialog(dialog.element,this.theme);
+        localizeDialog(dialog.element,this.language==='ork'?'ork':'fantasy');
         editor=new PortraitEditor(dialog.element,{style:initialStyle,crop:saved??undefined,onState:({ready,message})=>{dialog.element.querySelector(`[data-action="${action}"]`).disabled=!ready;if(message)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(message);}});
         if(actor?.img&&!actor.img.endsWith('mystery-man.svg'))editor.load(()=>portraitFromActor(actor),saved??undefined);
         else editor.state(false,this.t('Bitte ein Bild auswählen.'));
