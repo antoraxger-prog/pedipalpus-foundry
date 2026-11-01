@@ -827,6 +827,30 @@ try {
   await page.evaluate(()=>{game.user.isGM=false;});await beginChoices(grouped);assert.equal(await page.locator('[name="ownerId"]').count(),0);await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();assert.deepEqual(errors,[]);
   console.log('PASS: Player import offers no GM assignment; all new controls complete with no browser errors.');
 
+  const current=combatFixture();current.Name='Aktueller Testcharakter';
+  const newAttributes=value=>{if(!value||typeof value!=='object')return;if(['MU','KL','IN','CH','FF','GE','KO','KK','gMR','kMR','RE'].includes(value.ShortName)&&Number.isSafeInteger(value.TotalValue)){value.BaseValue=value.TotalValue;value.ModValue=0;value.RuleModValue=0;delete value.TotalValue;}for(const child of Object.values(value))newAttributes(child);};
+  newAttributes(current);current.ComplexConditions=[{Name:'Schmerz',Level:1}];current.SimpleConditions=[];
+  await upload(current,{destination:''});await idle();
+  const currentId=await page.locator('[name="actor"]').inputValue();
+  if(await page.locator('[data-action="full"]').count())await page.locator('[data-action="full"]').click();
+  await page.locator('[name="search"]').fill('Geographie');
+  assert.match(await page.locator('.pp-rule-state').textContent(),/Schmerz 1/);
+  assert.equal(await page.locator('[data-check-id="AcademicSkills:0:0"] .pp-rating').textContent(),'6');
+  const beforeCurrentRoll=await page.evaluate(()=>testMessages.length);
+  await page.locator('[data-check-id="AcademicSkills:0:0"] .pp-check-name').click();await idle();
+  assert.equal(await page.evaluate(()=>testMessages.length),beforeCurrentRoll+1);
+  assert.equal(await page.locator('.mock-dialog').count(),0);
+  console.log('PASS: New save without attribute totals imports through the UI, shows effective condition values and posts one direct roll.');
+  current.ComplexConditions[0].Level=3;await upload(current,{destination:currentId});await idle();
+  await page.locator('[name="search"]').fill('');await page.locator('[data-action="battle"]').click();
+  const blockedRow=page.locator('[data-check-id="combat:MeleeWeapons:0:attack"]');
+  assert.ok(await blockedRow.isVisible());assert.ok(await blockedRow.locator('.pp-dice-button[data-blind="false"]').isDisabled());assert.ok(await blockedRow.locator('.pp-dice-button[data-blind="true"]').isDisabled());
+  assert.match(await blockedRow.locator('.pp-rating').getAttribute('title'),/Schmerz III/);
+  assert.equal(await page.evaluate(()=>testMessages.length),beforeCurrentRoll+1);
+  await page.locator('.pp-root').screenshot({path:path.resolve(root,'../artifacts/zustaende-1.7.0.png')});
+  assert.deepEqual(errors,[]);
+  console.log('PASS: Incapacitated combat checks remain visible with disabled normal/blind actions and no unintended roll.');
+
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 
 

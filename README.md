@@ -18,6 +18,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
 
+## Aktuelle Pedipalpus-Dateien
+
+Version 1.7.0 unterstützt zusätzlich die am 26. Oktober 2026 vorliegenden Charakterdateien ohne gespeicherte Attributsummen. Attribute werden aus Grundwert und Modifikator aufgebaut; bereits enthaltene Regelboni werden nicht nochmals addiert. Alte Charakterdateien, NSC-Format und Gefolgsdateien bleiben unterstützt.
+
+Bei diesen neuen Charakterdateien werden gespeicherte Zustände einschließlich ganzer oder teilweiser Unterdrückung berücksichtigt: vorübergehende Attributsänderungen, Reaktion, Probenabzüge und die von Pedipalpus vorgesehenen Handlungssperren. Eisern und Ausdauernd reduzieren jeweils eine passende Zustandsstufe; Blutrausch ignoriert Schmerz und sperrt defensive Proben. Theoretiker und Schlechte Gelenke folgen ebenfalls den neuen Probenregeln. Zustände stehen kompakt über der Liste; gesperrte Proben bleiben sichtbar und können auch über Makros nicht ausgelöst werden. Die Werte enthalten diese Abzüge bereits. Situationsabhängige Ausnahmen bleiben manuell. Zustände werden beim Import übernommen, nicht während des Spiels mit der Windows-App synchronisiert.
+
+Eine in Pedipalpus ausgewählte, selbst getragene einhändige Nebenhand erhöht nur geeignete einhändige Hauptwaffen-Paraden. Ihre Ausbildungsstufe bestimmt den Schild-/Parierbonus. Beim Ändern getragener oder angelegter Rüstungen bleibt Rüstungsgewöhnung berücksichtigt; Überlastung wird dadurch nicht vermindert. Gefolgsmitglieder erhalten keine Zustandsabzüge oder Fokusboni ihres Besitzers. Personenbegleiter übernehmen zusätzlich göttliche Fähigkeiten sowie eigene Ausweichen- und Wahrnehmungsproben. Waffen, die einer Person zugewiesen sind, erscheinen mit deren gespeicherten fertigen Angriffen im Gefolgsabschnitt.
+
+Nach einem Modulupdate den Charakter einmal über **Aktualisieren** oder **JSON importieren** erneut einlesen. Die Quelle muss zuvor in der aktuellen Pedipalpus-App gespeichert worden sein. Bilder, vorhandene Begleiter-Zuordnungen und persönliche Favoriten folgen den bisherigen Importoptionen. Der Regelabgleich, die Charaktererstellung, Steigerungen und Regeneration bleiben Funktionen der Windows-App; das Foundry-Modul verändert keine AP oder lokalen Charakterdateien.
+
 ## Installation und Updates
 
 Im Foundry-Setup unter **Zusatzmodule → Modul installieren** diese Manifest-URL verwenden:

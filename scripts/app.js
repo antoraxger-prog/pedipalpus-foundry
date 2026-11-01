@@ -375,7 +375,7 @@ export class PedipalpusApp extends ApplicationV2 {
       this.element.querySelectorAll('[name="actor"], [name="theme"]').forEach(field=>{field.disabled=false;});
       this.element.querySelectorAll('[data-action]').forEach(field=>{
         if (['battle','ring','full','administration','preferences','presets','favorite','breakdown'].includes(field.dataset.action)) field.disabled=false;
-        if (field.dataset.action==='roll') { const status=connectionStatus(),check=getCharacter(this.actor)?.checks.find(check=>check.id===field.dataset.check);field.disabled=!this.actor?.isOwner || !status.ready || status.directReady===false || check?.kind==='combat' && status.combatReady===false; }
+        if (field.dataset.action==='roll') { const status=connectionStatus(),check=getCharacter(this.actor)?.checks.find(check=>check.id===field.dataset.check);field.disabled=!check || Boolean(check.reason) || !this.actor?.isOwner || !status.ready || status.directReady===false || check?.kind==='combat' && status.combatReady===false; }
         if (field.dataset.action==='import') field.disabled=!(visibleActors().some(actor=>actor.canUserModify(game.user,'update')) || foundry.documents.Actor.canUserCreate(game.user));
         if (['portrait','portrait-edit'].includes(field.dataset.action)) field.disabled=!this.actor?.isOwner;
         if (field.dataset.action==='animal-portrait') field.disabled=!this.actor?.isOwner||!field.dataset.animalKey;

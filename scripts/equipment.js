@@ -2,6 +2,7 @@ import { normalizeCharacter } from './data.js';
 import { characterFocus } from './combat.js';
 import { NPC_FORMAT,mapNpcFile,retainNpcChoices } from './npc.js';
 import { retainCompanionChoices,retainCompanionImport } from './retinue.js';
+import { currentCharacterRules,specialAbilityLevel } from './character-rules.js';
 
 const list=value=>Array.isArray(value)?value.filter(item=>item&&typeof item==='object'):[];
 const finite=value=>typeof value==='number'&&Number.isFinite(value)?value:0;
@@ -31,7 +32,8 @@ export function recalculateArmor(raw) {
   const overload=load>capacity*2?3:load>capacity*1.5?2:load>capacity?1:0;
   raw.CarriedWeight=load;raw.CarryCapacity=capacity;
   raw.GRS=equipped.reduce((sum,item)=>sum+Math.max(0,finite(item.Protection)),0);
-  raw.Be=equipped.reduce((sum,item)=>sum+item.BaseMobilityPenalty,0)+overload;
+  const familiarity=currentCharacterRules(raw)&&specialAbilityLevel(raw,'Rüstungsgewöhnung')>0?1:0;
+  raw.Be=Math.max(0,equipped.reduce((sum,item)=>sum+item.BaseMobilityPenalty,0)-familiarity)+overload;
   return raw;
 }
 

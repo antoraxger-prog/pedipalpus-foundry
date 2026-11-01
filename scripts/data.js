@@ -1,6 +1,7 @@
 import { retinueEntries,companionProbes,COMPANION_GROUPS,COMPANION_ATTRIBUTES,memberAttributes } from './retinue.js';
 import { combatChecks } from './combat.js';
 import { NPC_FORMAT,mapNpcFile } from './npc.js';
+import { currentCharacterRules,prepareCharacterRules,applyCharacterCheckRules,conditionState } from './character-rules.js';
 export const MODULE_ID = 'pedipalpus-foundry';
 export const FLAG = 'character';
 export const SCHEMA_VERSION = 1;
@@ -52,7 +53,7 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
       if(typeof member.Name!=='string'||!member.Name.trim()||member.Name.length>100||/[|\r\n]/.test(member.Name)||typeof member.InventoryId!=='string'||!member.InventoryId||ids.has(member.InventoryId))throw new Error('Gefolgsdatei: Namen und eindeutige Kennungen werden benötigt.');
       ids.add(member.InventoryId);
       if(COMPANION_ATTRIBUTES.some(([key])=>!Number.isSafeInteger(member[key])||Math.abs(member[key])>1000))throw new Error('Gefolgsdatei: Acht vollständige Attributswerte werden benötigt.');
-      for(const field of ['Attacks','MundaneAbilities','MagicalAbilities'])if(member[field]!==undefined&&(!Array.isArray(member[field])||member[field].some(row=>!row||typeof row!=='object'||Array.isArray(row))))throw new Error('Gefolgsdatei: Die Probenliste ist ungültig.');
+      for(const field of ['Attacks','MundaneAbilities','MagicalAbilities','DivineAbilities'])if(member[field]!==undefined&&(!Array.isArray(member[field])||member[field].some(row=>!row||typeof row!=='object'||Array.isArray(row))))throw new Error('Gefolgsdatei: Die Probenliste ist ungültig.');
     }
     const selected={Version:17,Name:raw.Name,PrimaryAttributes:[],Notes:text(raw.Notes),PortraitFileName:text(raw.PortraitFileName),...Object.fromEntries(COMPANION_GROUPS.map(([collection])=>[collection,raw[collection]??[]]))};
     const snapshot=normalizeBaseCharacter(selected,importedAt,false,true),single=members.length===1?members[0]:null;
@@ -73,10 +74,12 @@ function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false)
     throw new Error('Das ist keine vollständige Pedipalpus-Charakterdatei. Name, Version und Attribute werden benötigt.');
   }
   const warnings = [];
+  const currentRules=!npcRules&&!retinueOnly&&currentCharacterRules(raw);
+  if(currentRules)raw=prepareCharacterRules(raw);
   if (raw.Version !== KNOWN_SAVE_VERSION) warnings.push(`Dateiversion ${raw.Version}: geprüft ist Version ${KNOWN_SAVE_VERSION}. Bitte die angezeigten Werte vergleichen.`);
   const attributes = list(raw.PrimaryAttributes).map(attribute).filter(Boolean);
   if (!retinueOnly&&!attributes.length) throw new Error('Die Datei enthält keine lesbaren Attributswerte.');
-  const checks = [];
+  let checks = [];
   function addCheck(id, name, group, value, trio, kind = 'skill', reason = '', extra = {}) {
     name = text(name).trim();
     if (!name) return;
@@ -106,8 +109,9 @@ function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false)
       key === 'Rituals' && entry.HasCheck === false ? 'Für dieses Ritual ist keine Probe erforderlich.' : ''));
   }
   const equipment = [];
-  const combat = combatChecks(raw,{npcRules});
+  const combat = combatChecks(raw,{npcRules,currentRules});
   checks.push(...combat,...companionProbes(raw,{npcRules}));
+  if(currentRules)checks=applyCharacterCheckRules(raw,checks);
   if (combat.some(check => check.reason)) warnings.push('Einige Kampfproben sind unvollständig. Bitte den Charakter in Pedipalpus speichern und erneut importieren.');
   for (const [key, group] of Object.entries(EQUIPMENT_GROUPS)) list(raw[key]).forEach((entry, i) => equipment.push({
     id: `${key}:${i}`, name: text(entry.Name), group, quantity: number(entry.Quantity) ?? 1,
@@ -129,6 +133,7 @@ function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false)
   })) })).filter(group => group.entries.length);
   return {
     schemaVersion: SCHEMA_VERSION, combatSchemaVersion: 1, sourceVersion: raw.Version, importedAt,
+    ...(currentRules?{characterRulesVersion:1}:{}),
     profile: { name: raw.Name.trim(), portraitFileName: text(raw.PortraitFileName), race: named(raw.Race), culture: named(raw.HomeCultureFamily), subCulture: text(raw.HomeSubCulture), socialClass: text(raw.SocialClass),
       church: text(raw.ChurchName), apTotal: number(raw.ApTotal), apAvailable: number(raw.ApAvailable),
       weight: number(raw.CarriedWeight), capacity: number(raw.TotalCarryCapacity), notes: text(raw.Notes),
@@ -137,8 +142,8 @@ function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false)
     attributes, checks, equipment, details, warnings, retinue:retinueEntries(raw), retinueSchemaVersion:1,
     secondary: list(raw.SecondaryAttributes).map(attribute).filter(Boolean),
     journal: list(raw.Notes).map(entry => ({ title: text(entry.Title), description: text(entry.Description), date: text(entry.Date) })),
-    conditions: { simple: list(raw.SimpleConditions).map(entry => ({ name: text(entry.Name), active: entry.IsActive === true })),
-      complex: list(raw.ComplexConditions).map(entry => ({ name: text(entry.Name), level: number(entry.Level) })) },
+    conditions: { simple: list(raw.SimpleConditions).map(entry => ({ name: text(entry.Name), active: currentRules?conditionState(raw).active(entry.Name):entry.IsActive === true })),
+      complex: list(raw.ComplexConditions).map(entry => ({ name: text(entry.Name), level: currentRules?conditionState(raw).level(entry.Name):number(entry.Level) })) },
     combat: { offDefOffset: integer(raw.OffDefOffset), offOffset: integer(raw.OffOffset), defOffset: integer(raw.DefOffset),
       melee: list(raw.MeleeSkills).map(entry => ({ name: text(entry.Name), value: number(entry.Value) })),
       ranged: list(raw.RangedSkills).map(entry => ({ name: text(entry.Name), value: number(entry.Value) })),

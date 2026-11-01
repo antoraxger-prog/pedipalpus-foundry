@@ -1,4 +1,5 @@
-import { retinueEntries,isCompanionCheck } from './retinue.js';
+import { retinueEntries,isCompanionCheck,personValue } from './retinue.js';
+import { offHandBonus,parryDefense } from './character-rules.js';
 const list = value => Array.isArray(value) ? value.filter(x => x && typeof x === 'object') : [];
 const text = value => typeof value === 'string' ? value.trim() : '';
 const integer = value => Number.isSafeInteger(value) ? value : null;
@@ -24,7 +25,7 @@ export function withFocus(character, focus) {
     })};
 }
 
-export function combatChecks(raw,{npcRules=false}={}) {
+export function combatChecks(raw,{npcRules=false,currentRules=false}={}) {
   const checks = [];
   const add = (id, weaponName, skillName, type, skillValue, baseValue, focusValue, weaponModifier, mobilityPenalty, extra = {}) => {
     const values = [skillValue, baseValue, focusValue, weaponModifier, mobilityPenalty];
@@ -39,6 +40,7 @@ export function combatChecks(raw,{npcRules=false}={}) {
   for (const key of ['MeleeWeapons','ParryWeapons','RangedWeapons']) {
     const ranged = key === 'RangedWeapons';
     list(raw[key]).forEach((weapon,i) => {
+      if(currentRules&&text(weapon.CarrierAnimalId)&&list(raw.Persons).some(person=>person.InventoryId===weapon.CarrierAnimalId))return;
       const allowed = Array.isArray(weapon.UsedSkills) ? weapon.UsedSkills.filter(x => text(x)) : [];
       if (!allowed.length && text(weapon.UsedSkill)) allowed.push(weapon.UsedSkill);
       let best = null;
@@ -52,7 +54,10 @@ export function combatChecks(raw,{npcRules=false}={}) {
       for (const type of ranged ? ['ranged'] : ['attack','parry']) {
         add(`combat:${key}:${i}:${type}`,text(weapon.Name),text(best?.Name),type,integer(best?.Value),base(type),
           ranged ? 0 : integer(raw[type === 'attack' ? 'OffOffset' : 'DefOffset']),
-          integer(weapon[type === 'parry' ? key === 'ParryWeapons' ? 'DefenseBonus' : 'ParryBonus' : 'AttackBonus']),penalty);
+          type==='parry'&&key==='MeleeWeapons'&&currentRules&&integer(weapon.ParryBonus)!==null
+            ? weapon.ParryBonus+offHandBonus(raw,weapon)
+            : type==='parry'&&key==='ParryWeapons'&&currentRules?integer(parryDefense(raw,weapon))
+            : integer(weapon[type === 'parry' ? key === 'ParryWeapons' ? 'DefenseBonus' : 'ParryBonus' : 'AttackBonus']),penalty);
       }
     });
   }
@@ -61,5 +66,9 @@ export function combatChecks(raw,{npcRules=false}={}) {
     for (const type of attack.IsRanged===true?['ranged']:attack.AttackOnly===true?['attack']:['attack','parry']) add(`${group}:${i}:${j}:${type}`,`${text(animal.Name) || 'Tier'} – ${text(attack.Name) || 'Tierangriff'}`,
       text(attack.Name) || 'Tierangriff',type,integer(attack[type === 'parry' ? 'ParryValue' : 'AttackValue']),0,0,0,0,{...(group==='animals'?{animalName:text(animal.Name)}:{}),companionName:text(animal.Name),companionGroup:group,companionIndex:i,companionId:text(animal.InventoryId),ranges:text(attack.Ranges)});
   }));
+  retinueEntries(raw).filter(member=>member._group==='persons'&&personValue(member,'AW')!==null).forEach(member=>{
+    add(`persons:${member._index}:dodge:parry`,`${text(member.Name)} – Ausweichen`,'Ausweichen','parry',personValue(member,'AW'),0,0,0,0,
+      {fixedCombat:true,companionName:text(member.Name),companionGroup:'persons',companionIndex:member._index,companionId:text(member.InventoryId)});
+  });
   return checks;
 }

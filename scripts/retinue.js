@@ -16,6 +16,12 @@ export function readCompanions(character){
  });
 }
 export const memberAttributes = member => COMPANION_ATTRIBUTES.flatMap(([short,name])=>Number.isSafeInteger(member?.[short])?[{short,name,value:member[short]}]:[]);
+export function personValue(member,key){
+ const row=objects(member?.DerivedValues).find(row=>row.Key===key);
+ if(!row||![row.BaseValue,row.RuleModifier,row.Modifier,row.Constant].every(Number.isFinite))return null;
+ const value=row.Constant+(row.IsMultiplier?row.BaseValue*(row.RuleModifier+row.Modifier):row.BaseValue+row.RuleModifier+row.Modifier);
+ const total=Math.sign(value)*Math.round(Math.abs(value));return Number.isSafeInteger(total)?total:null;
+}
 export function companionProbes(raw,{npcRules=false}={}){
  const result=[];
  for(const member of retinueEntries(raw)){
@@ -30,7 +36,8 @@ export function companionProbes(raw,{npcRules=false}={}){
   for(const [field,label,keys] of [['MentalMagicResistance','Geistige Magieresistenz',['MU','KL','IN']],['PhysicalMagicResistance','Körperliche Magieresistenz',['GE','KO','KK']],['Reaction','Reaktionsvermögen',['MU','IN','GE']]]){
    if(Number.isSafeInteger(member[field]))add(`resistance:${field}`,label,member[field],keys.flatMap(key=>attrs.filter(attr=>attr.short===key)),'skill',npcRules?{collection:'Resistance',index:0,name:label,keys}:null);
   }
-  for(const [collection,type] of [['MundaneAbilities','mundane'],['MagicalAbilities','magical']])objects(member[collection]).forEach((ability,index)=>{
+  if(member._group==='persons'&&personValue(member,'WA')!==null)add('derived:WA','Wahrnehmung',personValue(member,'WA'),[],'attribute');
+  for(const [collection,type] of [['MundaneAbilities','mundane'],['MagicalAbilities','magical'],['DivineAbilities','divine']])objects(member[collection]).forEach((ability,index)=>{
    const keys=[ability.FirstAttribute,ability.SecondAttribute,ability.ThirdAttribute];
    const chosen=keys.map(key=>attrs.find(attr=>attr.short===key));
    add(`${type}:${index}`,String(ability.Name??'Fähigkeit'),ability.Value,chosen.every(Boolean)?chosen:[],'skill',{collection,index,keys:chosen.every(Boolean)?keys:[],name:String(ability.Name??'Fähigkeit')});

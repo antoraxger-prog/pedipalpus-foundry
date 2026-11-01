@@ -37,7 +37,8 @@ export function rollableChecks(character) {
       && check.attributes.every(att => att && typeof att.name === 'string' && Number.isSafeInteger(att.value))));
 }
 export function checksForView(character, mode = 'full') {
-  return rollableChecks(character).filter(check => mode === 'battle' ? check.kind === 'combat'||isCompanionCheck(check) : check.kind !== 'combat'&&!isCompanionCheck(check));
+  const valid=new Set(rollableChecks(character));
+  return (character?.checks??[]).filter(check=>valid.has(check)||check.ruleBlocked).filter(check => mode === 'battle' ? check.kind === 'combat'||isCompanionCheck(check) : check.kind !== 'combat'&&!isCompanionCheck(check));
 }
 const probe = (check, theme = 'fantasy') => check.kind === 'combat' ? `<span class="pp-single-probe" title="${e(`${uiText(theme,'Fertigkeit')} ${check.combat.skillValue} + ${uiText(theme,'Basis')} ${check.combat.baseValue} + ${uiText(theme,'Fokus')} ${check.combat.focusValue} + ${uiText(theme,'Waffenbonus')} ${check.combat.weaponModifier} − BE ${check.combat.mobilityPenalty}`)}">${(theme === 'ork' ? {attack:'Hau',parry:'Block',ranged:'Weit'} : {attack:'AT',parry:'PA',ranged:'FK'})[check.combat.type]} · 1W20</span>` : check.kind === 'attribute' ? '<span class="pp-single-probe">3W20</span>'
   : check.needsAttributes?`<span class="pp-single-probe">${e(uiText(theme,'Attribute wählen …'))}</span>`: `<span class="pp-trio">${check.attributes.map(att => `<span title="${e(att.name)}">${e(att.short || att.name)} <strong>${number(att.value)}</strong></span>`).join('')}</span>`;
@@ -147,7 +148,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   if(mode==='battle'){available.add('armors');for(const [collection,group] of COMPANION_GROUPS)if(character.equipment?.some(item=>item.id.startsWith(`${collection}:`)))available.add(group);}
   const disabled = busy || !status.ready || status.directReady === false || !actor?.isOwner;
   const disabledReason = !actor?.isOwner ? 'Zum Würfeln werden Besitzerrechte benötigt.' : status.message;
-  const rollDisabled = check => disabled || check.kind === 'combat' && status.combatReady === false;
+  const rollDisabled = check => disabled || Boolean(check.reason) || check.kind === 'combat' && status.combatReady === false;
   const nameButton = (check,markup) => button('roll',markup,`class="pp-check-name" draggable="true" data-check="${e(check.id)}" data-blind="false" aria-label="${e(check.name)} durch Anklicken würfeln" title="${e(check.name)} würfeln" ${rollDisabled(check)?'disabled':''}`);
   const rankAttributes = check => {
     const rank = mastery(check);
@@ -156,13 +157,13 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const favoriteButton = check => button('favorite', isFavorite(check) ? '★' : '☆', `class="pp-favorite-button" data-check="${e(check.id)}" aria-label="${e(check.name)} ${isFavorite(check) ? 'aus Favoriten entfernen' : 'zu Favoriten hinzufügen'}" title="${isFavorite(check) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}" aria-pressed="${isFavorite(check)}" ${frozen}`);
   const rating = check => {
     const rank = mastery(check);
-    const text = `${rank.label} · ${rank.scale === 'talents' && check.kind === 'combat' ? `Talentwert ${number(check.combat.skillValue)} · Probenwert` : 'Wert'} ${number(check.value)} · Würfeln`;
+    const text = `${rank.label} · ${rank.scale === 'talents' && check.kind === 'combat' ? `Talentwert ${number(check.combat.skillValue)} · Probenwert` : 'Wert'} ${number(check.value)}${check.rulePenalty?` · Zustands-/Regelabzüge ${check.rulePenalty}`:''}${check.reason?` · ${check.reason}`:' · Würfeln'}`;
     const decoration=rank.grade==='master'?'master':'plain';
     return `<span class="pp-value-medallion" data-decoration="${decoration}" data-zero="${check.value===0}">${decoration!=='plain' ? masteryFrame : ''}${button('roll', number(check.value), `class="pp-rating" data-check="${e(check.id)}" data-blind="false" title="${e(text)}" aria-label="${e(check.name)} würfeln · ${e(text)}" ${rollDisabled(check)?'disabled':''}`)}</span>`;
   };
   const rolls = check => {
     const rowDisabled = rollDisabled(check);
-    const reason = !disabled && rowDisabled ? 'Kampfproben benötigen Ucurifunke – Proben ab 1.0.14.' : disabledReason;
+    const reason = check.reason || (!disabled && rowDisabled ? 'Kampfproben benötigen Ucurifunke – Proben ab 1.0.14.' : disabledReason);
     return `<div class="pp-roll-buttons">${rollButton(check,rowDisabled,reason)}${rollButton(check,rowDisabled,reason,true)}</div>`;
   };
   const focus = characterFocus(character);
@@ -201,7 +202,9 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
     const companions=mode==='battle'?`<div class="pp-companion-overviews">${companionEntries(character).map((member,index)=>{const key=`${member._group}:${member._index}`,body=companionRows.get(key)??'';let identity='';try{identity=companionKey(character,index);}catch{}return `<details class="pp-companion-section" data-companion-section="${e(identity||key)}" data-inventory="${e(member._group)}"><summary data-companion-card data-search="${e(`${member.Name} ${member.Species??''} ${member.Domain??''}`.toLocaleLowerCase('de'))}"><strong>${e(member.Name)}</strong><span>${e(member.Domain??member.Species??'')} · LE ${number(member.CurrentLe)} / ${number(member.MaxLe)}</span></summary><div class="pp-companion-content">${renderCompanionRules(member,language)}${button('animal-portrait',e(uiText(language,'Bild / Token')),`data-animal="${index}" data-animal-key="${e(identity)}" ${!actor?.isOwner||busy||!identity?'disabled':''}`)}${Number.isSafeInteger(member.AstralEnergy)?`<span>AE ${number(member.CurrentAstralEnergy)} / ${number(member.AstralEnergy)}</span>`:''}<table class="pp-table"><tbody>${body}</tbody></table></div></details>`;}).join('')}</div>`:'';
     list=`<div class="pp-check-list"><table class="pp-table"><thead><tr><th scope="col" class="pp-favorite-cell"><span class="pp-sr-only">Favoriten</span></th><th scope="col">Probe</th><th scope="col">Attribute</th><th scope="col" class="pp-value">Wert</th><th scope="col"><span class="pp-sr-only">Würfeln</span></th></tr></thead><tbody>${rows}</tbody></table>${companions}<p class="pp-no-results" hidden>Keine passende Probe gefunden.</p></div>`;
   }
-  return `${openRoot}${toolbar}${admin}${filters}${modifierControl}${presetControl}${focusControl}${quickbar}${mode==='battle'?renderBattleInventory(character,actor,busy,language):''}${list}${fixedStatus}</div>`;
+  const activeConditions=character.characterRulesVersion?[...(character.conditions?.simple??[]).filter(row=>row.active).map(row=>row.name),...(character.conditions?.complex??[]).filter(row=>row.level>0).map(row=>`${row.name} ${row.level}`)]:[];
+  const conditionInfo=activeConditions.length?`<div class="pp-rule-state" title="Gespeicherte Zustände aus Pedipalpus; Unterdrückung ist berücksichtigt. Die angezeigten Probenwerte enthalten die automatischen Abzüge bereits.">Zustände: ${e(activeConditions.join(' · '))}</div>`:'';
+  return `${openRoot}${toolbar}${admin}${filters}${modifierControl}${presetControl}${focusControl}${conditionInfo}${quickbar}${mode==='battle'?renderBattleInventory(character,actor,busy,language):''}${list}${fixedStatus}</div>`;
 }
 
 function renderBattleInventory(character,actor,busy,language) {
