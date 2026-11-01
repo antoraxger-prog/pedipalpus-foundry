@@ -66,7 +66,7 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
     const verify=()=>{
       if(!actor.canUserModify(game.user,'update'))throw new Error('Für den Import benötigst du Besitzerrechte auf den gewählten Charakter.');
       const current=getCharacter(actor);
-      if(portrait&&portraitExpected!==undefined&&JSON.stringify({img:actor.img,framing:actor.getFlag(MODULE_ID,'portraitFraming')})!==portraitExpected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte den Import erneut öffnen.');
+      if(portrait&&portraitExpected!==undefined&&portraitState(actor)!==portraitExpected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte den Import erneut öffnen.');
       if(actor.getFlag(MODULE_ID,'companion')?.sourceActorId)throw new Error('Ein verknüpfter Begleiter kann nicht als Hauptcharakter überschrieben werden. Bitte einen neuen Eintrag anlegen.');
       if(current&&(current.sourceFormat??'character')!==(snapshot.sourceFormat??'character'))throw new Error('Charakter- und NSC-Import dürfen einander nicht überschreiben. Bitte einen passenden oder neuen Foundry-Eintrag wählen.');
       if(expected!==undefined&&JSON.stringify(current)!==expected)throw new Error('Die Foundry-Daten wurden inzwischen geändert. Bitte den Import erneut vergleichen.');

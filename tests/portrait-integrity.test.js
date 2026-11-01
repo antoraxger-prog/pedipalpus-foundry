@@ -43,3 +43,19 @@ test('A newer portrait during scene propagation stops remaining stale token writ
  assert.deepEqual(tokenWrites,[{'texture.src':'prepared-token.png'}]);
  assert.equal(actor.img,'newer-portrait.png');assert.equal(warnings.length,1);assert.match(warnings[0],/1 verknüpfte Tokens.*zwischenzeitlichen/);
 });
+
+test('A prototype token changed while the portrait editor was open rejects the old crop before writes',async()=>{
+ const {actor,writes,tokenWrites}=runtime();actor.prototypeToken={texture:{src:'old-token.png'}};const expected=portraitState(actor);
+ actor.prototypeToken.texture.src='independent-token.png';
+ await assert.rejects(applyPortrait(actor,'original.png',()=>{},'stale-token.png',null,expected),/inzwischen/);
+ assert.equal(actor.img,'original.png');assert.deepEqual(writes,[]);assert.deepEqual(tokenWrites,[]);
+});
+
+test('A newer prototype token during propagation stops the remaining scene updates',async()=>{
+ const {actor,tokenWrites}=runtime(),warnings=[];actor.prototypeToken={texture:{src:'prepared-token.png'}};
+ const first=game.scenes.contents[0].tokens.contents[0],second={...first,async update(data){tokenWrites.push(data);}};
+ first.update=async data=>{tokenWrites.push(data);actor.prototypeToken.texture.src='newer-token.png';};
+ game.scenes.contents[0].tokens.contents.push(second);
+ await applyPortrait(actor,'original.png',message=>warnings.push(message),'prepared-token.png',null,portraitState(actor));
+ assert.deepEqual(tokenWrites,[{'texture.src':'prepared-token.png'}]);assert.equal(actor.prototypeToken.texture.src,'newer-token.png');assert.match(warnings[0],/1 verknüpfte Tokens/);
+});

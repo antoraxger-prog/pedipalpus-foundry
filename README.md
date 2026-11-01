@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.5
+# Pedipalpus – Proben · 1.9.6
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.5 trennt ausgeführte Würfe von Fehlern beim Speichern persönlicher Einstellungen und verbessert Waffensets sowie Makros bei geschlossenem Fenster. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.6 hält erfolgreiche Importe bei Fehlern der persönlichen Speicherung bedienbar und schützt zwischenzeitlich geänderte Tokenbilder. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Import und Tokenbilder in 1.9.6
+
+Ein bereits gespeicherter Import bleibt erfolgreich, wenn die persönliche Auswahl danach nicht gespeichert werden kann. Dafür erscheint eine Warnung. Die Figur bleibt ausgewählt und die eingelesene Dateiquelle bleibt für **Aktualisieren** verfügbar. Ein tatsächlicher Fehler beim Speichern der Charakterdaten bleibt ein Fehler.
+
+Bildeditor und Importvergleich prüfen neben Originalbild und Ausschnitt auch das Tokenbild der Figur. Wird dieses zwischenzeitlich in Foundry geändert, überschreibt der alte Editor es nicht. Erfolgt die Änderung während der Aktualisierung verknüpfter Szenentokens, werden weitere alte Bildübernahmen gestoppt und gemeldet. Ein Import mit ausgeschalteter Bildübernahme übernimmt weiterhin die Charakterwerte und lässt vorhandene Bilder erhalten.
+
+Die Änderungen benötigen keine Datenmigration und keinen erneuten Charakterimport. Bei einem Konflikt nach bereits gespeicherten Charakterwerten sind mehrere Foundry-Dokumente weiterhin kein gemeinsamer, atomarer Schreibvorgang.
 
 ## Würfe und persönliche Speicherung in 1.9.5
 

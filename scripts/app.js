@@ -760,7 +760,7 @@ export class PedipalpusApp extends ApplicationV2 {
   }
   async acceptImport(answer) {
     if (!answer?.snapshot) return;
-    const importActor=game.actors.get(answer.actorId),previous=getCharacter(importActor),previousFraming=savedPortraitFraming(importActor),portraitExpected=importActor?JSON.stringify({img:importActor.img,framing:importActor.getFlag(MODULE_ID,'portraitFraming')}):undefined;
+    const importActor=game.actors.get(answer.actorId),previous=getCharacter(importActor),previousFraming=savedPortraitFraming(importActor),portraitExpected=importActor?portraitState(importActor):undefined;
     const includeCompanions=answer.snapshot.profile.retinueOnly?true:answer.includeCompanions??true,includeImages=answer.includeImages??true;
     ownerAssignment(answer.ownerId);
     answer.snapshot=retainNpcChoices(previous,answer.snapshot);
@@ -799,11 +799,11 @@ export class PedipalpusApp extends ApplicationV2 {
     const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId,portraitExpected});
     if(includeCompanions)await applyCompanionImport(actor,plan,{includeImages,portraits:preparedCompanionPictures,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
     this.selectActor(actor.id);
-    await this.persist({...this.preferences,actorId:actor.id,category:'all'});
+    if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame,includeImages,includeCompanions});
+    try{await this.persist({...this.preferences,actorId:actor.id,category:'all'});}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Der Charakter wurde importiert. Die persönliche Auswahl konnte nicht gespeichert werden.');}
     await this.render({ force: true });
     this.notify('info', `${answer.snapshot.profile.name} wurde importiert.`);
     this.feedback('saved','Charakter importiert.');this.sound('import');
-    if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame,includeImages,includeCompanions});
     return actor;
   }
   async refreshCharacter() {
@@ -863,9 +863,9 @@ export class PedipalpusApp extends ApplicationV2 {
     if(button.dataset.animalKey!==key)throw new Error('Das Gefolgsmitglied wurde inzwischen geändert. Bitte erneut auswählen.');
     if(character.profile.retinueOnly&&character.profile.companionGroup)return this.importPortrait();
     const animal=companionEntries(character)[index],existing=source.getFlag(MODULE_ID,'companion')?.sourceActorId?source:companionActor(source.id,key),style=existing?.getFlag(MODULE_ID,'companion')?.tokenStyle||this.preferences.tokenFrame;
-    const expected=JSON.stringify({img:existing?.img,framing:existing?.getFlag(MODULE_ID,'portraitFraming')}),expectedTarget={id:existing?.id,state:companionTargetState(existing),source:JSON.stringify(character)},answer=await this.editPortrait(existing,{title:`${animal.Name} · ${this.t('Bild / Token')}`,style,action:'animal-image',label:'Token erstellen'});
+    const expected=portraitState(existing),expectedTarget={id:existing?.id,state:companionTargetState(existing),source:JSON.stringify(character)},answer=await this.editPortrait(existing,{title:`${animal.Name} · ${this.t('Bild / Token')}`,style,action:'animal-image',label:'Token erstellen'});
     if(!answer)return;
-    if(JSON.stringify({img:existing?.img,framing:existing?.getFlag(MODULE_ID,'portraitFraming')})!==expected)throw new Error('Das Gefolgsbild wurde inzwischen geändert. Bitte erneut öffnen.');
+    if(portraitState(existing)!==expected)throw new Error('Das Gefolgsbild wurde inzwischen geändert. Bitte erneut öffnen.');
     const framed=await prepareTokenPortrait(answer.portrait,answer.style,answer.crop);
     await saveCompanion(source,index,key,framed,message=>this.notify('warn',message),expectedTarget);
     this.notify('info',`${animal.Name}: ${this.t('Token erstellt. Aus dem Charakterverzeichnis auf die Karte ziehen.')}`);

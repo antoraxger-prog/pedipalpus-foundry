@@ -46,7 +46,7 @@ export async function uploadPortrait(prepared) {
 
 export const framingFor=portrait=>portrait?.tokenCrop?{x:portrait.tokenCrop.x,y:portrait.tokenCrop.y,zoom:portrait.tokenCrop.zoom,style:portrait.tokenStyle,...(portrait.tokenFrame?{frame:portrait.tokenFrame}:{})}:null;
 
-export const portraitState=actor=>JSON.stringify({img:actor?.img,framing:actor?.getFlag?.('pedipalpus-foundry','portraitFraming')??null});
+export const portraitState=actor=>JSON.stringify({img:actor?.img,token:actor?.prototypeToken?.texture?.src??null,framing:actor?.getFlag?.('pedipalpus-foundry','portraitFraming')??null});
 
 export async function applyPortrait(actor, path, warn = message => ui.notifications.warn(message), tokenPath = path, framing = null, expectedPortrait = null) {
   if (!actor?.canUserModify(game.user,'update')) throw new Error('Zum Bildimport benötigst du Besitzerrechte auf diesem Charakter.');
