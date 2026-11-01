@@ -16,9 +16,10 @@ export function equipmentSource(character) {
 }
 export function armorItems(character) {
   if(character?.sourceFormat===NPC_FORMAT)return (character.equipment??[]).filter(item=>item.id?.startsWith('Armors:')).map(item=>({...item,carried:null}));
-  try { return list(equipmentSource(character).Armors).map((item,index)=>({id:`Armors:${index}`,name:String(item.Name??''),armor:item.Protection,penalty:item.MobilityPenalty,basePenalty:item.BaseMobilityPenalty,carried:carried(item),equipped:item.IsEquiped===true,carrierAnimalId:String(item.CarrierAnimalId??'')})); }
+  try { return list(equipmentSource(character).Armors).map((item,index)=>({id:`Armors:${index}`,inventoryId:String(item.InventoryItemId??item.InventoryId??''),name:String(item.Name??''),armor:item.Protection,penalty:item.MobilityPenalty,basePenalty:item.BaseMobilityPenalty,carried:carried(item),equipped:item.IsEquiped===true,carrierAnimalId:String(item.CarrierAnimalId??'')})); }
   catch { return (character?.equipment??[]).filter(item=>item.id?.startsWith('Armors:')); }
 }
+export const armorFingerprint=item=>JSON.stringify(item?[item.id,item.inventoryId??'',item.name,item.armor??null,item.penalty??null,item.basePenalty??null,item.carried??null,item.equipped,item.carrierAnimalId??'']:null);
 
 // Die Last-/Rüstungsberechnung folgt Pedipalpus RecalculateCarriedWeight und RecalculateImpairment.
 export function recalculateArmor(raw,{currentRules=currentCharacterRules(raw)}={}) {
@@ -38,8 +39,9 @@ export function recalculateArmor(raw,{currentRules=currentCharacterRules(raw)}={
   return raw;
 }
 
-export function withArmorState(character,id,field,value) {
+export function withArmorState(character,id,field,value,expectedArmor) {
   if(!/^Armors:\d+$/.test(id??'')||!['carried','equipped'].includes(field)||typeof value!=='boolean')throw new Error('Die Rüstungsauswahl ist ungültig.');
+  if(expectedArmor!==undefined&&armorFingerprint(armorItems(character).find(item=>item.id===id))!==expectedArmor)throw new Error('Die Rüstung wurde inzwischen geändert oder neu sortiert. Bitte erneut auswählen.');
   const raw=equipmentSource(character),index=Number(id.split(':')[1]);
   if(character.sourceFormat===NPC_FORMAT){
     if(field!=='equipped')throw new Error('Das NSC-Format speichert nur Angelegt, keinen Dabei-Zustand.');

@@ -51,8 +51,9 @@ export function combatChecks(raw,{npcRules=false,currentRules=false}={}) {
       const penalty = Number.isSafeInteger(raw.Be) && (ranged&&!npcRules || Number.isSafeInteger(weapon.MobilityTolerance))
         ? Math.max(0, raw.Be - (ranged&&!npcRules ? 2 : weapon.MobilityTolerance)) : null;
       const base = type => savedInteger(raw[type === 'attack' ? 'Off' : type === 'parry' ? 'Def' : 'Fk']);
+      // Der NSC-Generator verwendet ohne passende Kampftechnik ausdrücklich Talentwert 0.
       for (const type of ranged ? ['ranged'] : ['attack','parry']) {
-        add(`combat:${key}:${i}:${type}`,text(weapon.Name),text(best?.Name),type,integer(best?.Value),base(type),
+        add(`combat:${key}:${i}:${type}`,text(weapon.Name),best?text(best.Name):npcRules?'Ohne Kampftechnik':'',type,best?integer(best.Value):npcRules?0:null,base(type),
           ranged ? 0 : integer(raw[type === 'attack' ? 'OffOffset' : 'DefOffset']),
           type==='parry'&&key==='MeleeWeapons'&&currentRules&&integer(weapon.ParryBonus)!==null
             ? weapon.ParryBonus+offHandBonus(raw,weapon)

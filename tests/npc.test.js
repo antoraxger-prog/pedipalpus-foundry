@@ -49,11 +49,11 @@ test('NPC combat uses its own ranged tolerance and shield training without hidde
  const normal=combatFixture();normal._npc=true;assert.equal(find(normalizeCharacter(normal),'combat:RangedWeapons:0:ranged').combat.mobilityPenalty,3);
 });
 
-test('Tied NPC techniques follow their stored order and removed techniques cannot invent a roll',()=>{
+test('Tied NPC techniques follow their stored order and unmatched techniques use the generator fallback zero',()=>{
  const raw=npcFixture();raw.Npc.Weapons[0].Techniques='Schwerter; Äxte und Beile';
  assert.equal(find(normalizeCharacter(raw),'combat:MeleeWeapons:0:attack').combat.skillName,'Äxte und Beile');
  raw.Npc.Techniques.reverse();assert.equal(find(normalizeCharacter(raw),'combat:MeleeWeapons:0:attack').combat.skillName,'Schwerter');
- raw.Npc.Weapons[0].Techniques='Nicht vorhanden';assert.ok(find(normalizeCharacter(raw),'combat:MeleeWeapons:0:attack').reason);
+ raw.Npc.Weapons[0].Techniques='Nicht vorhanden';const untrained=find(normalizeCharacter(raw),'combat:MeleeWeapons:0:attack');assert.equal(untrained.reason,'');assert.equal(untrained.combat.skillValue,0);assert.equal(untrained.value,6);
 });
 
 test('Duplicate and umlaut-equivalent NPC technique names still use the highest technique value',()=>{

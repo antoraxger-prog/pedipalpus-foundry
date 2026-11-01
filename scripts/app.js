@@ -235,7 +235,7 @@ export class PedipalpusApp extends ApplicationV2 {
       this.updateModifier(content);
       this.sound('dial');
     });
-    content.querySelectorAll('[data-armor]').forEach(field=>field.addEventListener('change',async()=>{if(this.busy||this.referenceBusy)return;this.busy=true;field.disabled=true;try{await saveArmorState(this.actor,field.dataset.armor,field.dataset.armorField,field.checked);}catch(error){this.notify('error',error.message);}finally{this.busy=false;await this.render({force:true});}}));
+    content.querySelectorAll('[data-armor]').forEach(field=>field.addEventListener('change',async()=>{if(this.busy||this.referenceBusy)return;this.busy=true;field.disabled=true;try{await saveArmorState(this.actor,field.dataset.armor,field.dataset.armorField,field.checked,field.dataset.armorExpected);}catch(error){this.notify('error',error.message);}finally{this.busy=false;await this.render({force:true});}}));
     this.filterChecks(content);
   }
   t(text) { return uiText(this.language === 'ork' ? 'ork' : 'fantasy',text); }

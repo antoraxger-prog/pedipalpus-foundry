@@ -12,6 +12,7 @@ const words = {
   'Dieser Begleiter ist dem Hauptcharakter nicht mehr eindeutig zugeordnet. Bitte den Import prüfen.':'Freund passt nicht mehr zum Blatt. Import prüfen.',
   'Die Begleiterzuordnung wurde inzwischen geändert. Bitte den Spielstand erneut öffnen.':'Freund gehört jetzt anders. Kraftfenster neu auf.',
   'Bitte den Hauptcharakter erneut importieren, bevor du den Spielstand änderst.':'Großes Blatt neu holen. Dann Kraft ändern.',
+  'Die Rüstung wurde inzwischen geändert oder neu sortiert. Bitte erneut auswählen.':'Panzer anders oder verrutscht. Noch mal wählen.',
   'Bilder übernehmen':'Gesichter mitnehmen', 'Begleiter übernehmen':'Freunde mitnehmen', 'Spieler zuweisen':'Wem gehört das?', 'Bisherige Rechte behalten':'Gehört weiter denen', 'Keinen Token ändern':'Figur lassen', 'Neuen Token-Eintrag anlegen':'Neue Figur machen', 'Keine Begleiter in dieser Datei.':'Keine Freunde auf Blatt.', 'Ohne Begleiterimport bleiben bisherige Begleiter und ihre Tokens unverändert.':'Freunde nicht holen? Alte Freunde bleiben wie sind.', 'Der Spieler erhält Besitzerrechte am Charakter und an den ausgewählten Begleiter-Einträgen. Bestehende Rechte bleiben erhalten.':'Spieler kriegt Blatt und gewählte Freunde. Alte Besitzer bleiben.',
 
   'Pedipalpus-Charakterdatei':'Dein Pedipalpus-Blatt',

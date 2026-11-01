@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.3
+# Pedipalpus – Proben · 1.9.4
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.3 prüft Begleiterzuordnungen vor Energieänderungen und korrigiert die Sprachwahl in Dialogen sowie Direktwürfe nach der Attributsauswahl. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.4 schützt Rüstungsänderungen bei veralteten Listen und unterstützt den vom NSC-Generator vorgesehenen Kampf ohne passende Technik. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Rüstung und untrainierter NSC-Kampf in 1.9.4
+
+**Dabei** und **Angelegt** prüfen vor dem Speichern, ob der angezeigte Rüstungseintrag noch zur aktuellen Liste passt. Bei einer zwischenzeitlich geänderten oder neu sortierten Liste wird die Aktion gestoppt und die aktuelle Ansicht geladen. Das schützt auch gleichnamige Rüstungen mit unterschiedlichen gespeicherten Kennungen. Unabhängig geänderte LE oder Fokus verhindern das Umschalten eines unveränderten Rüstungsteils nicht und bleiben erhalten.
+
+NSC-Waffen ohne passende Kampftechnik verwenden entsprechend dem Generator **Talentwert 0**. Die Anzeige nennt dies **Ohne Kampftechnik**. Eigene Basiswerte, Fokus, Waffenmodifikatoren und Beeinträchtigung gelten weiterhin, auch bei verdeckten Proben und Fernkampf. Eine vorhandene Technik mit Wert 0 behält ihren Namen. Der Fall gilt für das eigenständige NSC-Format; unvollständige Kampfwerte normaler Charakterdateien bleiben prüfpflichtig.
 
 ## Begleiterdialoge und Sprache in 1.9.3
 

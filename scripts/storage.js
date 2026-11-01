@@ -102,8 +102,8 @@ export async function linkToken(actor, token, acceptUnlinked = false) {
   await token.update({ actorId: actor.id, actorLink: true });
 }
 
-export async function saveArmorState(actor,id,field,value) {
+export async function saveArmorState(actor,id,field,value,expectedArmor) {
  if(!actor?.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Ändern der Rüstung werden Besitzerrechte benötigt.');
  const character=getCharacter(actor);if(!character)throw new Error('Bitte zuerst eine Charakterdatei importieren.');
- await actor.setFlag(MODULE_ID,FLAG,withArmorState(character,id,field,value));
+ await actor.setFlag(MODULE_ID,FLAG,withArmorState(character,id,field,value,expectedArmor));
 }

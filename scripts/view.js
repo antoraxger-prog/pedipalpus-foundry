@@ -2,7 +2,7 @@ import { COMPANION_GROUPS,isCompanionCheck } from './retinue.js';
 import { buildCommand } from './commands.js';
 import { tokenStyles, customFrameFor, savedFrames } from './tokens.js';
 import { companionKey,companionEntries,companionActor,companionImportTargets } from './companions.js';
-import { armorItems } from './equipment.js';
+import { armorItems,armorFingerprint } from './equipment.js';
 import { characterFocus } from './combat.js';
 import { uiText } from './language.js';
 import { checkDisplayName,orkTalentName } from './ork-talents.js';
@@ -217,7 +217,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
 
 function renderBattleInventory(character,actor,busy,language) {
  const t=text=>e(uiText(language,text)),armors=armorItems(character);
- const checkbox=(item,field,label)=>`<label>${t(label)}<input type="checkbox" data-armor="${e(item.id)}" data-armor-field="${field}" data-armor-locked="${Boolean(item.carrierAnimalId)}" aria-label="${e(item.name)} · ${t(label)}" ${item[field]?'checked':''} ${!actor?.isOwner||busy||!character.sourceJSON||field==='equipped'&&item.carrierAnimalId?'disabled':''}></label>`;
+ const checkbox=(item,field,label)=>`<label>${t(label)}<input type="checkbox" data-armor="${e(item.id)}" data-armor-field="${field}" data-armor-expected="${e(armorFingerprint(item))}" data-armor-locked="${Boolean(item.carrierAnimalId)}" aria-label="${e(item.name)} · ${t(label)}" ${item[field]?'checked':''} ${!actor?.isOwner||busy||!character.sourceJSON||field==='equipped'&&item.carrierAnimalId?'disabled':''}></label>`;
  const armor=`<section class="pp-battle-inventory pp-armor-panel" data-inventory="armors" hidden><h3>${t('Rüstungen')}</h3>${armors.length?armors.map(item=>`<article class="pp-armor-card"><header><strong>${e(item.name)}</strong><span>RS ${number(item.armor)} · BE ${number(item.basePenalty??item.penalty)}</span></header><div>${item.carried===null?'':checkbox(item,'carried','Dabei')}${checkbox(item,'equipped','Angelegt')}${item.carrierAnimalId?`<small>${t('Beim Gefolge')}</small>`:''}</div></article>`).join(''):`<p>${t('Keine Rüstungen vorhanden.')}</p>`}</section>`;
  return armor;
 }
