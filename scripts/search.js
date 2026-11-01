@@ -20,6 +20,9 @@ export function handleProbeKeys(event,root,{busy=false}={}){
  const inSearch=event.target===search,button=event.target.closest?.('[data-action="roll"]');
  if(!inSearch&&!button)return;
  if(event.key==='Escape'&&!inSearch){event.preventDefault();search.focus();search.select();return;}
+ if(!inSearch&&['Home','End'].includes(event.key)){
+  event.preventDefault();const choices=visibleRollButtons(root),target=event.key==='Home'?choices[0]:choices.at(-1);target?.focus();target?.scrollIntoView?.({block:'nearest'});return;
+ }
  if(!['ArrowDown','ArrowUp'].includes(event.key))return;
  event.preventDefault();
  const choices=visibleRollButtons(root);

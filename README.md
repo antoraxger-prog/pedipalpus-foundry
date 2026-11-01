@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.10.1
+# Pedipalpus – Proben · 1.11.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.10.1 sichert gleichzeitig gespeicherte eigene Tokenrahmen ab und ergänzt die Rückkehr zum letzten gültigen Bild im Bildeditor. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.0 merkt die Ansicht beim Wechsel zwischen Proben und Kampf und ergänzt einen Rückweg aus leeren Suchergebnissen sowie weitere Tastaturhilfen. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Weniger neu suchen in 1.11.0
+
+Beim Wechsel zwischen **Proben** und **Kampf** merkt sich jeder Bereich seine Suche, Kategorie, Listenposition und den Zustand der Schnellleiste. Auch ein Besuch des Probenrings erhält die vorherige Ansicht. Die Merkhilfe gilt im laufenden Modulfenster getrennt je Figur; eine andere Figur erhält nicht den Suchtext der vorherigen. Fenstergröße und Position bleiben beim Wechsel zwischen Proben und Kampf erhalten. Es werden dafür keine Charakterwerte oder neuen dauerhaften Einstellungen gespeichert.
+
+Ist eine gemerkte Kategorie nach einem Import nicht mehr vorhanden, fällt die Ansicht auf **Alle Proben** zurück. Bei einer Suche ohne Treffer oder einer leeren Favoritenliste führt **Alle Proben anzeigen** direkt zurück: Suche und Filter werden geleert, die Liste beginnt oben und die Suche erhält den Fokus. Der Knopf erscheint nur bei leeren Ergebnissen.
+
+**Pos1** und **Ende** springen von einem fokussierten Probenknopf zur ersten oder letzten sichtbaren normalen Würfelaktion. Im Suchfeld behalten die Tasten ihre normale Funktion für den Textcursor. Die Navigation löst keinen Wurf aus und überspringt gesperrte Aktionen. **Enter** auf einem gewählten Würfelknopf würfelt weiterhin ausdrücklich. Neue Texte sind auch in Ork-Sprache verfügbar.
+
+Kein Neuimport und keine Datenmigration erforderlich.
 
 ## Bildeditor und eigene Rahmen in 1.10.1
 

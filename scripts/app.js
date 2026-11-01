@@ -3,7 +3,7 @@ import { rememberImportSource,importSource,directoryCharacters,readLiveSource } 
 import { parseCharacter, MODULE_ID, RETINUE_FORMAT } from './data.js';
 import { connectionStatus, executeCheck } from './commands.js';
 import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment } from './storage.js';
-import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, checksForView } from './view.js';
+import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, viewCategories } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
@@ -51,6 +51,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.administration = false;
     this.mode = 'full';
     this.fullPosition = null;
+    this.modeViews = new Map();
   }
   get dialogClasses() { const design={dark:'pp-dark-dialog',light:'pp-light-dialog',ork:'pp-ork-dialog',demonic:'pp-demonic-dialog',aristocrat:'pp-aristocrat-dialog',warrior:'pp-warrior-dialog',arcane:'pp-arcane-dialog',sneaky:'pp-sneaky-dialog'}[this.theme];return ['pedipalpus-dialog',...(design?[design]:[])]; }
   get language() { return this.preferences.language === 'theme' ? this.theme === 'ork' ? 'ork' : 'standard' : this.preferences.language; }
@@ -99,10 +100,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.theme=figureTheme(this.preferences,this.actorId,savedDesign());
     if(actor?.getFlag(MODULE_ID,'companion')?.sourceActorId||getCharacter(actor)?.profile.retinueOnly)this.mode='battle';
     const current = getCharacter(actor);
-    if(this.mode==='full' && !['all','favorites'].includes(this.category)){
-      const available=new Set(checksForView(current,'full').map(check=>['primary','secondary'].includes(check.id.split(':')[0])?'attributes':['Spells','Rituals'].includes(check.id.split(':')[0])?'magic':check.id.split(':')[0]));
-      if(!available.has(this.category))this.category='all';
-    }
+    if(this.mode!=='ring'&&!viewCategories(current,this.mode).has(this.category))this.category='all';
     const keys = type => (this.preferences[type][actor?.id] ?? []).flatMap(ref => {
       try { return [resolveCheck(current,ref).id]; } catch { return []; }
     });
@@ -142,6 +140,13 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelector('[name="search"]')?.addEventListener('input', event => {
       this.search = event.target.value;
       this.filterChecks(content);
+    });
+    content.querySelector('[data-filter-reset]')?.addEventListener('click',()=>{
+      if(this.busy||this.referenceBusy)return;
+      this.search='';this.category='all';
+      const search=content.querySelector('[name="search"]');search.value='';content.querySelector('[name="category"]').value='all';this.filterChecks(content);
+      const list=content.querySelector('.pp-check-list');if(list)list.scrollTop=0;search.focus();
+      if(this.mode==='full')this.persist({...this.preferences,category:'all'}).catch(error=>this.notify('error',error.message));
     });
     content.querySelector('[name="theme"]')?.addEventListener('change', event => {
       if(this.busy||this.referenceBusy)return;
@@ -288,13 +293,19 @@ export class PedipalpusApp extends ApplicationV2 {
   async setMode(mode,point=null) {
     if (!['full','battle','ring'].includes(mode)) return;
     const previousMode=this.mode;
+    const actorId=this.actorId;
+    if(previousMode!=='ring')this.modeViews.set(JSON.stringify([actorId,previousMode]),{search:this.search,category:this.category,view:captureViewState(this.element)});
     if (previousMode!=='ring')try{await this.rememberWindow();}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Die Fensterposition konnte nicht gespeichert werden.');}
+    if(this.actorId!==actorId)return;
     this.mode=mode;
     if (mode !== 'full') this.administration=false;
-    this.category=mode==='full'?this.preferences.category:'all';this.search='';
+    const saved=this.modeViews.get(JSON.stringify([actorId,mode]));
+    this.category=saved?.category??(mode==='full'?this.preferences.category:'all');this.search=saved?.search??'';
     await this.render({force:true});
+    if(this.actorId!==actorId||this.mode!==mode)return;
     if (mode==='ring') this.setPosition(this.safePosition({width:510,height:640,left:point?.x?point.x-255:80,top:point?.y?point.y-240:100}));
     else if (previousMode==='ring' && this.fullPosition) this.setPosition(this.safePosition(this.fullPosition));
+    if(saved?.view)restoreViewState(this.element,{...saved.view,focus:null});
   }
   updateModifier(content = this.element, updateValue = true) {
     const field = content.querySelector('[name="modifier"]');
