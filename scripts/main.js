@@ -1,11 +1,13 @@
 import { registerTokenSettings } from './tokens.js';
 import { MODULE_ID } from './data.js';
 import { PedipalpusApp } from './app.js';
-import { registerDesignSettings } from './design.js';
+import { registerDesignSettings, savedDesign } from './design.js';
 import { loadWorkbench, registerWorkbenchSettings, checkReference, resolveCheck, recordRecent, updateWorkbench } from './workbench.js';
 import { getCharacter } from './storage.js';
 import { executeCheck } from './commands.js';
 import { playFeedback } from './feedback.js';
+import {figureTheme} from './play-tools.js';
+import {uiText} from './language.js';
 let application;
 let macroBusy=false;
 let pointer={x:300,y:250};
@@ -22,11 +24,12 @@ export async function rollPedipalpus({actorId,reference,blind=false,modifier}={}
     const actor=game.actors.get(actorId),original=resolveCheck(getCharacter(actor),reference);
     if(!actor?.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
     let check=original;
-    if(check.companionAbility||check.npcChoice){application??=new PedipalpusApp();check=await application.configureCompanionAbility(actor,check);if(!check)return;}
+    if(check.companionAbility||check.npcChoice){application??=new PedipalpusApp();application.preferences=loadWorkbench();application.selectActor(actorId);check=await application.configureCompanionAbility(actor,check);if(!check)return;}
     const token=canvas.tokens?.controlled?.map(placeable=>placeable.document).find(token=>token.actorId===actorId&&token.actorLink) || null;
     await executeCheck(actor,check,token,{modifier:modifier??0,blind});
-    const previous=loadWorkbench(),prefs=await updateWorkbench(previous,recordRecent(previous,actorId,original));
-    playFeedback('roll',{...prefs,theme:game.settings.get(MODULE_ID,'design')||'fantasy'}).catch(error=>console.warn(MODULE_ID,error));
+    const previous=loadWorkbench();let prefs=previous;
+    try{prefs=await updateWorkbench(previous,recordRecent(previous,actorId,original));}catch(error){console.warn(MODULE_ID,error);const theme=figureTheme(previous,actorId,savedDesign()),language=previous.language==='theme'?(theme==='ork'?'ork':'fantasy'):previous.language;ui.notifications.warn(uiText(language,'Die Probe wurde gewürfelt. Die persönliche Liste konnte nicht gespeichert werden.'));}
+    playFeedback('roll',{...prefs,theme:figureTheme(prefs,actorId,savedDesign())}).catch(error=>console.warn(MODULE_ID,error));
   }finally{macroBusy=false;}
 }
 

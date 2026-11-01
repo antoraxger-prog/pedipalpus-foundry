@@ -76,7 +76,7 @@ export class PedipalpusApp extends ApplicationV2 {
       if (saved) this.setPosition(this.safePosition(saved));
       this.fullPosition = this.position ? {...this.position} : null;
     }
-    await this.persist({...this.preferences,actorId:this.actorId,category:this.category});
+    try{await this.persist({...this.preferences,actorId:this.actorId,category:this.category});}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Das Fenster ist geöffnet. Die persönliche Auswahl konnte nicht gespeichert werden.');}
     this.bringToFront();
     return this;
   }
@@ -267,11 +267,11 @@ export class PedipalpusApp extends ApplicationV2 {
     const existing=game.settings.get(MODULE_ID,'windowState') || {};
     await game.settings.set(MODULE_ID,'windowState',{...existing,[game.user.id]:this.fullPosition});
   }
-  async close(options) { clearTimeout(this.geometryTimer);this.geometryObserver?.disconnect();this.sizeObserver?.disconnect();this.geometryObserver=null;this.sizeObserver=null;await this.rememberWindow();await this.preferenceSave.catch(()=>{});return super.close(options); }
+  async close(options) { clearTimeout(this.geometryTimer);this.geometryObserver?.disconnect();this.sizeObserver?.disconnect();this.geometryObserver=null;this.sizeObserver=null;this.surfaceEvents?.abort();try{await this.rememberWindow();}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Die Fensterposition konnte nicht gespeichert werden.');}await this.preferenceSave.catch(()=>{});return super.close(options); }
   async setMode(mode,point=null) {
     if (!['full','battle','ring'].includes(mode)) return;
     const previousMode=this.mode;
-    if (previousMode!=='ring') await this.rememberWindow();
+    if (previousMode!=='ring')try{await this.rememberWindow();}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Die Fensterposition konnte nicht gespeichert werden.');}
     this.mode=mode;
     if (mode !== 'full') this.administration=false;
     this.category=mode==='full'?this.preferences.category:'all';this.search='';
@@ -400,7 +400,7 @@ export class PedipalpusApp extends ApplicationV2 {
         this.modifier = 0;
         this.modifierDirection = 1;
         this.updateModifier();
-        await this.persist(recordRecent(this.preferences,actor.id,clickedCheck??check));
+        try{await this.persist({...recordRecent(this.preferences,actor.id,clickedCheck??check),actorId:actor.id});}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Die Probe wurde gewürfelt. Die persönliche Liste konnte nicht gespeichert werden.');}
         const recent=new Set((this.preferences.recent[actor.id] || []).flatMap(ref=>{try{return [resolveCheck(getCharacter(actor),ref).id];}catch{return [];}}));
         this.element.querySelectorAll('.pp-check-row').forEach(row=>{row.dataset.recent=String(recent.has(row.dataset.checkId));row.dataset.last=String(row.dataset.checkId===check.id);});
         this.feedback('modifierConsumed','');this.sound('roll');
@@ -449,7 +449,7 @@ export class PedipalpusApp extends ApplicationV2 {
       if (!Number.isSafeInteger(modifier)) throw new Error('Bitte eine ganze Zahl für die Erschwernis oder Erleichterung eingeben.');
       this.modifier=modifier;this.modifierDirection=modifier<0?-1:1;
     }
-    await this.persist({...this.preferences,actorId});
+    try{await this.persist({...this.preferences,actorId});}catch(error){console.warn(MODULE_ID,error);}
     if (this.rendered) await this.render({force:true});
     if((check.kind==='combat'||isCompanionCheck(check)) && this.mode!=='battle')await this.setMode('battle');
     else if(check.kind!=='combat' && !isCompanionCheck(check) && this.mode==='battle')await this.setMode('full');

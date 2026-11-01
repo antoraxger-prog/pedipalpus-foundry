@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.4
+# Pedipalpus – Proben · 1.9.5
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.4 schützt Rüstungsänderungen bei veralteten Listen und unterstützt den vom NSC-Generator vorgesehenen Kampf ohne passende Technik. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.5 trennt ausgeführte Würfe von Fehlern beim Speichern persönlicher Einstellungen und verbessert Waffensets sowie Makros bei geschlossenem Fenster. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Würfe und persönliche Speicherung in 1.9.5
+
+Ist eine Probe erfolgreich an das Würfelmodul übergeben worden, wird ein anschließender Fehler beim Speichern der persönlichen Liste als Warnung gemeldet. Die Probe wird dadurch nicht erneut ausgelöst; ihr nächster Modifikator bleibt verbraucht. Das gilt auch für Makros bei offenem oder geschlossenem Fenster. Ein tatsächlicher Fehler beim Senden der Probe bleibt ein Fehler und erhält den nächsten Modifikator für einen erneuten Versuch.
+
+Eine nicht speicherbare persönliche Auswahl verhindert das Öffnen oder den Makrowurf nicht. Fehler beim Merken der Fensterposition blockieren weder den Wechsel zwischen Proben und Kampf noch das Schließen. Makros bei geschlossenem Fenster verwenden für Auswahlfenster und Klang das gespeicherte Design der tatsächlich gewürfelten Figur.
+
+Ein offener Waffenset-Dialog prüft vor dem Speichern, ob die Figur und alle neu ausgewählten Waffen noch vorhanden und eindeutig sind. Eine reine Umordnung bleibt möglich. Alte Sets lassen sich auch dann entfernen, wenn die Figur inzwischen keine eigenen Waffen mehr besitzt.
 
 ## Rüstung und untrainierter NSC-Kampf in 1.9.4
 
