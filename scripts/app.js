@@ -8,11 +8,11 @@ import { withFocus, characterFocus } from './combat.js';
 import { preparePortrait, uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
 import { uiText, localizeSurface, localizeDialog } from './language.js';
-import { loadWorkbench, updateWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
+import { loadWorkbench, updateWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent,favoriteAvailability } from './workbench.js';
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
 import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices,withCompanionImport } from './retinue.js';
-import { companionEntries,companionKey,companionActor,saveCompanion,companionTargetState,prepareCompanionImport,verifyCompanionImport,applyCompanionImport } from './companions.js';
+import { companionEntries,companionKey,companionActor,saveCompanion,companionTargetState,prepareCompanionImport,verifyCompanionImport,applyCompanionImport,companionRollIssue } from './companions.js';
 import { characterFiles, readCharacterWithPortrait,matchCompanionPictures } from './character-folder.js';
 import { tokenStyles, importCustomFrame, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames, savedPortraitFraming, portraitFromActor } from './tokens.js';
 import { writeCharacterBundle } from './bundle.js';
@@ -107,7 +107,7 @@ export class PedipalpusApp extends ApplicationV2 {
       try { return [resolveCheck(current,ref).id]; } catch { return []; }
     });
     return renderView({ actors: actors.map(item => ({ id: item.id, name: item.name, hasCharacter: !!getCharacter(item),npc:getCharacter(item)?.sourceFormat===NPC_FORMAT })),
-      actor, character: getCharacter(actor), status: connectionStatus(),
+      actor, character: getCharacter(actor), status: connectionStatus(),rollBlock:companionRollIssue(actor),
       canImport: actors.some(actor => actor.canUserModify(game.user, 'update')) || foundry.documents.Actor.canUserCreate(game.user),
       token: this.token, canLinkToken: actor?.isOwner && !this.token && canvas.tokens?.controlled?.length === 1,
       search: this.search, category: this.category, theme: this.theme, modifier: this.modifier, modifierDirection: this.modifierDirection, busy: this.busy || this.referenceBusy,
@@ -171,13 +171,13 @@ export class PedipalpusApp extends ApplicationV2 {
       if(this.mode==='full')this.persist({...this.preferences,category:this.category}).catch(error => this.notify('error',error.message));
     });
     content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => { if(!button.disabled && button.dataset.dragging!=='true')this.onAction(button); }));
-    content.querySelectorAll('.pp-check-name').forEach(name => {
+    content.querySelectorAll('.pp-check-name, .pp-dice-button').forEach(name => {
       name.draggable = true;
       name.addEventListener('dragstart',event => {
         const check = getCharacter(this.actor)?.checks.find(check => check.id === name.dataset.check);
-        if (!check || !this.actor?.isOwner) { event.preventDefault(); return; }
+        if (!check || name.disabled || !this.actor?.isOwner || this.busy || this.referenceBusy || companionRollIssue(this.actor)) { event.preventDefault(); return; }
         name.dataset.dragging='true';
-        event.dataTransfer.setData('text/plain',JSON.stringify({type:'PedipalpusCheck',actorId:this.actorId,reference:checkReference(check)}));
+        event.dataTransfer.setData('text/plain',JSON.stringify({type:'PedipalpusCheck',actorId:this.actorId,reference:checkReference(check),blind:name.dataset.blind==='true'}));
       });
       name.addEventListener('dragend',()=>setTimeout(()=>delete name.dataset.dragging,0));
     });
@@ -368,6 +368,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.element.querySelectorAll('[name="focus"]').forEach(field => { field.disabled = true; });
     try {
       await this.focusSave;
+      if(['roll','damage'].includes(button.dataset.action)){const issue=companionRollIssue(actor);if(issue)throw new Error(issue);}
       if (this.focusError && button.dataset.action === 'roll') throw this.focusError;
       if (button.dataset.action === 'refresh') await this.refreshCharacter();
       if (button.dataset.action === 'import') await this.importCharacter();
@@ -406,13 +407,15 @@ export class PedipalpusApp extends ApplicationV2 {
       if (button.dataset.action === 'damage') {
         const check=getCharacter(actor)?.checks.find(row=>row.id===button.dataset.check);
         if(!check||!clickedCheck||referenceKey(checkReference(check))!==referenceKey(checkReference(clickedCheck)))throw new Error('Die Waffe wurde inzwischen geändert.');
-        await rollDamage(actor,check,token,{blind:button.dataset.blind==='true'});this.sound('roll');
+        await rollDamage(actor,check,token,{blind:button.dataset.blind==='true',verify:()=>{const issue=companionRollIssue(actor);if(issue)throw new Error(issue);if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');}});this.sound('roll');
       }
       if (button.dataset.action === 'roll') {
         this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"], [name="focus"]').forEach(field => { field.disabled = true; });
         let check = reference ? resolveCheck(getCharacter(actor),reference) : getCharacter(actor)?.checks.find(check => check.id === button.dataset.check);
         if (!reference && (!check || !clickedCheck || referenceKey(checkReference(check))!==referenceKey(checkReference(clickedCheck)))) throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
         if(check.companionAbility||check.npcChoice){check=await this.configureCompanionAbility(actor,check);if(!check)return;}
+        const issue=companionRollIssue(actor);if(issue)throw new Error(issue);
+        if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');
         this.feedback('rollPending','');
         pendingTimer=setTimeout(()=>button.setAttribute?.('aria-busy','true'),180);
         await executeCheck(actor, check, token, { modifier: this.modifier, blind: button.dataset.blind === 'true' });
@@ -432,10 +435,11 @@ export class PedipalpusApp extends ApplicationV2 {
     } finally {
       this.busy = false; button.disabled = false;
       clearTimeout(pendingTimer);button.removeAttribute?.('aria-busy');
+      const linkedRollBlocked=Boolean(companionRollIssue(this.actor));
       this.element.querySelectorAll('[name="actor"], [name="theme"]').forEach(field=>{field.disabled=false;});
       this.element.querySelectorAll('[data-action]').forEach(field=>{
         if (['battle','ring','full','administration','preferences','presets','favorite','breakdown'].includes(field.dataset.action)) field.disabled=false;
-        if (field.dataset.action==='roll') { const status=connectionStatus(),check=getCharacter(this.actor)?.checks.find(check=>check.id===field.dataset.check);field.disabled=!check || Boolean(check.reason) || !this.actor?.isOwner || !status.ready || status.directReady===false || check?.kind==='combat' && status.combatReady===false; }
+        if (field.dataset.action==='roll') { const status=connectionStatus(),check=getCharacter(this.actor)?.checks.find(check=>check.id===field.dataset.check);field.disabled=!check || Boolean(check.reason) || linkedRollBlocked || !this.actor?.isOwner || !status.ready || status.directReady===false || check?.kind==='combat' && status.combatReady===false; }
         if (field.dataset.action==='import') field.disabled=!(visibleActors().some(actor=>actor.canUserModify(game.user,'update')) || foundry.documents.Actor.canUserCreate(game.user));
         if (['portrait','portrait-edit'].includes(field.dataset.action)) field.disabled=!this.actor?.isOwner;
         if (field.dataset.action==='animal-portrait') field.disabled=!this.actor?.isOwner||!field.dataset.animalKey;
@@ -447,7 +451,7 @@ export class PedipalpusApp extends ApplicationV2 {
         if(field.dataset.action==='playstate')field.disabled=!this.actor?.isOwner;
         if(field.dataset.action==='companion-state')field.disabled=!this.actor?.isOwner||field.dataset.identityValid!=='true';
         if(['expand-companions','collapse-companions'].includes(field.dataset.action))field.disabled=false;
-        if(field.dataset.action==='damage'){const check=getCharacter(this.actor)?.checks.find(row=>row.id===field.dataset.check);field.disabled=!this.actor?.isOwner||!check||Boolean(check.reason)||!damageFormula(check.damage);}
+        if(field.dataset.action==='damage'){const check=getCharacter(this.actor)?.checks.find(row=>row.id===field.dataset.check);field.disabled=!this.actor?.isOwner||!check||Boolean(check.reason)||linkedRollBlocked||!damageFormula(check.damage);}
       });
       this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = !this.actor?.isOwner; });
       this.element.querySelectorAll('[name="focus"]').forEach(field => { field.disabled = !this.actor?.isOwner; });
@@ -463,6 +467,7 @@ export class PedipalpusApp extends ApplicationV2 {
     try {
     const actor=game.actors.get(actorId);
     if (!actor?.isOwner) throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+    const issue=companionRollIssue(actor);if(issue)throw new Error(issue);
     const check=resolveCheck(getCharacter(actor),reference);
     if (this.actorId!==actorId) this.selectActor(actorId);
     if (modifier!==undefined) {
@@ -519,10 +524,12 @@ export class PedipalpusApp extends ApplicationV2 {
         dialog.element.querySelector('[name="tokenFramesZip"]')?.addEventListener('change',async event=>{const field=event.target;field.disabled=true;try{await importTokenFrames(field.files?.[0]);frameStatus.textContent=this.t('Originalrahmen importiert.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{field.disabled=false;}});
         dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,expected=portraitState(actor),image=actor.img,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,image,message=>this.notify('warn',message),await uploadPortrait(framed.token),framingFor(framed),expected);frameStatus.textContent=this.t('Tokenbild erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
         const host=dialog.element.querySelector('.pp-favorite-editor');
-        const update=()=>{host.innerHTML=(draft.favorites[this.actorId] || []).map((ref,index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`;};
+        const availability=()=>favoriteAvailability(getCharacter(this.actor),draft.favorites[this.actorId]||[]);
+        const update=()=>{const rows=availability();host.innerHTML=(rows.map(({reference:ref,check,reason},index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}${check?'':`<small class="pp-original-name" title="${e(this.t(reason))}">${t('Nicht verfügbar')}</small>`}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`)+(rows.some(row=>!row.check)?`<button type="button" data-favorite-operation="unavailable">${t('Nicht verfügbare Favoriten entfernen')}</button>`:'');};
         update();
         host.addEventListener('click',event=>{
           const button=event.target.closest('[data-favorite-operation]');if(!button)return;
+          if(button.dataset.favoriteOperation==='unavailable'){draft.favorites[this.actorId]=availability().filter(row=>row.check).map(row=>row.reference);update();return;}
           const refs=draft.favorites[this.actorId] || [],index=Number(button.dataset.index);if(!Number.isInteger(index)||!refs[index])return;
           if(button.dataset.favoriteOperation==='remove')draft.favorites[this.actorId]=refs.filter((_ref,i)=>i!==index);
           else draft.favorites=moveFavorite(draft,this.actorId,refs[index],button.dataset.favoriteOperation).favorites;
@@ -834,6 +841,10 @@ export class PedipalpusApp extends ApplicationV2 {
     return this.acceptImport({snapshot,includeImages:source.includeImages??true,includeCompanions:source.includeCompanions??getCharacter(actor)?.retinueImportEnabled??true,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:savedPortraitFraming(actor)?.style??source.tokenFrame??this.preferences.tokenFrame,source});
   }
   async configureCompanionAbility(actor,check){
+    const issue=companionRollIssue(actor);if(issue)throw new Error(issue);
+    if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');
+    const linkState=()=>{const link=actor.getFlag(MODULE_ID,'companion');return JSON.stringify([link?.sourceActorId,link?.key,link?.active!==false]);},expectedLink=linkState();
+    const sourceState=()=>{const id=actor.getFlag(MODULE_ID,'companion')?.sourceActorId;return id?JSON.stringify(getCharacter(game.actors.get(id))):null;},expectedSource=sourceState();
     const character=getCharacter(actor),expected=JSON.stringify(character),root=Boolean(check.npcChoice);
     const member=root?{Name:character.profile.name}:companionEntries(character).find(member=>member._group===check.companionGroup&&member._index===check.companionIndex);
     if(!member)throw new Error('Dieses Gefolgsmitglied ist nicht mehr vorhanden.');
@@ -847,9 +858,12 @@ export class PedipalpusApp extends ApplicationV2 {
         dialog.element.querySelectorAll('select').forEach(field=>field.addEventListener('change',update));update();
       }});
     if(!answer)return null;
+    const currentIssue=companionRollIssue(actor);if(currentIssue)throw new Error(currentIssue);
+    if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');
+    if(linkState()!==expectedLink)throw new Error('Die Begleiterzuordnung wurde inzwischen geändert. Bitte die Probe erneut öffnen.');
     if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
     const fresh=getCharacter(actor),now=fresh?.checks.find(entry=>entry.id===check.id);
-    if(JSON.stringify(fresh)!==expected||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
+    if(JSON.stringify(fresh)!==expected||sourceState()!==expectedSource||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
     const label=answer.name.trim()||choice.name,name=(root?label:`${member.Name} – ${label}`).trim();
     if(/[|\r\n]/.test(name)||name.length>160)throw new Error('Der Probenname ist zu lang oder enthält ungültige Zeichen.');
     const updated=root?withNpcAttributes(fresh,check.id,answer.keys):withCompanionAttributes(fresh,check.id,answer.keys);

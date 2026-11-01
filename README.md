@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.9
+# Pedipalpus – Proben · 1.10.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.9 hält die laufende Ansicht bei Aktualisierungen ruhiger: Listenposition, Suchfokus und zugeklappte Schnellleiste bleiben erhalten. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.10.0 sichert Würfe ersetzter oder nicht mehr zugeordneter Begleiter ab und ergänzt verdeckte Würfelmakros sowie die Pflege nicht mehr verfügbarer Favoriten. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Würfelmakros, Begleiter und Favoriten in 1.10.0
+
+Normale und verdeckte **Würfelknöpfe** lassen sich auf die Foundry-Makroleiste ziehen. Ein vom durchgestrichenen Auge gezogenes Makro merkt sich den verdeckten Wurf und trägt den Namenszusatz **Verdeckt**. Das Ziehen würfelt nicht. Die Makros verwenden weiterhin die aktuelle eindeutig zugeordnete Probe statt eines fest gespeicherten Zahlenwerts.
+
+Ersetzte Begleiter, fehlende Hauptcharaktere sowie entfernte oder mehrdeutige Gefolgszuordnungen werden vor Würfen über das Modul und seine öffentliche Makroanbindung geprüft. Die alte Figur bleibt erhalten, erhält jedoch einen Hinweis und gesperrte Würfelaktionen. Änderungen am Hauptcharakter aktualisieren auch das geöffnete Begleiterfenster. Ein offener Attributdialog prüft vor dem Übernehmen erneut Figur, Zuordnung und Datenstand; zwischenzeitlich entfernte Figuren werden nicht weiter beschrieben. Auch Schadenswürfe prüfen nach der Auswertung erneut, ob der Begleiter noch gültig ist und die Figur noch gewürfelt werden darf, bevor die Nachricht gesendet wird.
+
+In **Einstellungen → Favoriten ordnen** werden nicht mehr eindeutig auffindbare Proben als **Nicht verfügbar** gekennzeichnet. **Nicht verfügbare Favoriten entfernen** bereinigt nur den Einstellungsentwurf. Erst **Speichern** übernimmt die Änderung; **Abbrechen** lässt die bisherige Liste erhalten. Eine vorhandene, vorübergehend durch Zustände gesperrte Probe zählt weiter als verfügbar. Es werden keine Favoriten automatisch gelöscht.
+
+Bestehende Makros und Daten benötigen keine Migration oder einen erneuten Charakterimport.
 
 ## Ruhigere Aktualisierungen in 1.9.9
 

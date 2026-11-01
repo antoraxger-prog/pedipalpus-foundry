@@ -77,6 +77,9 @@ export function resolveCheck(character, reference) {
   if (matches.length !== 1) throw new Error('Diese Probe ist mehrdeutig. Bitte die passende Probe direkt in der Liste auswählen.');
   return matches[0];
 }
+export function favoriteAvailability(character,references=[]){
+ return references.map(reference=>{try{return {reference,check:resolveCheck(character,reference),reason:''};}catch(error){return {reference,check:null,reason:error.message};}});
+}
 
 export function groupWeaponChecks(checks) {
   const buckets = new Map();

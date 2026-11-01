@@ -122,7 +122,7 @@ const safePortrait = value => typeof value === 'string' && value && !/[\u0000-\u
 const actionLabel = check => ({attack:'Angriff',parry:'Parade',ranged:'Fernkampf'})[check.combat?.type] || check.name;
 const weaponKey = check => check.kind === 'combat' ? check.id.replace(/:(attack|parry|ranged)$/, '') : '';
 
-export function renderView({ actors = [], actor, character, status = {}, canImport, token, canLinkToken = false, search = '', category = 'all', theme = 'fantasy', modifier = 0, modifierDirection = 1, busy = false, preferences = {}, administration = false, mode = 'full', favoriteKeys = [], recentKeys = [], checkKeys = {}, feedback = '', lastCheckId = '' }) {
+export function renderView({ actors = [], actor, character, status = {}, canImport, token, canLinkToken = false, rollBlock = '', search = '', category = 'all', theme = 'fantasy', modifier = 0, modifierDirection = 1, busy = false, preferences = {}, administration = false, mode = 'full', favoriteKeys = [], recentKeys = [], checkKeys = {}, feedback = '', lastCheckId = '' }) {
   const density = ['compact','comfortable'].includes(preferences.density) ? preferences.density : 'normal';
   const language = preferences.language === 'normal' || preferences.language === 'standard' ? 'normal' : preferences.language === 'ork' || theme === 'ork' ? 'ork' : 'normal';
   const probeTheme = language === 'ork' ? 'ork' : 'fantasy';
@@ -151,8 +151,8 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const checks = mode === 'ring' ? allChecks.filter(isFavorite).sort((a,b)=>favoriteKeys.indexOf(keyOf(a))-favoriteKeys.indexOf(keyOf(b))).slice(0,6) : allChecks;
   const available = new Set(checks.map(categoryOf));
   if(mode==='battle'){available.add('armors');for(const [collection,group] of COMPANION_GROUPS)if(character.equipment?.some(item=>item.id.startsWith(`${collection}:`)))available.add(group);}
-  const disabled = busy || !status.ready || status.directReady === false || !actor?.isOwner;
-  const disabledReason = !actor?.isOwner ? 'Zum Würfeln werden Besitzerrechte benötigt.' : status.message;
+  const disabled = Boolean(rollBlock) || busy || !status.ready || status.directReady === false || !actor?.isOwner;
+  const disabledReason = rollBlock || (!actor?.isOwner ? 'Zum Würfeln werden Besitzerrechte benötigt.' : status.message);
   const rollDisabled = check => disabled || Boolean(check.reason) || check.kind === 'combat' && status.combatReady === false;
   const nameButton = (check,markup) => button('roll',markup,`class="pp-check-name" draggable="true" data-check="${e(check.id)}" data-blind="false" aria-label="${e(check.name)} durch Anklicken würfeln" title="${e(check.name)} würfeln" ${rollDisabled(check)?'disabled':''}`);
   const rankAttributes = check => {
@@ -172,7 +172,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
     return `<div class="pp-roll-buttons">${rollButton(check,rowDisabled,reason)}${rollButton(check,rowDisabled,reason,true)}</div>`;
   };
   const infoButton=check=>button('info','ⓘ',`class="pp-info-button" data-check="${e(check.id)}" aria-label="Informationen und Notiz zu ${e(check.name)}" title="Informationen und meine Spielnotiz" ${busy?'disabled':''}`);
-  const damageActions=check=>check.damage?`<span class="pp-damage-actions">${button('damage',e(check.damage),`data-check="${e(check.id)}" data-blind="false" title="Schaden würfeln: ${e(check.damage)}" ${!actor?.isOwner||busy||check.reason||!damageFormula(check.damage)?'disabled':''}`)}${button('damage','<svg class="pp-blind-eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3 21 21M9 5c6-2 10 4 12 7l-3 4M6 6c-2 2-4 4-5 6 3 5 8 8 13 6M10 10a3 3 0 0 0 4 4"/></svg>',`data-check="${e(check.id)}" data-blind="true" aria-label="${e(check.name)} Schaden verdeckt würfeln" title="Schaden verdeckt würfeln" ${!actor?.isOwner||busy||check.reason||!damageFormula(check.damage)?'disabled':''}`)}</span>`:'';
+  const damageActions=check=>check.damage?`<span class="pp-damage-actions">${button('damage',e(check.damage),`data-check="${e(check.id)}" data-blind="false" title="Schaden würfeln: ${e(check.damage)}" ${!actor?.isOwner||busy||rollBlock||check.reason||!damageFormula(check.damage)?'disabled':''}`)}${button('damage','<svg class="pp-blind-eye" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3 21 21M9 5c6-2 10 4 12 7l-3 4M6 6c-2 2-4 4-5 6 3 5 8 8 13 6M10 10a3 3 0 0 0 4 4"/></svg>',`data-check="${e(check.id)}" data-blind="true" aria-label="${e(check.name)} Schaden verdeckt würfeln" title="Schaden verdeckt würfeln" ${!actor?.isOwner||busy||rollBlock||check.reason||!damageFormula(check.damage)?'disabled':''}`)}</span>`:'';
   const playControls=`<div class="pp-play-controls">${button('playstate','Spielstand',`title="Zustände und Energien in Foundry ändern" ${!actor?.isOwner||busy?'disabled':''}`)}${mode==='battle'&&(weapons.length||figure.weaponSets.length)?`${button('weapons','Waffensets',busy?'disabled':'')}<select data-weapon-set aria-label="Waffenset" ${busy?'disabled':''}><option value="">Alle Waffen</option>${figure.weaponSets.map(set=>`<option value="${e(set.id)}" ${set.id===figure.activeSet?'selected':''}>${e(set.name)}</option>`).join('')}</select>`:''}${mode==='battle'&&companionEntries(character).length>1?`<span class="pp-fold-controls">${button('expand-companions','▾',`aria-label="Alle Begleiter aufklappen" title="Alle Begleiter aufklappen" ${busy?'disabled':''}`)}${button('collapse-companions','▸',`aria-label="Alle Begleiter zuklappen" title="Alle Begleiter zuklappen und Suche leeren" ${busy?'disabled':''}`)}</span>`:''}${staleSet?'<small>Set unvollständig – alle Waffen angezeigt.</small>':''}</div>`;
   const focus = characterFocus(character);
   const focusControl = mode === 'battle' && focus !== null && checks.some(check => check.kind === 'combat' && !isCompanionCheck(check) && !check.fixedCombat && check.combat.type !== 'ranged')
@@ -212,7 +212,7 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   }
   const activeConditions=character.characterRulesVersion?[...(character.conditions?.simple??[]).filter(row=>row.active).map(row=>row.name),...(character.conditions?.complex??[]).filter(row=>row.level>0).map(row=>`${row.name} ${row.level}`)]:[];
   const conditionInfo=activeConditions.length?`<div class="pp-rule-state" title="Gespeicherte Zustände aus Pedipalpus; Unterdrückung ist berücksichtigt. Die angezeigten Probenwerte enthalten die automatischen Abzüge bereits.">Zustände: ${e(activeConditions.join(' · '))}</div>`:'';
-  return `${openRoot}${toolbar}${admin}${filters}${modifierControl}${presetControl}${focusControl}${playControls}${conditionInfo}${quickbar}${mode==='battle'?renderBattleInventory(character,actor,busy,language):''}${list}${fixedStatus}</div>`;
+  return `${openRoot}${toolbar}${admin}${rollBlock?`<p class="pp-warning" role="status">${e(rollBlock)}</p>`:''}${filters}${modifierControl}${presetControl}${focusControl}${playControls}${conditionInfo}${quickbar}${mode==='battle'?renderBattleInventory(character,actor,busy,language):''}${list}${fixedStatus}</div>`;
 }
 
 function renderBattleInventory(character,actor,busy,language) {

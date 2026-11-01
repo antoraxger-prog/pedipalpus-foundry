@@ -16,6 +16,15 @@ export function companionKey(character,index){
 }
 const linkedActors=(sourceActorId,key)=>game.actors.contents.filter(actor=>{const link=actor.getFlag(MODULE_ID,'companion');return link?.active!==false&&link?.sourceActorId===sourceActorId&&link.key===key;});
 export function companionActor(sourceActorId,key){const matches=linkedActors(sourceActorId,key);if(matches.length>1)throw new Error('Mehrere Token-Einträge sind diesem Begleiter zugeordnet. Bitte beim Import ein eindeutiges Ziel wählen.');return matches[0];}
+export function companionRollIssue(actor){
+ const link=actor?.getFlag?.(MODULE_ID,'companion');if(!link?.sourceActorId)return '';
+ if(link.active===false)return 'Dieser Begleiter wurde ersetzt. Bitte den aktuellen Begleiter öffnen.';
+ const source=game.actors?.get?.(link.sourceActorId),character=getCharacter(source);
+ if(!source||!character)return 'Der Hauptcharakter dieses Begleiters ist nicht mehr vorhanden.';
+ if(game.actors.get(actor.id)!==actor||source.getFlag(MODULE_ID,'companion')?.sourceActorId)return 'Dieser Begleiter ist dem Hauptcharakter nicht mehr eindeutig zugeordnet. Bitte den Import prüfen.';
+ const matches=companionEntries(character).filter((_member,index)=>{try{return companionKey(character,index)===link.key;}catch{return false;}});
+ return matches.length===1?'':'Dieser Begleiter ist dem Hauptcharakter nicht mehr eindeutig zugeordnet. Bitte den Import prüfen.';
+}
 export function companionSnapshot(character,index){
  const member=companionEntries(character)[index];companionKey(character,index);
  const item=(character.equipment??[]).find(item=>item.id===`${member._collection}:${member._index}`);

@@ -8,6 +8,7 @@ import { executeCheck } from './commands.js';
 import { playFeedback } from './feedback.js';
 import {figureTheme} from './play-tools.js';
 import {uiText} from './language.js';
+import {companionRollIssue} from './companions.js';
 let application;
 let macroBusy=false;
 let pointer={x:300,y:250};
@@ -23,9 +24,12 @@ export async function rollPedipalpus({actorId,reference,blind=false,modifier}={}
   try{
     const actor=game.actors.get(actorId),original=resolveCheck(getCharacter(actor),reference);
     if(!actor?.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+    const issue=companionRollIssue(actor);if(issue)throw new Error(issue);
     let check=original;
     if(check.companionAbility||check.npcChoice){application??=new PedipalpusApp();application.preferences=loadWorkbench();application.selectActor(actorId);check=await application.configureCompanionAbility(actor,check);if(!check)return;}
     const token=canvas.tokens?.controlled?.map(placeable=>placeable.document).find(token=>token.actorId===actorId&&token.actorLink) || null;
+    const currentIssue=companionRollIssue(actor);if(currentIssue)throw new Error(currentIssue);
+    if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');
     await executeCheck(actor,check,token,{modifier:modifier??0,blind});
     const previous=loadWorkbench();let prefs=previous;
     try{prefs=await updateWorkbench(previous,recordRecent(previous,actorId,original));}catch(error){console.warn(MODULE_ID,error);const theme=figureTheme(previous,actorId,savedDesign()),language=previous.language==='theme'?(theme==='ork'?'ork':'fantasy'):previous.language;ui.notifications.warn(uiText(language,'Die Probe wurde gewürfelt. Die persönliche Liste konnte nicht gespeichert werden.'));}
@@ -37,10 +41,12 @@ async function createRollMacro(data,slot){
   if(!Number.isSafeInteger(slot)||slot<1||slot>50)throw new Error('Dieser Makroplatz ist ungültig.');
   const actor=game.actors.get(data.actorId);
   if(!actor?.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+  const issue=companionRollIssue(actor);if(issue)throw new Error(issue);
   const check=resolveCheck(getCharacter(actor),data.reference);
   if(!foundry.documents.Macro.canUserCreate(game.user))throw new Error('Dein Meister muss das Erstellen von Makros erlauben.');
   const payload={actorId:actor.id,reference:checkReference(check),blind:data.blind===true};
-  const macro=await foundry.documents.Macro.create({name:check.name,type:'script',img:'icons/svg/d20.svg',command:`await game.modules.get(${JSON.stringify(MODULE_ID)}).api.roll(${JSON.stringify(payload)});`,ownership:{[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER}});
+  const prefs=loadWorkbench(),theme=figureTheme(prefs,actor.id,savedDesign()),language=prefs.language==='theme'?(theme==='ork'?'ork':'fantasy'):prefs.language;
+  const macro=await foundry.documents.Macro.create({name:check.name+(payload.blind?` · ${uiText(language,'Verdeckt')}`:''),type:'script',img:'icons/svg/d20.svg',command:`await game.modules.get(${JSON.stringify(MODULE_ID)}).api.roll(${JSON.stringify(payload)});`,ownership:{[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER}});
   await game.user.assignHotbarMacro(macro,slot);
 }
 
@@ -84,7 +90,7 @@ Hooks.on('renderActorDirectory', (_app, html) => {
 
 function refreshWindows(actorId = null) {
   for (const app of foundry.applications.api.ApplicationV2.instances()) {
-    if (app instanceof PedipalpusApp && app.rendered && (!actorId || app.actorId === actorId)) {
+    if (app instanceof PedipalpusApp && app.rendered && (!actorId || app.actorId === actorId || app.actor?.getFlag(MODULE_ID,'companion')?.sourceActorId===actorId)) {
       app.render({ force: true }).catch(error => console.error(MODULE_ID, error));
     }
   }

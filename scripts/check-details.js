@@ -30,12 +30,14 @@ export function damageFormula(value){
  for(const term of terms){if(term.includes('d')){const [count,sides]=term.replace(/^[+-]/,'').split('d').map(Number);if(count<1||count>100||sides<2||sides>1000)return null;dice+=count;}else if(Math.abs(Number(term))>100000)return null;}
  return dice<=100?formula:null;
 }
-export async function rollDamage(actor,check,token=null,{blind=false}={}){
+export async function rollDamage(actor,check,token=null,{blind=false,verify=()=>{}}={}){
  if(!actor?.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
  if(check?.reason)throw new Error(check.reason);
  if(token&&(!token.actorLink||token.actorId!==actor.id))throw new Error('Der Token gehört nicht zu diesem Charakter.');
  const formula=damageFormula(check?.damage);if(!formula)throw new Error('Die Schadensformel ist nicht eindeutig würfelbar.');
  const speaker=token?foundry.documents.ChatMessage.getSpeaker({actor,token,scene:token.parent}):{actor:actor.id,alias:actor.name};
  const roll=new foundry.dice.Roll(formula);await roll.evaluate();
+ if(!actor.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+ verify();
  return roll.toMessage({speaker,flavor:`Schaden: ${String(check.combat?.weaponName??check.name).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]))}`},{messageMode:blind?'blind':undefined});
 }
