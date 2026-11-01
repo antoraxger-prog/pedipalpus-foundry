@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.0
+# Pedipalpus – Proben · 1.9.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.0 vereinfacht Begleiterenergien und lange Gefolgslisten. Beim erneuten Import werden nur tatsächlich abweichende Spielwerte festgehalten. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.1 korrigiert Begleiterenergien, NSC-Schaden, Bildkonflikte und die Bedienung der Schnellleiste. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,15 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Fehlerkorrekturen in 1.9.1
+
+- Geweihte Begleiter zeigen KE auch im eigenen Token-Eintrag und als einzeln importiertes Wesen. Der Importvergleich berücksichtigt Änderungen ihrer Karmaenergie.
+- NSC-Nahkampfschaden enthält den vom Generator vorgesehenen TP/KK-Bonus einschließlich Finesse. Gefolge aus dem NSC-Generator behält gespeicherte Reaktion, Angriffsschaden, Reichweite und Hinweise. Regeltexte und Notizen werden der richtigen NSC-Fähigkeit, dem Merkmal oder der Kraft zugeordnet, auch bei gleichen Namen.
+- Favoriten können aus der Schnellleiste auf die Makroleiste gezogen werden. Pfeil-ab aus der Suche fokussiert auch bei geschlossenen Begleitern einen sichtbaren Würfelknopf. Äußere Leerzeichen im Begleiter- oder Fähigkeitsnamen verhindern keine Direktwürfe mehr; Originalnamen und Kennungen bleiben erhalten.
+- Bild- und Tokenaktualisierungen erkennen zwischenzeitliche Änderungen am Portrait oder Ausschnitt. Ein Begleiterimport stoppt bei geändertem Hauptcharakter oder verlorenen Besitzerrechten vor dem nächsten Schreibschritt. Bereits erfolgte Schreibvorgänge an anderen Foundry-Dokumenten werden nicht automatisch zurückgerollt.
+
+Für die ergänzten NSC- und KE-Werte bestehende Charaktere beziehungsweise Gefolgsdateien einmal über **Aktualisieren** oder **JSON importieren** erneut einlesen. Eigene Energie- und Zustandsänderungen können dabei wie bisher zum Behalten gewählt werden. Die Quelldateien werden nicht verändert.
 
 ## Begleiter und Aktualisierung ab 1.9.0
 
@@ -268,3 +277,12 @@ Eine Gefolgsdatei enthält `Format`, `Version`, `Name` und mindestens eine der L
 **Spielwerte und Regeln** zeigt bei jedem Begleiter vorhandene Angaben zu RS, gMR/kMR, Reaktion, Geschwindigkeit, Bindungslast, Beschwörung, Tragkraft, Angriffsschaden, Material und Besonderheiten. Reaktion wird mit MU/IN/GE und dem gespeicherten Probenwert gewürfelt. Breite Fähigkeiten ohne festgelegte Attributskombination bleiben beim Würfeln auswählbar. Fehlende Zahlenwerte werden nicht ergänzt. Passive Effekte, Schadenswürfe, Ressourcenverbrauch, Manöver und bedingte Boni aus Regeltexten werden nicht automatisch abgewickelt.
 
 Regelbücher, Charakterdateien und private Importbibliotheken sind nicht Bestandteil des öffentlichen Moduldownloads.
+
+## Entwicklungsprüfungen
+
+Die Tests benötigen Node.js mit Unterstützung für `node --test`, `File` und `DecompressionStream`. Die Integrationstests verwenden unveränderte Dateien aus Ucurifunke – Proben. Sie werden getrennt vom Modul bereitgestellt und vor dem Testlauf relativ zum Repository abgelegt:
+
+- `../pedipalpus-checks/ucurifunke-v1.0.8/ucurifunke-checks/scripts/ucurifunke-checks.js` · SHA-256 `8580ccbce9844536907e7f3db4250d7b4df54d0f808a01088071013a384a0b71`
+- `../pedipalpus-checks/ucurifunke-v1.0.14/scripts/ucurifunke-checks.js` · SHA-256 `a9e41cb7fdd6521a07f3b7c43cec101274f0b42389a62dc4db2656c837f30410`
+
+Danach im Repository `npm test` ausführen. Oberflächenprüfungen unter `tools/*-browser-check.mjs` benötigen zusätzlich Playwright und Chrome; die Pfade lassen sich über `PEDIPALPUS_PLAYWRIGHT` und `PEDIPALPUS_BROWSER` angeben. Private Charakter- und Gefolgsprüfungen sind optional und verwenden ausschließlich ausdrücklich gesetzte lokale Dateipfade. Testquellen und private Dateien werden nicht in das Modulpaket aufgenommen.

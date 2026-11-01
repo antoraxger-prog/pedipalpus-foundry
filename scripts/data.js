@@ -58,7 +58,7 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
     }
     const selected={Version:17,Name:raw.Name,PrimaryAttributes:[],Notes:text(raw.Notes),PortraitFileName:text(raw.PortraitFileName),...Object.fromEntries(COMPANION_GROUPS.map(([collection])=>[collection,raw[collection]??[]]))};
     const snapshot=normalizeBaseCharacter(selected,importedAt,false,true),single=members.length===1?members[0]:null;
-    return {...snapshot,sourceFormat:RETINUE_FORMAT,sourceVersion:1,profile:{...snapshot.profile,retinueOnly:true,...(single?{companionGroup:single._group,race:text(single.Species)}:{})},attributes:single?memberAttributes(single):[],resources:single?[{name:'LE',value:single.CurrentLe??null,max:single.MaxLe??null},{name:'AE',value:single.CurrentAstralEnergy??null,max:single.AstralEnergy??null}]:[]};
+    return {...snapshot,sourceFormat:RETINUE_FORMAT,sourceVersion:1,profile:{...snapshot.profile,retinueOnly:true,...(single?{companionGroup:single._group,race:text(single.Species)}:{})},attributes:single?memberAttributes(single):[],resources:single?[{name:'LE',value:single.CurrentLe??null,max:single.MaxLe??null},{name:'AE',value:single.CurrentAstralEnergy??null,max:single.AstralEnergy??null},{name:'KE',value:single.CurrentKarmaEnergy??null,max:single.KarmaEnergy??null}].filter(row=>row.name==='LE'||Number.isFinite(row.max)&&row.max>0):[]};
   }
   if(raw&&typeof raw==='object'&&'Format' in raw){
     const mapped=mapNpcFile(raw),snapshot=normalizeBaseCharacter(mapped.raw,importedAt,true);

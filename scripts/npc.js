@@ -17,6 +17,19 @@ const split=value=>value.split(';').map(part=>part.trim()).filter(Boolean);
 const weight=row=>{if(numeric(row.Weight,'Gewicht',0,false)<0)fail('Ein Gewicht ist negativ.');};
 export const npcRound=value=>Math.sign(value)*Math.round(Math.abs(value));
 const grade=value=>{const index=NPC_GRADES.indexOf(value);if(index<0)fail('Eine Fähigkeitsstufe ist unbekannt.');return (index+1)*4;};
+function weaponDamage(row,ranged,attribute){
+ const damage=string(row.Damage,'Schaden');if(ranged)return damage;
+ const notes=string(row.Notes,'Waffenhinweise'),parts=string(row.TpKk,'TP/KK').split('/');
+ const int=value=>/^[+-]?\d+$/.test(value.trim())&&Number(value)>=-2147483648&&Number(value)<=2147483647?Number(value):null;
+ const threshold=parts.length===2?int(parts[0]):null,step=parts.length===2?int(parts[1]):null;
+ if(threshold===null||step===null||step<=0)return damage;
+ const strength=notes.toLocaleLowerCase('en').includes('finesse')?Math.max(attribute('KK'),attribute('GE')):attribute('KK');
+ const bonus=Math.max(0,Math.trunc((strength-threshold)/step));if(!bonus)return damage;
+ const match=/^\s*(\d+)\s*[wWdD](\d+)\s*([+-]\s*\d+)?\s*$/.exec(damage);
+ if(!match)return `${damage} + ${bonus}`;
+ const fixed=(match[3]?Number(match[3].replace(/\s/g,'')):0)+bonus;
+ return `${match[1]}W${match[2]}${fixed>0?'+':''}${fixed===0?'':fixed}`;
+}
 
 function attributes(values,expected){
  const rows=array(values,'Attribute');
@@ -27,7 +40,7 @@ function attributes(values,expected){
   return {LongName:label(string(row.Name,'Attributname',names[keys.indexOf(key)]??labels[key])),ShortName:key,BaseValue:parts[0],ModValue:parts[1]+parts[2],TotalValue:parts.reduce((a,b)=>a+b,0)};
  });
 }
-function abilities(values,name){return array(values,name).map(row=>{const name=label(string(row.Name,'Fähigkeitsname'));if(!name)fail('Ein Fähigkeitsname fehlt.');return {Name:name,Value:grade(row.Grade)};});}
+function abilities(values,name){return array(values,name).map(row=>{const name=label(string(row.Name,'Fähigkeitsname'));if(!name)fail('Ein Fähigkeitsname fehlt.');return {Name:name,Value:grade(row.Grade),Notes:string(row.Notes,'Fähigkeitshinweise')};});}
 function validateGraph(value,depth=0){
  if(depth>64)fail('Die Datenstruktur ist zu tief verschachtelt.');
  if(typeof value==='number'&&(!Number.isFinite(value)||Math.abs(value)>100000))fail('Ein Zahlenwert liegt außerhalb des unterstützten Bereichs.');
@@ -67,7 +80,7 @@ export function mapNpcFile(file){
   const defense=numeric(row.DefenseBonus,'Abwehrbonus')+(mods.length?mods[Math.min(mods.length-1,Math.max(0,level))]:numeric(row.ParryModifier,'Paradebonus'));
   raw[ranged?'RangedWeapons':string(row.Kind,'Waffenart')==='Parierwaffe'?'ParryWeapons':'MeleeWeapons'].push({Name:label(string(row.Name,'Waffenname')),
    UsedSkills:ordered.filter(tech=>tech.Type===(ranged?'Ranged':'Melee')&&allowed.some(name=>ascii(name)===ascii(tech.SourceName))).map(tech=>tech.Name),
-   AttackBonus:numeric(row.AttackModifier,'Angriffsbonus'),ParryBonus:defense,DefenseBonus:defense,MobilityTolerance:numeric(row.MobilityTolerance,'Waffentoleranz'),Damage:string(row.Damage,'Schaden')});
+   AttackBonus:numeric(row.AttackModifier,'Angriffsbonus'),ParryBonus:defense,DefenseBonus:defense,MobilityTolerance:numeric(row.MobilityTolerance,'Waffentoleranz'),Damage:weaponDamage(row,ranged,a),Notes:string(row.Notes,'Waffenhinweise'),Range:string(row.Reach,'Waffenreichweite')});
  }
  const skillRows=[];
  for(const [collection,prefix,title] of [['Abilities','NpcAbilities','Fähigkeiten'],['Features','NpcFeatures','Merkmale']])abilities(npc[collection],title).forEach((entry,index)=>skillRows.push({id:`${prefix}:${index}`,name:entry.Name,category:prefix,group:title,kind:'skill',value:entry.Value,attributes:[],reason:'',needsAttributes:true,npcChoice:{keys:[],remember:true}}));
@@ -94,8 +107,9 @@ export function mapNpcFile(file){
   const memberName=string(member.Name,'Gefolgsname').trim();if(!memberName)fail('Ein Gefolgsname fehlt.');
   const attrs=attributes(member.Attributes,keys),row={Name:label(memberName),Species:`${kind}${member.Category?` · ${string(member.Category,'Kategorie')}`:''}`,InventoryId:`npc:${JSON.stringify([kind,memberName.normalize('NFC').toLocaleLowerCase('de')])}`,
    CurrentLe:numeric(member.CurrentLe,'Gefolgs-LE'),MaxLe:numeric(member.MaxLe,'Maximale Gefolgs-LE'),CurrentAstralEnergy:numeric(member.CurrentAe,'Gefolgs-AE'),AstralEnergy:numeric(member.MaxAe,'Maximale Gefolgs-AE'),
-   MentalMagicResistance:numeric(member.MentalResistance,'Geistige MR'),PhysicalMagicResistance:numeric(member.PhysicalResistance,'Körperliche MR'),
-   MundaneAbilities:abilities(member.Abilities,'Gefolgsfähigkeiten'),Attacks:array(member.Attacks,'Gefolgsangriffe').map(attack=>({Name:label(string(attack.Name,'Angriffsname')),AttackValue:numeric(attack.AttackValue,'Angriff'),ParryValue:numeric(attack.ParryValue,'Parade'),IsRanged:bool(attack.IsRanged,'Fernangriff')}))};
+   MentalMagicResistance:numeric(member.MentalResistance,'Geistige MR'),PhysicalMagicResistance:numeric(member.PhysicalResistance,'Körperliche MR'),Reaction:numeric(member.Reaction,'Gefolgsreaktion'),
+   Armor:numeric(member.Armor,'Gefolgsrüstung'),Speed:numeric(member.Speed,'Gefolgsgeschwindigkeit',0,false),BindingLoad:numeric(member.BindingLoad,'Bindungslast'),ServiceVolume:numeric(member.ServiceVolume,'Dienstvolumen'),SummoningDifficulty:numeric(member.SummoningDifficulty,'Beschwörungsschwierigkeit'),AstralSense:numeric(member.AstralSense,'Astralsinn'),CarryCapacity:member.CarryCapacity==null?null:numeric(member.CarryCapacity,'Gefolgstragkraft',0,false),Rules:string(member.Rules,'Gefolgsregeln'),Notes:string(member.Notes,'Gefolgshinweise'),
+   MundaneAbilities:abilities(member.Abilities,'Gefolgsfähigkeiten'),Attacks:array(member.Attacks,'Gefolgsangriffe').map(attack=>({Name:label(string(attack.Name,'Angriffsname')),AttackValue:numeric(attack.AttackValue,'Angriff'),ParryValue:numeric(attack.ParryValue,'Parade'),IsRanged:bool(attack.IsRanged,'Fernangriff'),Damage:string(attack.Damage,'Gefolgsschaden'),Ranges:string(attack.Reach,'Gefolgsreichweite'),Notes:string(attack.Notes,'Angriffshinweise'),AttackTicks:numeric(attack.AttackTicks,'Angriffsticks'),ParryTicks:numeric(attack.ParryTicks,'Paradeticks',4),ReloadTicks:numeric(attack.ReloadTicks,'Nachladeticks')}))};
   for(const attr of attrs)row[attr.ShortName]=attr.TotalValue;
   raw[collection].push(row);
  }

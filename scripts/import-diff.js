@@ -56,7 +56,7 @@ export function compareCharacters(previous, next) {
   }
   const oldMembers=readCompanions(previous),newMembers=readCompanions(next);
   const identity=member=>String(member.InventoryId??'')||JSON.stringify([member._group,member.Name,member.Species??member.Domain??'']);
-  const memberState=member=>member?`${({animals:'Tier',demons:'Dämon',undead:'Untoter'})[member._group]??'Gefolge'} · ${member.Name} · ${member.Species??member.Domain??''} · LE ${member.CurrentLe??'–'}/${member.MaxLe??'–'} · AE ${member.CurrentAstralEnergy??'–'}/${member.AstralEnergy??'–'} · Bindung ${member.BindingLoad??'–'} · Dienste ${member.CurrentServiceVolume??'–'}`:null;
+  const memberState=member=>member?`${({animals:'Tier',demons:'Dämon',undead:'Untoter'})[member._group]??'Gefolge'} · ${member.Name} · ${member.Species??member.Domain??''} · LE ${member.CurrentLe??'–'}/${member.MaxLe??'–'} · AE ${member.CurrentAstralEnergy??'–'}/${member.AstralEnergy??'–'} · KE ${member.CurrentKarmaEnergy??'–'}/${member.KarmaEnergy??'–'} · Bindung ${member.BindingLoad??'–'} · Dienste ${member.CurrentServiceVolume??'–'}`:null;
   for(const id of new Set([...oldMembers,...newMembers].map(identity))){
     const before=oldMembers.filter(member=>identity(member)===id),after=newMembers.filter(member=>identity(member)===id),label=`${after[0]?.Name??before[0]?.Name} · Gefolge`;
     if(before.length>1||after.length>1){add(label,`${before.length} Einträge`,`${after.length} Einträge`,'ambiguous');continue;}

@@ -33,7 +33,7 @@ export function companionProbes(raw,{npcRules=false}={}){
   const prefix=`${member._group}:${member._index}`,attrs=memberAttributes(member);
   const extra={companionGroup:member._group,companionIndex:member._index,companionId:String(member.InventoryId??''),companionName:String(member.Name??'')};
   const add=(suffix,label,value,attributes,kind='skill',ability=null)=>{
-   const name=`${member.Name} – ${label}`,needsAttributes=Boolean(ability)&&attributes.length!==3;
+   const name=`${member.Name} – ${label}`.trim(),needsAttributes=Boolean(ability)&&attributes.length!==3;
    const reason=!Number.isSafeInteger(value)?'Der Probenwert fehlt.':/[|\r\n]/.test(name)||name.length>160?'Der Probenname ist ungültig.':kind==='skill'&&!needsAttributes&&attributes.length!==3?'Die Probenattribute fehlen.':needsAttributes&&!attrs.length?'Die Attribute dieses Wesens fehlen.':'';
    result.push({id:`${prefix}:${suffix}`,name,group:String(member.Name??''),category:`${member._group}-${suffix.split(':')[0]}`,kind,value,attributes,reason,...extra,...(npcRules?{npcRules:true}:{}),...(ability?{companionAbility:ability,needsAttributes}:{} )});
   };

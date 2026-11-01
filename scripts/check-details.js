@@ -1,10 +1,14 @@
 const rows=value=>Array.isArray(value)?value:[];
 const scalar=value=>typeof value==='string'?value.trim().slice(0,2000):typeof value==='number'&&Number.isFinite(value)?String(value):'';
-const details=[['Description','Beschreibung'],['Cost','Kosten'],['Costs','Kosten'],['AstralCost','AE'],['KarmaCost','KE'],['Duration','Dauer'],['CastingTime','Zauberdauer'],['Range','Reichweite'],['EffectDuration','Wirkungsdauer'],['Notes','Hinweise'],['SpecialEffects','Besonderheiten']];
+const details=[['Description','Beschreibung'],['Rules','Regeln'],['Cost','Kosten'],['Costs','Kosten'],['AstralCost','AE'],['KarmaCost','KE'],['Duration','Dauer'],['CastingTime','Zauberdauer'],['Range','Reichweite'],['EffectDuration','Wirkungsdauer'],['Notes','Hinweise'],['SpecialEffects','Besonderheiten']];
 export function attachCheckDetails(raw,checks){
  return checks.map(check=>{
   const parts=check.id.split(':');let source;
-  if(raw.Npc&&!check.companionGroup){const matches=[...rows(raw.Npc.Abilities),...rows(raw.Npc.Features),...rows(raw.Npc.Powers)].filter(row=>row.Name===check.name);source=matches.length===1?matches[0]:null;}
+  if(raw.Npc&&!check.companionGroup){
+   if(parts[0]==='NpcAbilities')source=rows(raw.Npc.Abilities)[Number(parts[1])];
+   else if(parts[0]==='NpcFeatures')source=rows(raw.Npc.Features)[Number(parts[1])];
+   else if(['Spells','Rituals','Miracles'].includes(parts[0]))source=rows(raw.Npc.Powers).filter(power=>{const kind=power.Kind??'Zauber';return (kind==='Liturgie'?'Miracles':kind==='Ritual'||kind==='Ritus'?'Rituals':'Spells')===parts[0];})[Number(parts[1])];
+  }
   else if(parts[0]==='combat')source=rows(raw[parts[1]])[Number(parts[2])];
   else if(check.companionGroup){const collection={animals:'Animals',demons:'Demons',undead:'Undead',chimeras:'Chimeras',persons:'Persons',elementals:'Elementals',golems:'Golems'}[check.companionGroup],member=rows(raw[collection])[check.companionIndex];source=check.kind==='combat'?rows(member?.Attacks)[Number(parts[2])]:check.companionAbility?rows(member?.[check.companionAbility.collection])[check.companionAbility.index]:null;}
   else {source=rows(raw[parts[0]])[Number(parts[1])];if(parts.length===3)source=rows(source?.Subskills)[Number(parts[2])];}

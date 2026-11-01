@@ -1,6 +1,6 @@
 import { MODULE_ID, FLAG, SCHEMA_VERSION } from './data.js';
 import { getCharacter,ownerAssignment,assignOwner } from './storage.js';
-import { uploadPortrait,applyPortrait,framingFor } from './portraits.js';
+import { uploadPortrait,applyPortrait,framingFor,portraitState } from './portraits.js';
 import { tokenFromActor } from './tokens.js';
 import { readCompanions,memberAttributes,isCompanionCheck,retainCompanionChoices } from './retinue.js';
 
@@ -21,7 +21,7 @@ export function companionSnapshot(character,index){
  const item=(character.equipment??[]).find(item=>item.id===`${member._collection}:${member._index}`);
  const prefix=`${member._group}:${member._index}:`;
  const checks=(character.checks??[]).filter(check=>isCompanionCheck(check)&&check.id.startsWith(prefix)).map(check=>({...check,id:check.id.replace(prefix,`${member._group}:0:`),companionIndex:0}));
- return {schemaVersion:SCHEMA_VERSION,combatSchemaVersion:1,retinueSchemaVersion:1,retinue:[{...member,_index:0}],sourceVersion:character.sourceVersion,...(character.sourceFormat?{sourceFormat:character.sourceFormat}:{}),importedAt:character.importedAt,profile:{name:String(member.Name),portraitFileName:'',race:String(member.Domain??member.Species??''),companionGroup:member._group},attributes:memberAttributes(member),checks,equipment:item?[{...item,id:`${member._collection}:0`}]:[],resources:[{name:'LE',value:member.CurrentLe??null,max:member.MaxLe??null},{name:'AE',value:member.CurrentAstralEnergy??null,max:member.AstralEnergy??null}],derived:[],details:[],warnings:[],secondary:[],conditions:{simple:[],complex:[]},combat:{stats:[],melee:[],ranged:[]}};
+ return {schemaVersion:SCHEMA_VERSION,combatSchemaVersion:1,retinueSchemaVersion:1,retinue:[{...member,_index:0}],sourceVersion:character.sourceVersion,...(character.sourceFormat?{sourceFormat:character.sourceFormat}:{}),importedAt:character.importedAt,profile:{name:String(member.Name),portraitFileName:'',race:String(member.Domain??member.Species??''),companionGroup:member._group},attributes:memberAttributes(member),checks,equipment:item?[{...item,id:`${member._collection}:0`}]:[],resources:[{name:'LE',value:member.CurrentLe??null,max:member.MaxLe??null},{name:'AE',value:member.CurrentAstralEnergy??null,max:member.AstralEnergy??null},{name:'KE',value:member.CurrentKarmaEnergy??null,max:member.KarmaEnergy??null}],derived:[],details:[],warnings:[],secondary:[],conditions:{simple:[],complex:[]},combat:{stats:[],melee:[],ranged:[]}};
 }
 export async function saveCompanion(source,index,expectedKey,portrait,warn,expectedTarget){
  if(!source?.isOwner||!source.canUserModify(game.user,'update'))throw new Error('Zum Anlegen eines Gefolge-Tokens werden Besitzerrechte benötigt.');
@@ -29,10 +29,10 @@ export async function saveCompanion(source,index,expectedKey,portrait,warn,expec
  const previousLink=source.getFlag(MODULE_ID,'companion'),snapshot=companionSnapshot(character,index),existing=previousLink?.sourceActorId?source:companionActor(source.id,key);
  if(existing&&!existing.canUserModify(game.user,'update'))throw new Error('Für diesen Gefolge-Charakter fehlen Bearbeitungsrechte.');
  if(!existing&&!foundry.documents.Actor.canUserCreate(game.user))throw new Error('Dein Spielleiter muss den Gefolge-Charakter anlegen oder dir die Berechtigung dafür geben.');
- const before=targetState(existing),sourceState=JSON.stringify(character);
+ const before=targetState(existing),expectedPortrait=existing?portraitState(existing):null,sourceState=JSON.stringify(character);
  const verify=()=>{const current=getCharacter(source),target=previousLink?.sourceActorId?source:companionActor(source.id,key);if(!source.canUserModify(game.user,'update')||target&&!target.canUserModify(game.user,'update')||companionKey(current,index)!==key||JSON.stringify(current)!==sourceState||target?.id!==existing?.id||targetState(target)!==before||expectedTarget&&(target?.id!==expectedTarget.id||before!==expectedTarget.state||sourceState!==expectedTarget.source))throw new Error('Das Gefolgsbild oder seine Zuordnung wurde inzwischen geändert. Bitte erneut öffnen.');};
  verify();const image=await uploadPortrait(portrait),token=await uploadPortrait(portrait.token??portrait);verify();const link={...(previousLink?.sourceActorId?previousLink:{sourceActorId:source.id,key}),tokenStyle:portrait.tokenStyle};
- if(existing){await existing.setFlag(MODULE_ID,FLAG,retainCompanionChoices(getCharacter(existing),snapshot));await existing.setFlag(MODULE_ID,'companion',link);await applyPortrait(existing,image,warn,token,framingFor(portrait));return existing;}
+ if(existing){await existing.setFlag(MODULE_ID,FLAG,retainCompanionChoices(getCharacter(existing),snapshot));await existing.setFlag(MODULE_ID,'companion',link);await applyPortrait(existing,image,warn,token,framingFor(portrait),expectedPortrait);return existing;}
  return foundry.documents.Actor.create({name:snapshot.profile.name,type:'character',img:image,ownership:{...source.ownership,[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER},prototypeToken:{name:snapshot.profile.name,actorLink:true,texture:{src:token}},flags:{[MODULE_ID]:{[FLAG]:snapshot,companion:link,...(framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{})}}});
 }
 export async function refreshCompanions(source,warn=message=>ui.notifications.warn(message),{skipKeys=[],localState=false}={}){
@@ -81,22 +81,28 @@ export function verifyCompanionImport(character,sourceActorId,plan=[]){
 }
 export async function applyCompanionImport(source,plan=[],{includeImages=true,ownerId='',tokenFrame='concrete',portraits={},warn=message=>ui.notifications.warn(message)}={}){
  ownerAssignment(ownerId);
- const character=getCharacter(source);verifyCompanionImport(character,source.id,plan);
+ const character=getCharacter(source),sourceState=JSON.stringify(character);
+ const verify=selection=>{
+  if(!source?.isOwner||!source.canUserModify(game.user,'update'))throw new Error('Zum Importieren von Begleitern werden Besitzerrechte am Hauptcharakter benötigt.');
+  if(JSON.stringify(getCharacter(source))!==sourceState)throw new Error('Der Hauptcharakter wurde inzwischen geändert. Bitte den Import erneut öffnen.');
+  verifyCompanionImport(character,source.id,selection);
+ };
+ verify(plan);
  for(const row of plan){
-  verifyCompanionImport(character,source.id,[row]);
-  const snapshot=companionSnapshot(character,row.index),existing=game.actors.get(row.targetId),old=row.active.map(item=>game.actors.get(item.id));
+  verify([row]);
+  const snapshot=companionSnapshot(character,row.index),existing=game.actors.get(row.targetId),expectedPortrait=existing?portraitState(existing):null,old=row.active.map(item=>game.actors.get(item.id));
   let portrait=includeImages?portraits[row.key]??null:null;
   const imageSource=old.find(actor=>actor.img&&!actor.img.endsWith('mystery-man.svg'));
   if(!portrait&&includeImages&&imageSource&&imageSource.id!==existing?.id)portrait=await tokenFromActor(imageSource,tokenFrame);
-  verifyCompanionImport(character,source.id,[row]);
+  verify([row]);
   const image=portrait?await uploadPortrait(portrait):null,token=portrait?await uploadPortrait(portrait.token??portrait):null;
-  verifyCompanionImport(character,source.id,[row]);
+  verify([row]);
   const link={sourceActorId:source.id,key:row.key,active:true,tokenStyle:portrait?.tokenStyle??existing?.getFlag(MODULE_ID,'companion')?.tokenStyle??tokenFrame};
   let actor=existing;
   if(actor){
    await actor.setFlag(MODULE_ID,FLAG,retainCompanionChoices(getCharacter(actor),snapshot));await actor.setFlag(MODULE_ID,'companion',link);
    await actor.update({name:snapshot.profile.name,'prototypeToken.name':snapshot.profile.name});
-   if(image)await applyPortrait(actor,image,warn,token,framingFor(portrait));await assignOwner(actor,ownerId);
+   if(image)await applyPortrait(actor,image,warn,token,framingFor(portrait),expectedPortrait);await assignOwner(actor,ownerId);
   }else actor=await foundry.documents.Actor.create({name:snapshot.profile.name,type:'character',img:image||'icons/svg/mystery-man.svg',ownership:{...source.ownership,[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,...ownerAssignment(ownerId)},prototypeToken:{name:snapshot.profile.name,actorLink:true,...(token?{texture:{src:token}}:{})},flags:{[MODULE_ID]:{[FLAG]:snapshot,companion:link,...(framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{})}}});
   for(const previous of old)if(previous.id!==actor.id)await previous.setFlag(MODULE_ID,'companion',{...previous.getFlag(MODULE_ID,'companion'),active:false,replacedBy:actor.id});
  }

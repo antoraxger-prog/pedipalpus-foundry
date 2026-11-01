@@ -46,14 +46,19 @@ export async function uploadPortrait(prepared) {
 
 export const framingFor=portrait=>portrait?.tokenCrop?{x:portrait.tokenCrop.x,y:portrait.tokenCrop.y,zoom:portrait.tokenCrop.zoom,style:portrait.tokenStyle,...(portrait.tokenFrame?{frame:portrait.tokenFrame}:{})}:null;
 
-export async function applyPortrait(actor, path, warn = message => ui.notifications.warn(message), tokenPath = path, framing = null) {
+export const portraitState=actor=>JSON.stringify({img:actor?.img,framing:actor?.getFlag?.('pedipalpus-foundry','portraitFraming')??null});
+
+export async function applyPortrait(actor, path, warn = message => ui.notifications.warn(message), tokenPath = path, framing = null, expectedPortrait = null) {
   if (!actor?.canUserModify(game.user,'update')) throw new Error('Zum Bildimport benötigst du Besitzerrechte auf diesem Charakter.');
+  if (expectedPortrait !== null && portraitState(actor) !== expectedPortrait) throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte den Bildeditor erneut öffnen.');
   await actor.update({img:path,'prototypeToken.texture.src':tokenPath,...(framing?{'flags.pedipalpus-foundry.portraitFraming':framing}:{})});
+  const appliedState=portraitState(actor);
   let skipped = 0;
   for (const scene of game.scenes?.contents ?? []) for (const token of scene.tokens?.contents ?? []) {
     if (token.actorId !== actor.id || !token.actorLink) continue;
+    if (portraitState(actor) !== appliedState) { skipped++; continue; }
     if (!token.canUserModify(game.user,'update')) { skipped++; continue; }
     try { await token.update({'texture.src':tokenPath}); } catch { skipped++; }
   }
-  if (skipped) warn(`Bild übernommen. ${skipped} verknüpfte Tokens konnten mangels Bearbeitungsrecht oder wegen eines Fehlers nicht aktualisiert werden.`);
+  if (skipped) warn(`Bild übernommen. ${skipped} verknüpfte Tokens konnten wegen fehlender Rechte, einer zwischenzeitlichen Bildänderung oder eines Fehlers nicht aktualisiert werden.`);
 }

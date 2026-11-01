@@ -5,7 +5,7 @@ import { connectionStatus, executeCheck } from './commands.js';
 import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment } from './storage.js';
 import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, checksForView } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
-import { preparePortrait, uploadPortrait, applyPortrait, framingFor } from './portraits.js';
+import { preparePortrait, uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
 import { uiText, localizeSurface, localizeDialog } from './language.js';
 import { loadWorkbench, saveWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent } from './workbench.js';
@@ -162,7 +162,7 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelectorAll('.pp-check-name').forEach(name => {
       name.draggable = true;
       name.addEventListener('dragstart',event => {
-        const check = getCharacter(this.actor)?.checks.find(check => check.id === name.closest('[data-check-id]')?.dataset.checkId);
+        const check = getCharacter(this.actor)?.checks.find(check => check.id === name.dataset.check);
         if (!check || !this.actor?.isOwner) { event.preventDefault(); return; }
         name.dataset.dragging='true';
         event.dataTransfer.setData('text/plain',JSON.stringify({type:'PedipalpusCheck',actorId:this.actorId,reference:checkReference(check)}));
@@ -172,7 +172,11 @@ export class PedipalpusApp extends ApplicationV2 {
     content.addEventListener('keydown',event => {
       if (event.target.name !== 'search') return;
       if (event.key === 'Escape') { event.preventDefault(); event.target.value='';this.search='';this.filterChecks(content); }
-      if (event.key === 'ArrowDown') { event.preventDefault(); content.querySelector('.pp-check-row:not([hidden]) [data-action="roll"]:not([disabled])')?.focus(); }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        const candidates=content.querySelectorAll('.pp-check-row:not([hidden]) [data-action="roll"]:not([disabled]), .pp-companion-section:not([hidden]) .pp-companion-quick [data-action="roll"]:not([disabled])');
+        Array.from(candidates).find(button=>button.getClientRects().length)?.focus();
+      }
     });
     const focus = content.querySelector('[name="focus"]');
     let previousFocus=Number(focus?.value);
@@ -490,7 +494,7 @@ export class PedipalpusApp extends ApplicationV2 {
           finally{if(dialog.element.isConnected){field.disabled=false;save.disabled=refresh.disabled=false;}}
         });
         dialog.element.querySelector('[name="tokenFramesZip"]')?.addEventListener('change',async event=>{const field=event.target;field.disabled=true;try{await importTokenFrames(field.files?.[0]);frameStatus.textContent=this.t('Originalrahmen importiert.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{field.disabled=false;}});
-        dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,actor.img,message=>this.notify('warn',message),await uploadPortrait(framed.token),framingFor(framed));frameStatus.textContent=this.t('Tokenbild erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
+        dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,expected=portraitState(actor),image=actor.img,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,image,message=>this.notify('warn',message),await uploadPortrait(framed.token),framingFor(framed),expected);frameStatus.textContent=this.t('Tokenbild erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
         const host=dialog.element.querySelector('.pp-favorite-editor');
         const update=()=>{host.innerHTML=(draft.favorites[this.actorId] || []).map((ref,index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`;};
         update();
@@ -844,11 +848,11 @@ export class PedipalpusApp extends ApplicationV2 {
   }
   async importPortrait(){
     const actor=this.actor;if(!actor?.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Bitte einen eigenen Foundry-Charakter auswählen.');
-    const expected=JSON.stringify({img:actor.img,framing:actor.getFlag(MODULE_ID,'portraitFraming')}),answer=await this.editPortrait(actor);
+    const expected=portraitState(actor),answer=await this.editPortrait(actor);
     if(!answer)return;
-    const verify=()=>{if(!actor.isOwner||!actor.canUserModify(game.user,'update')||JSON.stringify({img:actor.img,framing:actor.getFlag(MODULE_ID,'portraitFraming')})!==expected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte erneut öffnen.');};
+    const verify=()=>{if(!actor.isOwner||!actor.canUserModify(game.user,'update')||portraitState(actor)!==expected)throw new Error('Das Charakterbild wurde inzwischen geändert. Bitte erneut öffnen.');};
     verify();const framed=await prepareTokenPortrait(answer.portrait,answer.style,answer.crop),image=await uploadPortrait(framed),token=await uploadPortrait(framed.token);verify();
-    await applyPortrait(actor,image,message=>this.notify('warn',message),token,framingFor(framed));
+    await applyPortrait(actor,image,message=>this.notify('warn',message),token,framingFor(framed),expected);
     this.notify('info','Charakter- und Tokenbild übernommen.');
   }
   async importAnimalPortrait(button){
