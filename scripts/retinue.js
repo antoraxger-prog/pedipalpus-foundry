@@ -6,6 +6,7 @@ export function retinueEntries(raw){
  return COMPANION_GROUPS.flatMap(([collection,group])=>objects(raw?.[collection]).map((member,index)=>({...member,_collection:collection,_group:group,_index:index})));
 }
 export function readCompanions(character){
+ if(character?.localState&&Array.isArray(character.retinue))return character.retinue;
  if(character?.retinueImportEnabled===false)return character.retinue??[];
  if(character?.sourceFormat==='Pedipalpus.Npc'&&Array.isArray(character.retinue))return character.retinue;
  try{return retinueEntries(JSON.parse(character.sourceJSON.replace(/^\uFEFF/,'')));}catch{}
@@ -67,7 +68,7 @@ export function withCompanionAttributes(character,checkId,keys){
 export function withCompanionImport(previous,next,include=true){
  if(include)return {...next,retinueImportEnabled:true};
  const equipment=item=>COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`));
- return {...next,retinueImportEnabled:false,retinueSchemaVersion:1,retinue:structuredClone(readCompanions(previous)),
+ return {...next,retinueImportEnabled:false,retinueSchemaVersion:1,...(previous?.localStateBase?{localStateBase:structuredClone(previous.localStateBase)}:{}),retinue:structuredClone(readCompanions(previous)),
   checks:[...next.checks.filter(check=>!isCompanionCheck(check)),...structuredClone((previous?.checks??[]).filter(isCompanionCheck))],
   equipment:[...next.equipment.filter(item=>!equipment(item)),...structuredClone((previous?.equipment??[]).filter(equipment))]};
 }

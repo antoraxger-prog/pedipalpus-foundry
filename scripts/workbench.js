@@ -8,6 +8,20 @@ const safeText = (value, maximum = 160) => text(value).slice(0, maximum);
 const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
 const actorKey = value => typeof value === 'string' && value.length > 0 && value.length <= 160 && !forbidden.has(value);
 const choices = (value, options, fallback) => options.includes(value) ? value : fallback;
+function figures(value){
+ const result={};if(!plain(value))return result;
+ for(const [id,row] of Object.entries(value).slice(0,200)){
+  if(!actorKey(id)||!plain(row))continue;
+  const notes={},sets=[];
+  if(plain(row.notes))for(const [key,note] of Object.entries(row.notes).slice(0,500))if(key.length<=1500&&!forbidden.has(key)&&typeof note==='string')notes[key]=note.slice(0,2000);
+  for(const set of Array.isArray(row.weaponSets)?row.weaponSets.slice(0,12):[]){
+   if(!plain(set)||!text(set.id)||!text(set.name)||!Array.isArray(set.weapons))continue;
+   sets.push({id:safeText(set.id,60),name:safeText(set.name,60),weapons:[...new Set(set.weapons.filter(key=>typeof key==='string'&&key.length<=500))].slice(0,60),...(typeof set.offHand==='string'&&set.offHand.length<=160?{offHand:set.offHand}:{})});
+  }
+  result[id]={theme:choices(row.theme,['fantasy','dark','light','ork','demonic','aristocrat','warrior','arcane','sneaky'],''),rememberTheme:row.rememberTheme===true,notes,weaponSets:sets,activeSet:sets.some(set=>set.id===row.activeSet)?row.activeSet:''};
+ }
+ return result;
+}
 
 export const DEFAULT_WORKBENCH = Object.freeze({
   actorId: null, category: 'all', favorites: Object.freeze({}), recent: Object.freeze({}),
@@ -132,6 +146,7 @@ export function validateWorkbench(value) {
     category: typeof source.category === 'string' && source.category !== 'recent' && /^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(source.category) ? source.category : 'all',
     favorites: referencesByActor(source.favorites, 100), recent: referencesByActor(source.recent, 12),
     density: choices(source.density, ['normal', 'compact', 'comfortable'], 'normal'),
+    textScale:choices(source.textScale,[90,100,110,120,130],100),highContrast:source.highContrast===true,calmRows:source.calmRows===true,figures:figures(source.figures),
     language: choices(source.language, ['theme', 'standard', 'ork'], 'theme'),
     animations: choices(source.animations, ['none', 'subtle', 'full'], 'subtle'),
     soundVersion: 1, sound: source.soundVersion === 1 ? source.sound !== false : true, volume: typeof source.volume === 'number' && Number.isFinite(source.volume) ? Math.max(0, Math.min(1, source.volume)) : 0.25,

@@ -26,3 +26,17 @@ export async function readCharacterWithPortrait(file,files=[],{includePortrait=t
   const imported=await readCharacterFile(file,{includePortrait}),character=parseCharacter(imported.json);
   return {...imported,portrait:includePortrait?(imported.portrait??matchingPortrait(files,character.profile.portraitFileName)):null};
 }
+
+export function matchCompanionPictures(members,files){
+ const images=Array.from(files??[]).filter(file=>/\.(png|jpe?g|bmp|webp)$/i.test(file.name));
+ if(images.length>200||images.reduce((sum,file)=>sum+(file.size??0),0)>100*1024*1024)throw new Error('Bitte höchstens 200 Bilder mit zusammen 100 MB auswählen.');
+ const clean=name=>String(name??'').normalize('NFC').toLocaleLowerCase('de');
+ const result=[];
+ members.forEach((member,index)=>{
+  const portrait=clean(member.PortraitFileName),name=clean(member.Name);
+  const matches=images.filter(file=>portrait?clean(file.name)===portrait:clean(file.name.replace(/\.[^.]+$/,''))===name);
+  if(matches.length>1)throw new Error(`${member.Name}: mehrere passende Bilder. Bitte einzeln zuordnen.`);
+  if(matches.length===1){if(!portrait&&members.filter(row=>clean(row.Name)===name).length>1)throw new Error(`${member.Name}: Name mehrfach vorhanden. Bitte Bilder einzeln zuordnen.`);result.push({index,file:matches[0]});}
+ });
+ return result;
+}

@@ -35,9 +35,9 @@ export async function saveCompanion(source,index,expectedKey,portrait,warn,expec
  if(existing){await existing.setFlag(MODULE_ID,FLAG,retainCompanionChoices(getCharacter(existing),snapshot));await existing.setFlag(MODULE_ID,'companion',link);await applyPortrait(existing,image,warn,token,framingFor(portrait));return existing;}
  return foundry.documents.Actor.create({name:snapshot.profile.name,type:'character',img:image,ownership:{...source.ownership,[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER},prototypeToken:{name:snapshot.profile.name,actorLink:true,texture:{src:token}},flags:{[MODULE_ID]:{[FLAG]:snapshot,companion:link,...(framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{})}}});
 }
-export async function refreshCompanions(source,warn=message=>ui.notifications.warn(message),{skipKeys=[]}={}){
+export async function refreshCompanions(source,warn=message=>ui.notifications.warn(message),{skipKeys=[],localState=false}={}){
  const character=getCharacter(source);if(!character||source.getFlag(MODULE_ID,'companion')?.sourceActorId)return;
- if(character.retinueImportEnabled===false)return;
+ if(character.retinueImportEnabled===false&&!localState)return;
  const keys=companionEntries(character).map((_member,index)=>{try{return companionKey(character,index);}catch{return null;}});
  for(const actor of game.actors.contents){
   const link=actor.getFlag(MODULE_ID,'companion');if(link?.sourceActorId!==source.id||link.active===false||skipKeys.includes(link.key))continue;
@@ -79,15 +79,15 @@ export function verifyCompanionImport(character,sourceActorId,plan=[]){
  const fresh=prepareCompanionImport(character,sourceActorId,plan);
  if(JSON.stringify(fresh)!==JSON.stringify(plan))throw new Error('Ein Begleiter oder seine Zuordnung wurde inzwischen geändert. Bitte den Import erneut öffnen.');
 }
-export async function applyCompanionImport(source,plan=[],{includeImages=true,ownerId='',tokenFrame='concrete',warn=message=>ui.notifications.warn(message)}={}){
+export async function applyCompanionImport(source,plan=[],{includeImages=true,ownerId='',tokenFrame='concrete',portraits={},warn=message=>ui.notifications.warn(message)}={}){
  ownerAssignment(ownerId);
  const character=getCharacter(source);verifyCompanionImport(character,source.id,plan);
  for(const row of plan){
   verifyCompanionImport(character,source.id,[row]);
   const snapshot=companionSnapshot(character,row.index),existing=game.actors.get(row.targetId),old=row.active.map(item=>game.actors.get(item.id));
-  let portrait=null;
+  let portrait=includeImages?portraits[row.key]??null:null;
   const imageSource=old.find(actor=>actor.img&&!actor.img.endsWith('mystery-man.svg'));
-  if(includeImages&&imageSource&&imageSource.id!==existing?.id)portrait=await tokenFromActor(imageSource,tokenFrame);
+  if(!portrait&&includeImages&&imageSource&&imageSource.id!==existing?.id)portrait=await tokenFromActor(imageSource,tokenFrame);
   verifyCompanionImport(character,source.id,[row]);
   const image=portrait?await uploadPortrait(portrait):null,token=portrait?await uploadPortrait(portrait.token??portrait):null;
   verifyCompanionImport(character,source.id,[row]);

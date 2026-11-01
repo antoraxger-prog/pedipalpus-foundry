@@ -3,6 +3,7 @@ import { characterFocus } from './combat.js';
 import { NPC_FORMAT,mapNpcFile,retainNpcChoices } from './npc.js';
 import { retainCompanionChoices,retainCompanionImport } from './retinue.js';
 import { currentCharacterRules,specialAbilityLevel } from './character-rules.js';
+import {retainPlayState} from './play-state.js';
 
 const list=value=>Array.isArray(value)?value.filter(item=>item&&typeof item==='object'):[];
 const finite=value=>typeof value==='number'&&Number.isFinite(value)?value:0;
@@ -20,7 +21,7 @@ export function armorItems(character) {
 }
 
 // Die Last-/Rüstungsberechnung folgt Pedipalpus RecalculateCarriedWeight und RecalculateImpairment.
-export function recalculateArmor(raw) {
+export function recalculateArmor(raw,{currentRules=currentCharacterRules(raw)}={}) {
   const armors=list(raw.Armors);
   for(const armor of armors)if(!carried(armor)||!own(armor))armor.IsEquiped=false;
   const equipped=armors.filter(armor=>carried(armor)&&own(armor)&&armor.IsEquiped===true);
@@ -32,7 +33,7 @@ export function recalculateArmor(raw) {
   const overload=load>capacity*2?3:load>capacity*1.5?2:load>capacity?1:0;
   raw.CarriedWeight=load;raw.CarryCapacity=capacity;
   raw.GRS=equipped.reduce((sum,item)=>sum+Math.max(0,finite(item.Protection)),0);
-  const familiarity=currentCharacterRules(raw)&&specialAbilityLevel(raw,'Rüstungsgewöhnung')>0?1:0;
+  const familiarity=currentRules&&specialAbilityLevel(raw,'Rüstungsgewöhnung')>0?1:0;
   raw.Be=Math.max(0,equipped.reduce((sum,item)=>sum+item.BaseMobilityPenalty,0)-familiarity)+overload;
   return raw;
 }
@@ -45,7 +46,7 @@ export function withArmorState(character,id,field,value) {
     mapNpcFile(raw);
     const armor=raw.Npc.Armors[index];if(!armor)throw new Error('Die Rüstung ist im aktuellen NSC nicht mehr vorhanden.');
     armor.Equipped=value;const focus=characterFocus(character);if(focus!==null)raw.Npc.Focus=focus;
-    return retainCompanionImport(character,retainCompanionChoices(character,retainNpcChoices(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)})));
+    return retainPlayState(character,retainCompanionImport(character,retainCompanionChoices(character,retainNpcChoices(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)}))));
   }
   const armor=list(raw.Armors)[index];
   if(!armor)throw new Error('Die Rüstung ist im aktuellen Charakter nicht mehr vorhanden.');
@@ -54,6 +55,6 @@ export function withArmorState(character,id,field,value) {
   else{armor.IsEquiped=value;if(value)armor.OnPerson=true;}
   const focus=characterFocus(character);
   if(focus!==null){raw.OffDefOffset=focus;raw.OffOffset=focus;raw.DefOffset=-focus;}
-  recalculateArmor(raw);
-  return retainCompanionImport(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)});
+  recalculateArmor(raw,{currentRules:character.characterRulesVersion===1||currentCharacterRules(raw)});
+  return retainPlayState(character,retainCompanionImport(character,{...normalizeCharacter(raw,character.importedAt),sourceJSON:JSON.stringify(raw)}));
 }

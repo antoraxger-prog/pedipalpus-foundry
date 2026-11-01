@@ -1,5 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Spielstand':'Wie geht es?', 'Schriftgröße':'Schrift größer', 'Kräftige Werte':'Zahlen stark', 'Ruhige Zeilenflächen':'Hinter Zahlen ruhig', 'Design für diese Figur merken':'Aussehen für den merken', 'Waffensets':'Waffen zusammen', 'Alle Waffen':'Alle Waffen', 'Meine Spielnotiz':'Mein Merktext', 'Notiz speichern':'Merktext merken', 'Quelldaten verwenden':'Zahlen vom Blatt nehmen',
   'Charakter / NSC / Gefolge importieren':'Blätter und Diener holen', 'Gefolge importieren':'Diener holen', 'Gefolgsdatei oder Einzelpaket':'Blatt mit Dienern', 'Spielwerte und Regeln':'Zahlen und Regeln',
   'Tokenbild erstellt.':'Figurenbild da.', 'Eigenen Rahmen hinzufügen':'Eigenen Ring holen', 'Eigener Rahmen':'Eigener Ring', 'Rahmenbild':'Bild vom Ring', 'Rahmen wird gespeichert …':'Ring wird gemerkt …', 'Rahmen gespeichert.':'Ring gemerkt.', 'Dein eigener Rahmen ist gespeichert.':'Dein Ring ist gemerkt.', 'Transparentes PNG oder WebP mit geschlossenem Rand und freier Mitte. Rechteckige Bilder sind möglich. Neue Rahmen bleiben für spätere Verwendung gespeichert.':'Ring muss zu sein. Mitte muss frei sein. PNG oder WebP. Rechteck geht auch. Ring bleibt für später.',
 

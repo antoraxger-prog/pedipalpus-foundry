@@ -23,6 +23,13 @@ export function compareCharacters(previous, next) {
   const add = (label, oldValue, newValue, type = 'changed') => rows.push({ label, before: printable(oldValue), after: printable(newValue), type });
   if (previous?.profile?.name !== next?.profile?.name) add('Charaktername', previous?.profile?.name, next?.profile?.name);
   if (previous?.sourceVersion !== next?.sourceVersion) add('Dateiversion', previous?.sourceVersion, next?.sourceVersion);
+  for(const name of ['LE','AE','KE']){
+    const oldValue=previous?.resources?.find(row=>row.name===name),newValue=next?.resources?.find(row=>row.name===name);
+    const state=row=>row?`${printable(row.value)} / ${printable(row.max)}`:null;
+    if(state(oldValue)!==state(newValue))add(name,state(oldValue),state(newValue));
+  }
+  const conditions=value=>[...(value?.conditions?.simple??[]).filter(row=>row.active).map(row=>row.name),...(value?.conditions?.complex??[]).filter(row=>row.level).map(row=>`${row.name} ${row.level}`)].sort().join(' · ');
+  if(conditions(previous)!==conditions(next))add('Wirksame Zustände',conditions(previous)||'Keine',conditions(next)||'Keine');
   const oldFocus = characterFocus(previous), newFocus = characterFocus(next);
   if (oldFocus !== newFocus) add('Kampffokus (OFF / DEF)', oldFocus === null ? null : `${oldFocus} / ${-oldFocus}`, newFocus === null ? null : `${newFocus} / ${-newFocus}`);
   for (const key of new Set([...before.keys(), ...after.keys()])) {

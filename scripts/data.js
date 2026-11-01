@@ -2,6 +2,7 @@ import { retinueEntries,companionProbes,COMPANION_GROUPS,COMPANION_ATTRIBUTES,me
 import { combatChecks } from './combat.js';
 import { NPC_FORMAT,mapNpcFile } from './npc.js';
 import { currentCharacterRules,prepareCharacterRules,applyCharacterCheckRules,conditionState } from './character-rules.js';
+import {attachCheckDetails} from './check-details.js';
 export const MODULE_ID = 'pedipalpus-foundry';
 export const FLAG = 'character';
 export const SCHEMA_VERSION = 1;
@@ -63,7 +64,7 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
     const mapped=mapNpcFile(raw),snapshot=normalizeBaseCharacter(mapped.raw,importedAt,true);
     const checks=[...snapshot.checks,...mapped.skillRows,{id:'combat:NpcDodge:0:parry',name:'Ausweichen · Parade',group:'Ausweichen',kind:'combat',value:mapped.dodge,attributes:[],reason:'',fixedCombat:true,combat:{type:'parry',weaponName:'Ausweichen',skillName:'Ausweichen',skillValue:mapped.dodge,baseValue:0,focusValue:0,weaponModifier:0,mobilityPenalty:0}}]
       .map(check=>({...check,sourceFormat:NPC_FORMAT,...(check.npcChoice&&(!check.name.trim()||/[|\r\n]/.test(check.name)||check.name.length>160)?{reason:'Der Probenname ist ungültig.'}:{})}));
-    return {...snapshot,sourceFormat:NPC_FORMAT,sourceVersion:1,npcSchemaVersion:1,profile:{...snapshot.profile,npc:true},checks,warnings:[...snapshot.warnings,...mapped.warnings]};
+    return {...snapshot,sourceFormat:NPC_FORMAT,sourceVersion:1,npcSchemaVersion:1,profile:{...snapshot.profile,npc:true},checks:attachCheckDetails(raw,checks),warnings:[...snapshot.warnings,...mapped.warnings]};
   }
   return normalizeBaseCharacter(raw,importedAt);
 }
@@ -111,6 +112,7 @@ function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false)
   const equipment = [];
   const combat = combatChecks(raw,{npcRules,currentRules});
   checks.push(...combat,...companionProbes(raw,{npcRules}));
+  checks=attachCheckDetails(raw,checks);
   if(currentRules)checks=applyCharacterCheckRules(raw,checks);
   if (combat.some(check => check.reason)) warnings.push('Einige Kampfproben sind unvollständig. Bitte den Charakter in Pedipalpus speichern und erneut importieren.');
   for (const [key, group] of Object.entries(EQUIPMENT_GROUPS)) list(raw[key]).forEach((entry, i) => equipment.push({

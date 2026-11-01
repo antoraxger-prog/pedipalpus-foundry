@@ -37,7 +37,7 @@ class DialogV2 {
         const button = document.createElement('button');
         button.type = 'button'; button.dataset.action = spec.action; button.textContent = spec.label; button.disabled = spec.disabled === true;
         button.addEventListener('click', async event => {
-          try {const answer = spec.callback ? await spec.callback(event, button, dialog) : spec.action; element.remove(); resolve(answer);}
+          try {const answer = spec.callback ? await spec.callback(event, button, dialog) : spec.action; element.remove(); resolve(answer ?? spec.action);}
           catch(error){ui.notifications.error(error.message);}
         });
         element.querySelector('footer').append(button);
@@ -73,8 +73,8 @@ window.foundry = {
     async browse() {return {dirs:['worlds/test-world/pedipalpus-portraits'],files:[]};},
     async upload(_source,path,file) { const target=`${path}/${file.name}`;const response=await fetch(`/preview-upload?path=${encodeURIComponent(target)}`,{method:'POST',body:file});if(!response.ok)throw new Error('Preview upload failed');return {path:target}; }
   }}} },
-  utils: { isNewerVersion: (a, b) => a.localeCompare(b, undefined, { numeric: true }) > 0, escapeHTML: value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) },
-  dice: { Roll: class { constructor(formula) {this.formula=formula;} async evaluate() { this.dice = [{ faces: 20, results: (this.formula === '1d20' ? [10] : [17, 10, 16]).map(result => ({ result })) }]; return this; } } },
+  utils: { randomID:()=>crypto.randomUUID().replaceAll('-','').slice(0,16), isNewerVersion: (a, b) => a.localeCompare(b, undefined, { numeric: true }) > 0, escapeHTML: value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) },
+  dice: { Roll: class { constructor(formula) {this.formula=formula;} async evaluate() { this.dice = [{ faces: 20, results: (this.formula === '1d20' ? [10] : [17, 10, 16]).map(result => ({ result })) }]; return this; } async toMessage(data,options={}){ const message={...data,content:this.formula,testDamage:true};foundry.documents.ChatMessage.applyMode(message,options.messageMode);await foundry.documents.ChatMessage.create(message);return message;} } },
   documents: {
     Macro:{canUserCreate:()=>true,async create(data){const macro={...data,id:`macro-${window.testMacros.length+1}`};window.testMacros.push(macro);return macro;}},
     Actor: { canUserCreate: () => true, async create(data) {

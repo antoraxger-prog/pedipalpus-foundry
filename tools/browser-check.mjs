@@ -257,7 +257,7 @@ try {
   assert.equal(await page.locator('.mock-dialog').count(),0);
   assert.match(await page.evaluate(() => testMessages.at(-1).content), /Rapier/);
   await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root, '../pedipalpus-checks/foundry-ui/kampf-1.5.0.png')});
-  await page.locator('[name="category"]').selectOption('animals');await page.locator('.pp-companion-section > summary').first().click();
+  await page.locator('[name="category"]').selectOption('animals');await page.locator('.pp-companion-section > summary > strong').first().click();
   assert.equal(await page.locator('.pp-check-row:not([hidden])').count(),2);
   await page.locator('.pp-check-row:not([hidden]) [data-action="roll"][data-blind="true"]').first().click();
   await page.waitForFunction(count => testMessages.length === count + 2,messagesBefore);

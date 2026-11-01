@@ -13,11 +13,14 @@ import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
 import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices,withCompanionImport } from './retinue.js';
 import { companionEntries,companionKey,companionActor,saveCompanion,companionTargetState,prepareCompanionImport,verifyCompanionImport,applyCompanionImport } from './companions.js';
-import { characterFiles, readCharacterWithPortrait } from './character-folder.js';
+import { characterFiles, readCharacterWithPortrait,matchCompanionPictures } from './character-folder.js';
 import { tokenStyles, importCustomFrame, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames, savedPortraitFraming, portraitFromActor } from './tokens.js';
 import { writeCharacterBundle } from './bundle.js';
 import {PortraitEditor,portraitEditorHTML,customFrameImportHTML,fillFrameOptions} from './portrait-editor.js';
 import { checkDisplayName } from './ork-talents.js';
+import {rollDamage,damageFormula} from './check-details.js';
+import {retainPlayState} from './play-state.js';
+import {figurePreferences,figureTheme,playStateDialog,infoDialog,weaponSetDialog,activateWeaponSet} from './play-tools.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
 export class PedipalpusApp extends ApplicationV2 {
@@ -81,6 +84,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const actors = visibleActors();
     const actor = actors.find(actor => actor.id === this.actorId) ?? null;
     if (!actor) this.actorId = null;
+    this.theme=figureTheme(this.preferences,this.actorId,savedDesign());
     if(actor?.getFlag(MODULE_ID,'companion')?.sourceActorId||getCharacter(actor)?.profile.retinueOnly)this.mode='battle';
     const current = getCharacter(actor);
     if(this.mode==='full' && !['all','favorites'].includes(this.category)){
@@ -133,11 +137,20 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelector('[name="theme"]')?.addEventListener('change', event => {
       this.theme = THEMES.includes(event.target.value) ? event.target.value : 'fantasy';
       const theme = this.theme;
-      this.designSave = this.designSave.then(() => saveDesign(theme)).catch(error => {
+      this.designSave = this.designSave.then(async() => {
+        const figure=figurePreferences(this.preferences,this.actorId);
+        if(figure.rememberTheme)await this.persist({...this.preferences,figures:{...(this.preferences.figures??{}),[this.actorId]:{...figure,theme}}});
+        else await saveDesign(theme);
+        await this.render({force:true});
+      }).catch(error => {
         console.error(MODULE_ID,error); this.notify('error','Das Design konnte nicht gespeichert werden.');
       });
-      this.render({force:true}).catch(error => console.error(MODULE_ID,error));
     });
+    content.querySelector('[data-weapon-set]')?.addEventListener('change',async event=>{
+      if(this.busy||this.referenceBusy)return;this.busy=true;
+      try{await activateWeaponSet(this,event.target.value);}catch(error){this.notify('error',error.message);}finally{this.busy=false;await this.render({force:true});}
+    });
+    content.querySelectorAll('.pp-companion-quick button').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();}));
     content.querySelector('[name="category"]')?.addEventListener('change', event => {
       this.category = event.target.value;
       this.search = '';
@@ -232,6 +245,7 @@ export class PedipalpusApp extends ApplicationV2 {
   selectActor(id) {
     this.characterChanged=this.actorId!==id;
     this.actorId=id; this.search=''; this.category='all';this.focusError=null;this.modifier=0;this.modifierDirection=1;
+    this.theme=figureTheme(this.preferences,id,savedDesign());
   }
   safePosition(position) {
     const width=Math.max(360,Math.min(Number(position.width)||540,Math.max(360,globalThis.innerWidth||1280)));
@@ -348,6 +362,14 @@ export class PedipalpusApp extends ApplicationV2 {
       if (button.dataset.action === 'breakdown') await this.breakdownDialog(button.dataset.check);
       if (button.dataset.action === 'export') await this.exportBundle();
       if (button.dataset.action === 'diagnostic') await this.diagnosticDialog();
+      if (button.dataset.action === 'playstate') await playStateDialog(this);
+      if (button.dataset.action === 'weapons') await weaponSetDialog(this);
+      if (button.dataset.action === 'info') await infoDialog(this,button.dataset.check);
+      if (button.dataset.action === 'damage') {
+        const check=getCharacter(actor)?.checks.find(row=>row.id===button.dataset.check);
+        if(!check||!clickedCheck||referenceKey(checkReference(check))!==referenceKey(checkReference(clickedCheck)))throw new Error('Die Waffe wurde inzwischen geändert.');
+        await rollDamage(actor,check,token,{blind:button.dataset.blind==='true'});this.sound('roll');
+      }
       if (button.dataset.action === 'roll') {
         this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"], [name="focus"]').forEach(field => { field.disabled = true; });
         let check = reference ? resolveCheck(getCharacter(actor),reference) : getCharacter(actor)?.checks.find(check => check.id === button.dataset.check);
@@ -383,11 +405,15 @@ export class PedipalpusApp extends ApplicationV2 {
         if (field.dataset.action==='preset') field.disabled=!this.actor?.isOwner;
         if (field.dataset.action==='export') field.disabled=!this.actor?.isOwner || !getCharacter(this.actor)?.sourceJSON;
         if (field.dataset.action==='diagnostic') field.disabled=false;
+        if (['weapons','info'].includes(field.dataset.action))field.disabled=false;
+        if(field.dataset.action==='playstate')field.disabled=!this.actor?.isOwner;
+        if(field.dataset.action==='damage'){const check=getCharacter(this.actor)?.checks.find(row=>row.id===field.dataset.check);field.disabled=!this.actor?.isOwner||!check||Boolean(check.reason)||!damageFormula(check.damage);}
       });
       this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = !this.actor?.isOwner; });
       this.element.querySelectorAll('[name="focus"]').forEach(field => { field.disabled = !this.actor?.isOwner; });
       this.element.querySelectorAll('[data-modifier-step]').forEach(field=>{field.disabled=!this.actor?.isOwner;});
       this.element.querySelectorAll('[data-armor]').forEach(field=>{field.disabled=!this.actor?.isOwner||!getCharacter(this.actor)?.sourceJSON||field.dataset.armorField==='equipped'&&field.dataset.armorLocked==='true';});
+      this.element.querySelectorAll('[data-weapon-set]').forEach(field=>{field.disabled=false;});
     }
   }
   async rollReference(actorId, reference, {blind=false,modifier}={}) {
@@ -415,6 +441,10 @@ export class PedipalpusApp extends ApplicationV2 {
     const row=(label,control)=>`<label>${t(label)}${control}</label>`;
     const content=`<div class="pp-preferences">
       ${row('Darstellung der Liste',select('density',[['normal','Normal'],['compact','Kompakt'],['comfortable','Große Knöpfe']]))}
+      ${row('Schriftgröße',select('textScale',[[90,'90 %'],[100,'100 %'],[110,'110 %'],[120,'120 %'],[130,'130 %']]))}
+      ${row('Kräftige Werte',`<input name="highContrast" type="checkbox" ${draft.highContrast?'checked':''}>`)}
+      ${row('Ruhige Zeilenflächen',`<input name="calmRows" type="checkbox" ${draft.calmRows?'checked':''}>`)}
+      ${this.actorId?row('Design für diese Figur merken',`<input name="rememberFigureTheme" type="checkbox" ${figurePreferences(draft,this.actorId).rememberTheme?'checked':''}>`):''}
       ${row('Sprache',select('language',[['theme','Passend zum Design'],['standard','Normal'],['ork','Ork']]))}
       ${row('Animationen',select('animations',[['none','Aus'],['subtle','Dezent'],['full','Lebendig']]))}
       ${row('Soundeffekte',`<input name="sound" type="checkbox" ${draft.sound?'checked':''}>`)}
@@ -430,11 +460,12 @@ export class PedipalpusApp extends ApplicationV2 {
     const answer=await DialogV2.wait({window:{title:this.t('Einstellungen')},classes:this.dialogClasses,position:{width:470},modal:true,rejectClose:false,content,
       buttons:[{action:'save',label:this.t('Speichern'),callback:(_event,_button,dialog)=>{
         const root=dialog.element;
-        return {...draft,density:root.querySelector('[name="density"]').value,language:root.querySelector('[name="language"]').value,
+        return {...draft,textScale:Number(root.querySelector('[name="textScale"]').value),highContrast:root.querySelector('[name="highContrast"]').checked,calmRows:root.querySelector('[name="calmRows"]').checked,
+          figures:{...(draft.figures??{}),...(this.actorId?{[this.actorId]:{...figurePreferences(draft,this.actorId),rememberTheme:root.querySelector('[name="rememberFigureTheme"]').checked,theme:this.theme}}:{})},density:root.querySelector('[name="density"]').value,language:root.querySelector('[name="language"]').value,
           tokenFrame:root.querySelector('[name="tokenFrame"]').value,animations:root.querySelector('[name="animations"]').value,sound:root.querySelector('[name="sound"]').checked,
           volume:Number(root.querySelector('[name="volume"]').value),soundSet:root.querySelector('[name="soundSet"]').value,
           followToken:root.querySelector('[name="followToken"]').checked};
-      }},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      }},{action:'cancel',label:this.t('Abbrechen'),callback:()=>false}],
       render:(_event,dialog)=>{
         const frameStatus=dialog.element.querySelector('[data-frame-status]');
         dialog.element.querySelector('[name="customFrameFile"]').addEventListener('change',async event=>{
@@ -479,7 +510,7 @@ export class PedipalpusApp extends ApplicationV2 {
         const entries=dialog.element.querySelector('[name="presets"]').value.split('\n').map(line=>line.trim()).filter(Boolean);
         if(entries.length>24)throw new Error('Höchstens 24 Vorlagen verwenden.');
         return entries.map((line,index)=>{const match=line.match(/^(.{1,80}?)\s*\|\s*(-?\d+)$/);if(!match||!Number.isSafeInteger(Number(match[2])))throw new Error('Vorlage im Format Name | ganze Zahl eingeben.');return {id:`preset-${index}`,label:match[1].trim(),modifier:Number(match[2])};});
-      }},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}]});
+      }},{action:'cancel',label:this.t('Abbrechen'),callback:()=>false}]});
     if(answer===null)return;
     await this.persist({...this.preferences,presets:answer});await this.render({force:true});this.feedback('saved','Vorlagen gespeichert.');
   }
@@ -532,6 +563,7 @@ export class PedipalpusApp extends ApplicationV2 {
     let readSequence = 0;
     let lastRead=null;
     let importKind=getCharacter(this.actor)?.profile.retinueOnly?'retinue':getCharacter(this.actor)?.sourceFormat===NPC_FORMAT?'npc':'character';
+    const companionPictures=new Map();
     this.importFolders??={};this.importSelections??={};
     const answer = await DialogV2.wait({
       window: { title: this.t('Charakter / NSC / Gefolge importieren') }, position: { width: 550 },
@@ -543,14 +575,21 @@ export class PedipalpusApp extends ApplicationV2 {
           const ownerId=dialog.element.querySelector('[name="ownerId"]')?.value||'';ownerAssignment(ownerId);
           const companionPlan=includeCompanions?prepareCompanionImport(pending,actorId,Array.from(dialog.element.querySelectorAll('[data-companion-import-index]')).map(field=>({index:Number(field.dataset.companionImportIndex),targetId:field.value}))):[];
           if (includeImages&&(portraitBusy || portraitError)) throw new Error('Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.');
-          return { snapshot: pending, portrait:includeImages?portrait:null, includeImages,includeCompanions,companionPlan,ownerId,source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
-        } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => null }],
+          return { snapshot: pending, portrait:includeImages?portrait:null, companionPictures:includeImages&&includeCompanions?Array.from(companionPictures.values()):[], includeImages,includeCompanions,companionPlan,ownerId,source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
+        } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => false }],
       render: (_event, dialog) => {
         localizeDialog(dialog.element,this.theme);
         const destination=dialog.element.querySelector('[name="destination"]');
         const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled; };
         const images=dialog.element.querySelector('[name="includeImages"]'),companions=dialog.element.querySelector('[name="includeCompanions"]'),companionOptions=dialog.element.querySelector('[data-companion-import-options]');
-        const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending&&!(pending.profile.retinueOnly&&pending.profile.companionGroup)?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.theme);};
+        const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending&&!(pending.profile.retinueOnly&&pending.profile.companionGroup)?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.theme);
+          companionOptions.querySelectorAll('[data-companion-picture-index]').forEach(field=>field.addEventListener('change',()=>{const index=Number(field.dataset.companionPictureIndex),file=field.files?.[0];if(!file){companionPictures.delete(index);return;}companionPictures.set(index,{index,key:companionKey(pending,index),file});const select=companionOptions.querySelector(`[data-companion-import-index="${index}"]`);if(!select.value&&Array.from(select.options).some(row=>row.value==='new'))select.value='new';dialog.element.querySelector('[data-companion-picture-status]').textContent=`${companionPictures.size} Begleiterbilder zugeordnet.`;}));
+        };
+        dialog.element.querySelector('[name="companionPictures"]').addEventListener('change',event=>{
+          if(!pending)return;
+          try{const matches=matchCompanionPictures(companionEntries(pending),event.target.files);for(const match of matches){companionPictures.set(match.index,{...match,key:companionKey(pending,match.index)});const select=companionOptions.querySelector(`[data-companion-import-index="${match.index}"]`);if(select&&!select.value&&Array.from(select.options).some(row=>row.value==='new'))select.value='new';}dialog.element.querySelector('[data-companion-picture-status]').textContent=matches.length?matches.map(row=>`${companionEntries(pending)[row.index].Name}: ${row.file.name}`).join(' · '):'Kein eindeutiger Dateiname passt. Bilder unten einzeln zuordnen.';}
+          catch(error){dialog.element.querySelector('[data-companion-picture-status]').textContent=error.message;}
+        });
         destination.addEventListener('change',()=>{syncButton();renderCompanions();});companions.addEventListener('change',()=>{companionOptions.hidden=!companions.checked;});
         const imageInput = dialog.element.querySelector('[name="portraitFile"]');
         imageInput.addEventListener('change', async () => {
@@ -568,7 +607,7 @@ export class PedipalpusApp extends ApplicationV2 {
           finally { if (sequence === portraitSequence) { portraitBusy = false; syncButton(); } }
         });
         const folderContext=kind=>this.importFolders[kind]??this.importFolders[kind==='npc'?'character':'npc']??null;
-        const resetSelection=(clearImage=false)=>{
+        const resetSelection=(clearImage=false)=>{companionPictures.clear();dialog.element.querySelector('[data-companion-picture-status]').textContent='';
           ++readSequence;pending=null;pendingSource=null;lastRead=null;companionOptions.innerHTML='';portraitPackaged=null;portrait=portraitManual;
           if(clearImage){++portraitSequence;portraitManual=null;portrait=null;portraitBusy=false;portraitError=false;imageInput.value='';}
           dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(portrait?`Bild ausgewählt: ${portrait.file.name}`:'Kein Bild ausgewählt. Vorhandene Foundry-Bilder bleiben erhalten.');
@@ -711,19 +750,33 @@ export class PedipalpusApp extends ApplicationV2 {
     if(!includeImages)answer.portrait=null;
     if(previous){
       const differences=compareCharacters(previous,answer.snapshot);
-      if(differences.length){
+      if(differences.length||previous.localState){
         const e=escapeHTML,canKeepFocus=characterFocus(previous)!==null&&characterFocus(answer.snapshot)!==null;
         const accepted=await DialogV2.wait({window:{title:this.t('Import vergleichen')},classes:this.dialogClasses,position:{width:600},modal:true,rejectClose:false,
           content:`<p>${e(this.t('Diese Änderungen werden übernommen:'))}</p><div class="pp-import-diff"><table><thead><tr><th>${e(this.t('Probe'))}</th><th>${e(this.t('Bisher'))}</th><th>${e(this.t('Neu'))}</th></tr></thead><tbody>${differences.slice(0,200).map(row=>`<tr><td>${e(row.label)}${row.type==='ambiguous'?` · ${e(this.t('Mehrdeutig'))}`:''}</td><td>${e(row.before)}</td><td>${e(row.after)}</td></tr>`).join('')}</tbody></table>${differences.length>200?`<p>${differences.length-200} ${e(this.t('weitere Änderungen.'))}</p>`:''}</div>${canKeepFocus?`<label><input type="checkbox" name="keepFocus">${e(this.t('Aktuellen Foundry-Fokus behalten'))}</label>`:''}`,
-          buttons:[{action:'accept',label:this.t('Übernehmen'),callback:(_ev,_button,dialog)=>({keepFocus:dialog.element.querySelector('[name="keepFocus"]')?.checked})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}]});
+          buttons:[{action:'accept',label:this.t('Übernehmen'),callback:(_ev,_button,dialog)=>({keepFocus:dialog.element.querySelector('[name="keepFocus"]')?.checked,keepConditions:dialog.element.querySelector('[name="keepLocalConditions"]')?.checked,keepResources:dialog.element.querySelector('[name="keepLocalResources"]')?.checked,keepOffHand:dialog.element.querySelector('[name="keepLocalOffHand"]')?.checked})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>false}],
+          render:(_event,dialog)=>{
+            if(!previous.localState)return;
+            const fieldset=document.createElement('fieldset');fieldset.className='pp-local-conflicts';
+            fieldset.innerHTML='<legend>Foundry-Spielstand beim Import</legend><p>Angehakt: Foundry-Änderungen behalten. Ohne Haken: Werte dieser Datei übernehmen. Entfernte oder mehrdeutige Begleiter werden nicht neu zugeordnet.</p>'+[['conditions','keepLocalConditions','Lokale Zustände und Unterdrückung'],['resources','keepLocalResources','Lokale LE / AE / KE'],['offHand','keepLocalOffHand','Gewählte Nebenhand']].filter(([key])=>previous.localState[key]!==undefined).map(([,name,label])=>`<label><input type="checkbox" name="${name}" checked> ${label} behalten</label>`).join('');
+            dialog.element.querySelector('.pp-import-diff').after(fieldset);
+          }});
         if(!accepted)return;
+        if(previous.localState)answer.snapshot=retainPlayState(previous,answer.snapshot,{conditions:accepted.keepConditions===true,resources:accepted.keepResources===true,offHand:accepted.keepOffHand===true});
         if(accepted.keepFocus)answer.snapshot=withFocus(answer.snapshot,characterFocus(previous));
       }
+    }
+    const preparedCompanionPictures={};
+    if(includeImages&&includeCompanions)for(const row of answer.companionPictures??[]){
+      if(companionKey(answer.snapshot,row.index)!==row.key)throw new Error('Die Bildzuordnung wurde inzwischen geändert.');
+      if(!plan.some(target=>target.key===row.key))throw new Error('Für ein ausgewähltes Begleiterbild fehlt das Token-Ziel.');
+      const target=game.actors.get(plan.find(target=>target.key===row.key).targetId);
+      preparedCompanionPictures[row.key]=await prepareTokenPortrait(await preparePortrait(row.file),answer.tokenFrame,savedPortraitFraming(target)??undefined);
     }
     if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame,previousFraming??undefined);
     if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
     const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId,portraitExpected});
-    if(includeCompanions)await applyCompanionImport(actor,plan,{includeImages,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
+    if(includeCompanions)await applyCompanionImport(actor,plan,{includeImages,portraits:preparedCompanionPictures,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
     this.selectActor(actor.id);
     await this.persist({...this.preferences,actorId:actor.id,category:'all'});
     await this.render({ force: true });
@@ -746,7 +799,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const attrs=root?character.attributes:memberAttributes(member),e=escapeHTML,choice=check.companionAbility??{...check.npcChoice,name:check.name},keys=choice.keys??[],npcRules=root||check.npcRules;
     const answer=await DialogV2.wait({window:{title:this.t(root?'NSC-Probe':'Gefolgsprobe')},classes:this.dialogClasses,position:{width:460},modal:true,rejectClose:false,
       content:`<p>${e(member.Name)} · ${e(choice.name)} · PW ${e(check.value)}</p>${[0,1,2].map(index=>`<label>${index+1}. ${e(this.t('Attribut'))}<select name="companionAttribute${index}"><option value="">${e(this.t('Attribut auswählen …'))}</option>${attrs.map(attr=>`<option value="${attr.short}" ${keys[index]===attr.short?'selected':''}>${e(attr.name)} ${e(attr.value)}</option>`).join('')}</select></label>`).join('')}<label>${e(this.t('Probenname'))}<input name="companionCheckName" maxlength="100" value="${e(choice.name)}"></label>${npcRules?`<p>${e(this.t('Zwei gleiche Attribute sind erlaubt; alle drei dürfen nicht gleich sein.'))}</p>`:''}`,
-      buttons:[{action:'companion-check',label:this.t('Würfeln'),disabled:keys.length!==3,callback:(_event,_button,dialog)=>({keys:[0,1,2].map(index=>dialog.element.querySelector(`[name="companionAttribute${index}"]`).value),name:dialog.element.querySelector('[name="companionCheckName"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>null}],
+      buttons:[{action:'companion-check',label:this.t('Würfeln'),disabled:keys.length!==3,callback:(_event,_button,dialog)=>({keys:[0,1,2].map(index=>dialog.element.querySelector(`[name="companionAttribute${index}"]`).value),name:dialog.element.querySelector('[name="companionCheckName"]').value})},{action:'cancel',label:this.t('Abbrechen'),callback:()=>false}],
       render:(_event,dialog)=>{
         localizeDialog(dialog.element,this.theme);
         const update=()=>{const values=Array.from(dialog.element.querySelectorAll('select')).map(field=>field.value);dialog.element.querySelector('[data-action="companion-check"]').disabled=values.some(value=>!value)||npcRules&&new Set(values).size<2;};
