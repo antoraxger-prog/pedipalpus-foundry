@@ -22,6 +22,7 @@ import {rollDamage,damageFormula} from './check-details.js';
 import {retainPlayState} from './play-state.js';
 import {figurePreferences,figureTheme,playStateDialog,infoDialog,weaponSetDialog,activateWeaponSet} from './play-tools.js';
 import {searchTerms,matchesSearch,handleProbeKeys} from './search.js';
+import {captureViewState,restoreViewState} from './view-state.js';
 
 const { ApplicationV2, DialogV2 } = foundry.applications.api;
 export class PedipalpusApp extends ApplicationV2 {
@@ -58,6 +59,16 @@ export class PedipalpusApp extends ApplicationV2 {
   get token() {
     return canvas.tokens?.controlled?.map(placeable => placeable.document)
       .find(token => token.actorId === this.actorId && token.actorLink) ?? null;
+  }
+  async render(...args){
+    const sequence=this.viewRenderSequence=(this.viewRenderSequence??0)+1;
+    const state=captureViewState(this.element)??this.pendingViewState;
+    this.pendingViewState=state;
+    try{
+      const result=await super.render(...args);
+      if(sequence===this.viewRenderSequence)restoreViewState(this.element,state);
+      return result;
+    }finally{if(sequence===this.viewRenderSequence)this.pendingViewState=null;}
   }
   async open(actorId = null) {
     if((this.busy || this.referenceBusy) && actorId && actorId!==this.actorId)throw new Error('Bitte die laufende Aktion abwarten.');
@@ -347,6 +358,7 @@ export class PedipalpusApp extends ApplicationV2 {
   }
   async onAction(button, {reserved=false,reference=null}={}) {
     if (this.busy || this.referenceBusy && !reserved) return;
+    const actionViewState=captureViewState(this.element);
     this.busy = true;
     button.disabled = true;
     const actor=this.actor, token=this.token;
@@ -442,6 +454,7 @@ export class PedipalpusApp extends ApplicationV2 {
       this.element.querySelectorAll('[data-modifier-step]').forEach(field=>{field.disabled=!this.actor?.isOwner;});
       this.element.querySelectorAll('[data-armor]').forEach(field=>{field.disabled=!this.actor?.isOwner||!getCharacter(this.actor)?.sourceJSON||field.dataset.armorField==='equipped'&&field.dataset.armorLocked==='true';});
       this.element.querySelectorAll('[data-weapon-set]').forEach(field=>{field.disabled=false;});
+      restoreViewState(this.element,actionViewState,{focusOnly:true});
     }
   }
   async rollReference(actorId, reference, {blind=false,modifier}={}) {

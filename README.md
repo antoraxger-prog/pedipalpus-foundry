@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.9.8
+# Pedipalpus – Proben · 1.9.9
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.9.8 sichert den Charakterwechsel bei Speicherfehlern ab und erleichtert Suche und Tastaturbedienung. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.9.9 hält die laufende Ansicht bei Aktualisierungen ruhiger: Listenposition, Suchfokus und zugeklappte Schnellleiste bleiben erhalten. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Ruhigere Aktualisierungen in 1.9.9
+
+Bei Aktualisierungen derselben Figur und Ansicht bleiben Listenposition, Suchfokus und Textmarkierung erhalten. Eine manuell zugeklappte Schnellleiste bleibt dabei geschlossen. Nach dem Ändern eines Favoriten kann die Tastaturbedienung an diesem Knopf weitergehen, ohne dass die Liste zum Anfang springt.
+
+Ein unverändert vorhandener Würfelknopf kann seinen Fokus nach einer Aktualisierung behalten; die Wiederherstellung löst keinen Wurf aus. Ist an der alten Stelle eine andere Fähigkeit eingetragen, wird sie nicht als bisherige Probe behandelt. Stattdessen führt der Fokus zur Suche zurück. Geöffnete Dialoge und eine inzwischen bewusst gewählte andere Eingabe behalten ihren Fokus.
+
+Die Wiederherstellung gilt nur für dieselbe Figur, denselben Bereich und denselben Suchtext. Die Merkhilfe gilt für die laufende Oberfläche und schreibt keine Charakterwerte oder zusätzlichen persönlichen Einstellungen. Kein erneuter Import erforderlich.
 
 ## Suche, Tastatur und Charakterwechsel in 1.9.8
 
