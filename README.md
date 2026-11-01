@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.0
+# Pedipalpus – Proben · 1.11.1
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.0 merkt die Ansicht beim Wechsel zwischen Proben und Kampf und ergänzt einen Rückweg aus leeren Suchergebnissen sowie weitere Tastaturhilfen. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.1 verhindert überholte Schadenswürfe und prüft NSC-/Begleiterproben nach dem Speichern der Attributwahl erneut. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Laufende Würfe absichern in 1.11.1
+
+Ändert sich eine Waffe oder ihre Schadensformel während eines laufenden Schadenswurfs, wird die alte Nachricht nicht mehr gesendet. Das gilt auch, wenn die Waffe entfernt oder ihre Probe inzwischen gesperrt wurde. Nach dem Hinweis kann mit einem neuen Klick der aktuelle Schaden gewürfelt werden. Eine währenddessen geänderte Token-Zuordnung oder ein aus der Szene entfernter Token stoppt ebenfalls die alte Schadensnachricht. Eine Änderung ohne Einfluss auf diese Waffe blockiert den Wurf nicht.
+
+Auch während einer noch laufenden Fokusspeicherung werden die ursprünglich angeklickten Schadenswerte festgehalten und vor dem Auswerten erneut geprüft. Ein Schadenswurf verbraucht weiterhin keinen Modifikator für die nächste Probe.
+
+NSC- und Begleiterproben prüfen nach dem Speichern der gewählten Attribute noch einmal Werte, Besitzerrechte, Figur und gegebenenfalls Hauptcharakter/Zuordnung. Zwischenzeitlich geänderte Daten werden nicht für einen veralteten Wurf verwendet. Bereits gespeicherte Attributwahlen können dabei erhalten bleiben; neuere Daten werden nicht zurückgerollt. Die unveränderte Würfelanbindung bleibt bestehen.
+
+Kein Neuimport oder Datenumbau nötig.
 
 ## Weniger neu suchen in 1.11.0
 

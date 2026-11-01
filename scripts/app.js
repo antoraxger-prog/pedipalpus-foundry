@@ -378,6 +378,7 @@ export class PedipalpusApp extends ApplicationV2 {
     this.element.querySelectorAll('[name="actor"], [name="theme"]').forEach(field=>{field.disabled=true;});
     this.element.querySelectorAll('[name="focus"]').forEach(field => { field.disabled = true; });
     try {
+      const clickedDamage=button.dataset.action==='damage'&&clickedCheck?JSON.stringify([referenceKey(checkReference(clickedCheck)),damageFormula(clickedCheck.damage)]):null;
       await this.focusSave;
       if(['roll','damage'].includes(button.dataset.action)){const issue=companionRollIssue(actor);if(issue)throw new Error(issue);}
       if (this.focusError && button.dataset.action === 'roll') throw this.focusError;
@@ -417,8 +418,15 @@ export class PedipalpusApp extends ApplicationV2 {
       if (button.dataset.action === 'info') await infoDialog(this,button.dataset.check);
       if (button.dataset.action === 'damage') {
         const check=getCharacter(actor)?.checks.find(row=>row.id===button.dataset.check);
-        if(!check||!clickedCheck||referenceKey(checkReference(check))!==referenceKey(checkReference(clickedCheck)))throw new Error('Die Waffe wurde inzwischen geändert.');
-        await rollDamage(actor,check,token,{blind:button.dataset.blind==='true',verify:()=>{const issue=companionRollIssue(actor);if(issue)throw new Error(issue);if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');}});this.sound('roll');
+        const verifyDamage=()=>{
+          const issue=companionRollIssue(actor);if(issue)throw new Error(issue);
+          if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');
+          const current=getCharacter(actor)?.checks.find(row=>row.id===button.dataset.check);
+          if(!current||!clickedDamage||JSON.stringify([referenceKey(checkReference(current)),damageFormula(current.damage)])!==clickedDamage)throw new Error('Die Waffe oder ihre Schadenswerte wurden inzwischen geändert. Bitte erneut würfeln.');
+          if(current.reason)throw new Error(current.reason);
+        };
+        verifyDamage();
+        await rollDamage(actor,check,token,{blind:button.dataset.blind==='true',verify:verifyDamage});this.sound('roll');
       }
       if (button.dataset.action === 'roll') {
         this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"], [name="focus"]').forEach(field => { field.disabled = true; });
@@ -869,16 +877,20 @@ export class PedipalpusApp extends ApplicationV2 {
         dialog.element.querySelectorAll('select').forEach(field=>field.addEventListener('change',update));update();
       }});
     if(!answer)return null;
-    const currentIssue=companionRollIssue(actor);if(currentIssue)throw new Error(currentIssue);
-    if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');
-    if(linkState()!==expectedLink)throw new Error('Die Begleiterzuordnung wurde inzwischen geändert. Bitte die Probe erneut öffnen.');
-    if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
-    const fresh=getCharacter(actor),now=fresh?.checks.find(entry=>entry.id===check.id);
-    if(JSON.stringify(fresh)!==expected||sourceState()!==expectedSource||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
+    const verify=expectedState=>{
+      const currentIssue=companionRollIssue(actor);if(currentIssue)throw new Error(currentIssue);
+      if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt. Bitte erneut auswählen.');
+      if(linkState()!==expectedLink)throw new Error('Die Begleiterzuordnung wurde inzwischen geändert. Bitte die Probe erneut öffnen.');
+      if(!actor.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+      const fresh=getCharacter(actor),now=fresh?.checks.find(entry=>entry.id===check.id);
+      if(JSON.stringify(fresh)!==expectedState||sourceState()!==expectedSource||!now||referenceKey(checkReference(now))!==referenceKey(checkReference(check)))throw new Error('Die Probe wurde inzwischen geändert. Bitte erneut auswählen.');
+      return fresh;
+    };
+    const fresh=verify(expected);
     const label=answer.name.trim()||choice.name,name=(root?label:`${member.Name} – ${label}`).trim();
     if(/[|\r\n]/.test(name)||name.length>160)throw new Error('Der Probenname ist zu lang oder enthält ungültige Zeichen.');
     const updated=root?withNpcAttributes(fresh,check.id,answer.keys):withCompanionAttributes(fresh,check.id,answer.keys);
-    if(!root||check.npcChoice.remember)await actor.setFlag(MODULE_ID,'character',updated);
+    if(!root||check.npcChoice.remember){const expectedUpdated=JSON.stringify(updated);await actor.setFlag(MODULE_ID,'character',updated);verify(expectedUpdated);}
     return {...updated.checks.find(entry=>entry.id===check.id),name};
   }
   async editPortrait(actor,{title='Charakterbild importieren',style=this.preferences.tokenFrame,action='image',label='Bild übernehmen'}={}){

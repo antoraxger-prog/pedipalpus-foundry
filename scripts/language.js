@@ -1,5 +1,7 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Die Waffe oder ihre Schadenswerte wurden inzwischen geändert. Bitte erneut würfeln.':'Waffe oder Aua-Zahlen anders. Noch mal würfeln.',
+  'Der Token gehört nicht mehr zu diesem Charakter oder wurde entfernt.':'Figur gehört wem anders oder ist weg.',
   'Alle Proben anzeigen':'Alles Können zeigen',
   'Mehrere Wörter; Umlaute auch als ae/oe/ue oder a/o/u. Strg+F zur Suche, Pfeiltasten zu Proben, Pos1/Ende zur ersten/letzten Probe, Esc zurück.':'Mehr Wörter gehen. Umlaute ohne Punkte gehen auch. Strg+F suchen. Pfeile wählen. Pos1 ganz vorn. Ende ganz hinten. Esc zurück.',
   'Letztes gültiges Bild':'Letztes heiles Gesicht', 'Letztes gültiges Bild wiederhergestellt.':'Heiles Gesicht wieder da.',

@@ -33,11 +33,13 @@ export function damageFormula(value){
 export async function rollDamage(actor,check,token=null,{blind=false,verify=()=>{}}={}){
  if(!actor?.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
  if(check?.reason)throw new Error(check.reason);
- if(token&&(!token.actorLink||token.actorId!==actor.id))throw new Error('Der Token gehört nicht zu diesem Charakter.');
+ const verifyToken=()=>{if(token&&(!token.actorLink||token.actorId!==actor.id||token.parent?.tokens?.get&&token.parent.tokens.get(token.id)!==token))throw new Error('Der Token gehört nicht mehr zu diesem Charakter oder wurde entfernt.');};
+ verifyToken();
  const formula=damageFormula(check?.damage);if(!formula)throw new Error('Die Schadensformel ist nicht eindeutig würfelbar.');
  const speaker=token?foundry.documents.ChatMessage.getSpeaker({actor,token,scene:token.parent}):{actor:actor.id,alias:actor.name};
  const roll=new foundry.dice.Roll(formula);await roll.evaluate();
  if(!actor.isOwner)throw new Error('Zum Würfeln werden Besitzerrechte benötigt.');
+ verifyToken();
  verify();
  return roll.toMessage({speaker,flavor:`Schaden: ${String(check.combat?.weaponName??check.name).replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]))}`},{messageMode:blind?'blind':undefined});
 }
