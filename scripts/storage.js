@@ -3,7 +3,7 @@ import { uploadPortrait, applyPortrait, framingFor } from './portraits.js';
 import { withArmorState } from './equipment.js';
 import { isCompanionCheck,COMPANION_GROUPS } from './retinue.js';
 import { withFocus } from './combat.js';
-import {withPlayState} from './play-state.js';
+import {withPlayState,compactLocalState} from './play-state.js';
 
 export const getCharacter = actor => {
   const value = actor?.getFlag(MODULE_ID, FLAG);
@@ -30,7 +30,7 @@ export async function savePlayState(actor,state,expected){
  if(!actor?.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Ändern des Spielstands werden Besitzerrechte benötigt.');
  const before=getCharacter(actor);
  if(!before||JSON.stringify(before)!==expected)throw new Error('Die Daten wurden inzwischen geändert. Bitte den Spielstand erneut öffnen.');
- const next=withPlayState(before,state);
+ const next=withPlayState(before,compactLocalState(before,state));
  if(JSON.stringify(getCharacter(actor))!==expected)throw new Error('Die Daten wurden inzwischen geändert. Bitte erneut öffnen.');
  await actor.setFlag(MODULE_ID,FLAG,next);
  const {refreshCompanions}=await import('./companions.js');

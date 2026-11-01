@@ -208,3 +208,10 @@
 .pedipalpus-dialog .pp-state-row input[type="number"] { width:62px; }
 .pedipalpus-dialog .pp-local-conflicts { border:1px solid var(--pp-border,#9c885f); margin:8px 0; padding:8px; }
 @container (max-width:460px) { .pedipalpus-app .pp-info-button { margin-left:0; } .pedipalpus-app .pp-damage-actions { margin-left:3px; } }
+.pedipalpus-app .pp-fold-controls { display:inline-flex; gap:3px; }
+.pedipalpus-app .pp-fold-controls button { min-width:25px; padding:1px 5px; }
+.pedipalpus-app .pp-root button.pp-companion-energy { width:auto; min-height:20px; padding:0 3px; border:0; background:none; color:inherit; box-shadow:none; font-size:11px; text-decoration:underline; text-underline-offset:2px; }
+.pedipalpus-app .pp-root button.pp-companion-energy:hover:not(:disabled) { outline:1px solid var(--pp-accent); }
+.pedipalpus-dialog .pp-energy-editor { display:inline-flex; align-items:center; gap:4px; margin:3px 5px; max-width:100%; }
+.pedipalpus-dialog .pp-energy-editor input[type="number"] { width:90px; min-width:50px; max-width:100%; }
+.pedipalpus-dialog .pp-energy-editor button { width:28px; min-width:28px; min-height:28px; padding:2px; margin:0; }

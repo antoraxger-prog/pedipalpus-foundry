@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.6.0
+# Pedipalpus – Proben · 1.9.0
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.6.0 ergänzt den direkten Import vorbereiteter Gefolgsdateien, Reaktionsproben und aufklappbare Spielwerte und Regeltexte für Begleiter. Vorhandene Charakter- und NSC-Importe bleiben getrennt.
+1.9.0 vereinfacht Begleiterenergien und lange Gefolgslisten. Beim erneuten Import werden nur tatsächlich abweichende Spielwerte festgehalten. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Begleiter und Aktualisierung ab 1.9.0
+
+Im Kampfbereich öffnet ein Klick auf die **LE eines Begleiters** direkt dessen Energien. **Plus und Minus** ändern zunächst den Entwurf; erst **Speichern** übernimmt die Werte. **Abbrechen** verwirft den Entwurf. **Quelldaten verwenden** setzt dort ausschließlich die Energien dieses Begleiters zurück. Dafür werden Besitzerrechte am Hauptcharakter benötigt.
+
+Bei mehreren Begleitern klappen zwei kleine Pfeilknöpfe alle Abschnitte auf oder zu. Beim gemeinsamen Zuklappen wird eine laufende Suche geleert, damit deren Treffer die Abschnitte nicht sofort wieder öffnen. Die nächste Erschwernis bleibt erhalten.
+
+Der Foundry-Spielstand speichert nur Abweichungen zur importierten Quelle: Wer nur LE ändert, hält beim nächsten Import keine unveränderten AE oder andere Begleiterwerte fest. Bei Zuständen werden Stufe, Aktivierung und Unterdrückung getrennt behandelt. Eine lokal geänderte Unterdrückung hält daher keine unveränderte Zustandsstufe fest. Neue Zustände aus der aktualisierten Datei bleiben erhalten. Vollständige Spielstände aus 1.8.0 werden beim nächsten Speichern oder Behalten entsprechend reduziert; das bloße Öffnen oder unveränderte Speichern eines Dialogs schreibt keine neuen Charakterdaten. Die bisherigen Importauswahlen zum Behalten gelten weiterhin.
+
+Die Begleiterauswertung verwendet einen Zwischenspeicher je importiertem Datenstand. Suche und Gruppensichtbarkeit vermeiden wiederholte Durchläufe durch dieselben Zeilen. Das ändert weder Probenwerte noch die Quelldatei, Bilder oder Token-Zuordnungen.
 
 ## Spielkomfort ab 1.8.0
 

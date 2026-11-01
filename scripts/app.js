@@ -150,7 +150,7 @@ export class PedipalpusApp extends ApplicationV2 {
       if(this.busy||this.referenceBusy)return;this.busy=true;
       try{await activateWeaponSet(this,event.target.value);}catch(error){this.notify('error',error.message);}finally{this.busy=false;await this.render({force:true});}
     });
-    content.querySelectorAll('.pp-companion-quick button').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();}));
+    content.querySelectorAll('.pp-companion-quick button,.pp-companion-energy').forEach(button=>button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();}));
     content.querySelector('[name="category"]')?.addEventListener('change', event => {
       this.category = event.target.value;
       this.search = '';
@@ -292,17 +292,20 @@ export class PedipalpusApp extends ApplicationV2 {
     content.querySelector('[data-inventory="armors"]')?.toggleAttribute('hidden',!armorView);
     let count = 0;
     const scales = new Set();
-    content.querySelectorAll('.pp-check-row').forEach(row => {
+    const allRows=Array.from(content.querySelectorAll('.pp-check-row'));
+    allRows.forEach(row => {
       row.hidden = query ? !row.dataset.search.includes(query) : this.mode==='ring' ? false : this.category === 'favorites' ? row.dataset.favorite !== 'true'
         : this.category === 'recent' ? row.dataset.recent !== 'true' : this.category !== 'all' && row.dataset.category !== this.category;
       if (!row.hidden) { count++; scales.add(row.dataset.scale); }
     });
+    const visibleIds=new Set(allRows.filter(row=>!row.hidden).map(row=>row.dataset.checkId));
     content.querySelectorAll('.pp-weapon-header,.pp-talent-header').forEach(header => {
       const ids=JSON.parse(header.dataset.checkIds || '[]');
-      header.hidden=!Array.from(content.querySelectorAll('.pp-check-row')).some(row => ids.includes(row.dataset.checkId) && !row.hidden);
+      header.hidden=!ids.some(id=>visibleIds.has(id));
     });
-    content.querySelectorAll('.pp-talent-child').forEach(row=>row.classList.remove('pp-talent-first','pp-talent-last'));
-    content.querySelectorAll('.pp-talent-header:not([hidden])').forEach(header=>{const rows=Array.from(content.querySelectorAll('.pp-talent-child')).filter(row=>!row.hidden&&row.dataset.talentGroup===header.dataset.talentGroup);rows[0]?.classList.add('pp-talent-first');rows.at(-1)?.classList.add('pp-talent-last');});
+    const talents=new Map();
+    allRows.filter(row=>row.classList.contains('pp-talent-child')).forEach(row=>{row.classList.remove('pp-talent-first','pp-talent-last');if(!row.hidden){const key=row.dataset.talentGroup;if(!talents.has(key))talents.set(key,[]);talents.get(key).push(row);}});
+    content.querySelectorAll('.pp-talent-header:not([hidden])').forEach(header=>{const rows=talents.get(header.dataset.talentGroup)??[];rows[0]?.classList.add('pp-talent-first');rows.at(-1)?.classList.add('pp-talent-last');});
     content.querySelectorAll('[data-companion-section]').forEach(section=>{
       const card=section.querySelector('[data-companion-card]'),rows=Array.from(section.querySelectorAll('.pp-check-row'));
       const match=Boolean(query&&card.dataset.search.includes(query));
@@ -319,8 +322,14 @@ export class PedipalpusApp extends ApplicationV2 {
     const empty = content.querySelector('.pp-no-results');
     if (empty) empty.hidden = count > 0 || visibleMembers > 0;
     const focus = content.querySelector('.pp-focus');
-    if (focus) focus.hidden = !Array.from(content.querySelectorAll('.pp-check-row')).some(row => !row.hidden && row.dataset.category === 'combat');
+    if (focus) focus.hidden = !allRows.some(row => !row.hidden && row.dataset.category === 'combat');
     content.querySelectorAll('.pp-rank-legend').forEach(legend => { legend.hidden = !scales.has(legend.dataset.scale); });
+  }
+  foldCompanions(open){
+    this.companionOpen??=new Map();
+    if(!open){this.search='';const search=this.element.querySelector('[name="search"]');if(search)search.value='';}
+    this.element.querySelectorAll('[data-companion-section]').forEach(section=>this.companionOpen.set(JSON.stringify([this.actorId,section.dataset.companionSection]),open));
+    this.filterChecks();
   }
   async onAction(button, {reserved=false,reference=null}={}) {
     if (this.busy || this.referenceBusy && !reserved) return;
@@ -363,6 +372,9 @@ export class PedipalpusApp extends ApplicationV2 {
       if (button.dataset.action === 'export') await this.exportBundle();
       if (button.dataset.action === 'diagnostic') await this.diagnosticDialog();
       if (button.dataset.action === 'playstate') await playStateDialog(this);
+      if (button.dataset.action === 'companion-state') await playStateDialog(this,{memberKey:button.dataset.memberState});
+      if (button.dataset.action === 'expand-companions') this.foldCompanions(true);
+      if (button.dataset.action === 'collapse-companions') this.foldCompanions(false);
       if (button.dataset.action === 'weapons') await weaponSetDialog(this);
       if (button.dataset.action === 'info') await infoDialog(this,button.dataset.check);
       if (button.dataset.action === 'damage') {
@@ -407,6 +419,8 @@ export class PedipalpusApp extends ApplicationV2 {
         if (field.dataset.action==='diagnostic') field.disabled=false;
         if (['weapons','info'].includes(field.dataset.action))field.disabled=false;
         if(field.dataset.action==='playstate')field.disabled=!this.actor?.isOwner;
+        if(field.dataset.action==='companion-state')field.disabled=!this.actor?.isOwner||field.dataset.identityValid!=='true';
+        if(['expand-companions','collapse-companions'].includes(field.dataset.action))field.disabled=false;
         if(field.dataset.action==='damage'){const check=getCharacter(this.actor)?.checks.find(row=>row.id===field.dataset.check);field.disabled=!this.actor?.isOwner||!check||Boolean(check.reason)||!damageFormula(check.damage);}
       });
       this.element.querySelectorAll('[name="modifier"], [name="modifierDirection"]').forEach(field => { field.disabled = !this.actor?.isOwner; });

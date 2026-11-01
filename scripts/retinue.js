@@ -5,11 +5,15 @@ export const isCompanionCheck = check => COMPANION_GROUPS.some(([_collection,gro
 export function retinueEntries(raw){
  return COMPANION_GROUPS.flatMap(([collection,group])=>objects(raw?.[collection]).map((member,index)=>({...member,_collection:collection,_group:group,_index:index})));
 }
+const companionCache=new WeakMap();
 export function readCompanions(character){
  if(character?.localState&&Array.isArray(character.retinue))return character.retinue;
  if(character?.retinueImportEnabled===false)return character.retinue??[];
  if(character?.sourceFormat==='Pedipalpus.Npc'&&Array.isArray(character.retinue))return character.retinue;
- try{return retinueEntries(JSON.parse(character.sourceJSON.replace(/^\uFEFF/,'')));}catch{}
+ if(character&&typeof character==='object'&&typeof character.sourceJSON==='string'){
+  const cached=companionCache.get(character);if(cached?.source===character.sourceJSON)return cached.members;
+  try{const members=retinueEntries(JSON.parse(character.sourceJSON.replace(/^\uFEFF/,'')));companionCache.set(character,{source:character.sourceJSON,members});return members;}catch{}
+ }
  if(Array.isArray(character?.retinue))return character.retinue;
  return (character?.equipment??[]).flatMap(item=>{
   const type=COMPANION_GROUPS.find(([collection])=>item.id?.startsWith(`${collection}:`));

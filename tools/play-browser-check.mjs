@@ -83,7 +83,7 @@ try {
   console.log('PASS: Local conditions and root/companion energy changes update visible values while the imported file stays byte-identical.');
 
   await action('playstate');await page.locator('[data-resource-row="0"][data-energy="LE"]').fill('1');await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').resources[0].value,actorId),12);
-  await action('playstate');await page.evaluate(async id=>{const actor=game.actors.get(id),data=structuredClone(actor.getFlag('pedipalpus-foundry','character'));data.profile.notes='Gleichzeitige Änderung';await actor.setFlag('pedipalpus-foundry','character',data);},actorId);await page.locator('.mock-dialog [data-action="save"]').click();await idle();
+  await action('playstate');await page.locator('[data-resource-row="0"][data-energy="LE"]').fill('2');await page.evaluate(async id=>{const actor=game.actors.get(id),data=structuredClone(actor.getFlag('pedipalpus-foundry','character'));data.profile.notes='Gleichzeitige Änderung';await actor.setFlag('pedipalpus-foundry','character',data);},actorId);await page.locator('.mock-dialog [data-action="save"]').click();await idle();
   assert.match(await page.locator('.pp-feedback').textContent(),/inzwischen geändert/);assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').profile.notes,actorId),'Gleichzeitige Änderung');
   console.log('PASS: Cancellation keeps state; a concurrent character edit rejects the stale dialog without overwriting it.');
 

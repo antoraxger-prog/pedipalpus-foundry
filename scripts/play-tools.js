@@ -14,23 +14,29 @@ export function weaponChoices(character){
  const values=[...groups.values()];return values.filter(row=>values.filter(other=>other.key===row.key).length===1);
 }
 const setFigure=async(app,figure)=>app.persist({...app.preferences,figures:{...(app.preferences.figures??{}),[app.actorId]:figure}});
-export async function playStateDialog(app){
+export async function playStateDialog(app,{memberKey=null}={}){
  const actor=app.actor,link=actor?.getFlag(MODULE_ID,'companion'),source=link?.sourceActorId&&link.active!==false?game.actors.get(link.sourceActorId):actor;
  if(!source?.isOwner||!source.canUserModify(game.user,'update'))throw new Error('Zum Ändern wird Besitzerrecht am Hauptcharakter benötigt.');
- const character=getCharacter(source),expected=JSON.stringify(character),conditions=source===actor?conditionRows(character):null;
+ const character=getCharacter(source),expected=JSON.stringify(character),conditions=source===actor&&!memberKey?conditionRows(character):null;
  const members=readCompanions(character),member=link?.sourceActorId?members.find((_row,index)=>{try{return companionKey(character,index)===link.key;}catch{return false;}}):null;
- const resources=stateResources(character).filter(row=>source===actor||member&&row.key===memberStateKey(member));
+ const targetKey=memberKey??(source!==actor&&member?memberStateKey(member):null);
+ const resources=stateResources(character).filter(row=>targetKey?row.key===targetKey:source===actor);
+ if(memberKey&&!resources.length)throw new Error('Die Begleiterenergien sind nicht eindeutig zugeordnet. Bitte die Liste aktualisieren.');
  if(!conditions&&!resources.length)throw new Error('Für diese Figur sind keine bearbeitbaren Spielwerte vorhanden.');
  const draft=structuredClone(character.localState??{version:1});
- const content=`<p>${e(source.name)} · Änderungen gelten in Foundry. Die Quelldatei bleibt unverändert.</p>${conditions?`<h3>Zustände</h3>${conditions.simple.map((row,i)=>`<div class="pp-state-row"><label><input type="checkbox" data-simple="${i}" ${row.IsActive?'checked':''}> ${e(row.Name)}</label><label><input type="checkbox" data-simple-suppression="${i}" ${row.IsSuppressed?'checked':''}> Unterdrückt</label></div>`).join('')}${conditions.complex.map((row,i)=>`<div class="pp-state-row"><label>${e(row.Name)} <input data-complex="${i}" type="number" min="0" max="4" step="1" value="${row.Level}"></label><label>Unterdrückung <select data-suppression="${i}">${[[0,'Keine'],[1,'Ganz'],[2,'Eine Stufe'],[3,'Zwei Stufen']].map(([value,label])=>`<option value="${value}" ${row.Suppression===value?'selected':''}>${label}</option>`).join('')}</select></label></div>`).join('')}`:''}${resources.map((entry,i)=>`<fieldset><legend>${e(entry.name)}</legend>${entry.resources.map(row=>`<label>${e(row.name)} / ${e(row.max)} <input data-resource-row="${i}" data-energy="${row.name}" type="number" min="-100000" max="100000" step="1" value="${e(row.value)}"></label>`).join('')}</fieldset>`).join('')}`;
- const answer=await foundry.applications.api.DialogV2.wait({window:{title:'Spielstand · Zustände und Energien'},classes:app.dialogClasses,position:{width:520},modal:true,rejectClose:false,content,
-  buttons:[{action:'save',label:'Speichern',callback:(_ev,_button,dialog)=>{
-   if(conditions){draft.conditions=structuredClone(conditions);draft.conditions.simple.forEach((row,i)=>{row.IsActive=dialog.element.querySelector(`[data-simple="${i}"]`).checked;row.IsSuppressed=dialog.element.querySelector(`[data-simple-suppression="${i}"]`).checked;});draft.conditions.complex.forEach((row,i)=>{row.Level=Number(dialog.element.querySelector(`[data-complex="${i}"]`).value);row.Suppression=Number(dialog.element.querySelector(`[data-suppression="${i}"]`).value);});}
-   draft.resources??={};dialog.element.querySelectorAll('[data-resource-row]').forEach(field=>{const key=resources[Number(field.dataset.resourceRow)].key;draft.resources[key]??={};draft.resources[key][field.dataset.energy]=field.value===''?NaN:Number(field.value);});return draft;
-  }},{action:'reset',label:'Quelldaten verwenden',callback:()=>{
-    if(source===actor)return {version:1};
-    const reset=structuredClone(draft);if(member&&reset.resources)delete reset.resources[memberStateKey(member)];return reset;
-  }},{action:'cancel',label:'Abbrechen',callback:()=>false}]});
+ const t=value=>app.t?.(value)??value;
+ const content=`<p>${e(targetKey?resources[0].name:source.name)} · ${e(t('Änderungen gelten in Foundry. Die Quelldatei bleibt unverändert.'))}</p>${conditions?`<h3>${e(t('Zustände'))}</h3>${conditions.simple.map((row,i)=>`<div class="pp-state-row"><label><input type="checkbox" data-simple="${i}" ${row.IsActive?'checked':''}> ${e(row.Name)}</label><label><input type="checkbox" data-simple-suppression="${i}" ${row.IsSuppressed?'checked':''}> ${e(t('Unterdrückt'))}</label></div>`).join('')}${conditions.complex.map((row,i)=>`<div class="pp-state-row"><label>${e(row.Name)} <input data-complex="${i}" type="number" min="0" max="4" step="1" value="${row.Level}"></label><label>${e(t('Unterdrückung'))} <select data-suppression="${i}">${[[0,'Keine'],[1,'Ganz'],[2,'Eine Stufe'],[3,'Zwei Stufen']].map(([value,label])=>`<option value="${value}" ${row.Suppression===value?'selected':''}>${e(t(label))}</option>`).join('')}</select></label></div>`).join('')}`:''}${resources.map((entry,i)=>`<fieldset><legend>${e(entry.name)}</legend>${entry.resources.map(row=>`<label>${e(row.name)} / ${e(row.max)} <span class="pp-energy-editor"><button type="button" data-energy-step="-1" data-energy-row="${i}" data-energy-name="${row.name}" aria-label="${e(entry.name)} ${row.name} um eins verringern">−</button><input data-resource-row="${i}" data-energy="${row.name}" aria-label="${e(entry.name)} ${row.name}" type="number" min="-100000" max="100000" step="1" value="${e(row.value)}"><button type="button" data-energy-step="1" data-energy-row="${i}" data-energy-name="${row.name}" aria-label="${e(entry.name)} ${row.name} um eins erhöhen">+</button></span></label>`).join('')}</fieldset>`).join('')}<p>${e(t('Nur geänderte Werte werden gespeichert. Plus und Minus werden erst mit Speichern übernommen.'))}</p>`;
+ const answer=await foundry.applications.api.DialogV2.wait({window:{title:t('Spielstand · Zustände und Energien')},classes:app.dialogClasses,position:{width:520},modal:true,rejectClose:false,content,
+  buttons:[{action:'save',label:t('Speichern'),callback:(_ev,_button,dialog)=>{
+   let changed=false;
+   if(conditions){const selected=structuredClone(conditions);selected.simple.forEach((row,i)=>{row.IsActive=dialog.element.querySelector(`[data-simple="${i}"]`).checked;row.IsSuppressed=dialog.element.querySelector(`[data-simple-suppression="${i}"]`).checked;});selected.complex.forEach((row,i)=>{row.Level=Number(dialog.element.querySelector(`[data-complex="${i}"]`).value);row.Suppression=Number(dialog.element.querySelector(`[data-suppression="${i}"]`).value);});if(JSON.stringify(selected)!==JSON.stringify(conditions)){draft.conditions=selected;changed=true;}}
+   dialog.element.querySelectorAll('[data-resource-row]').forEach(field=>{const entry=resources[Number(field.dataset.resourceRow)],name=field.dataset.energy,value=field.value===''?NaN:Number(field.value);if(value===entry.resources.find(row=>row.name===name).value)return;draft.resources??={};draft.resources[entry.key]??={};draft.resources[entry.key][name]=value;changed=true;});return changed?draft:false;
+  }},{action:'reset',label:t('Quelldaten verwenden'),callback:()=>{
+    if(!targetKey)return {version:1};
+    const reset=structuredClone(draft);if(reset.resources)delete reset.resources[targetKey];return reset;
+  }},{action:'cancel',label:t('Abbrechen'),callback:()=>false}],render:(_event,dialog)=>{
+   dialog.element.querySelectorAll('[data-energy-step]').forEach(button=>button.addEventListener('click',()=>{const field=dialog.element.querySelector(`[data-resource-row="${button.dataset.energyRow}"][data-energy="${button.dataset.energyName}"]`),value=Number(field.value);if(field.value!==''&&Number.isSafeInteger(value))field.value=String(Math.max(-100000,Math.min(100000,value+Number(button.dataset.energyStep))));}));
+  }});
  if(!answer||typeof answer!=='object')return;
  await savePlayState(source,answer,expected);await app.render({force:true});
 }

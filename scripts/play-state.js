@@ -6,14 +6,26 @@ import {characterFocus,withFocus} from './combat.js';
 export const SIMPLE_STATES=['Blutrausch','Reue'];
 export const COMPLEX_STATES=['Schmerz','Benommen','Lähmung','Wut','Überanstrengung'];
 const copy=value=>structuredClone(value);
+const conditionKey=value=>String(value??'').normalize('NFC').toLocaleLowerCase('de').replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss');
+const suppression=value=>typeof value==='string'?({None:0,All:1,OneLevel:2,TwoLevels:3})[value]??0:value??0;
+function mergeConditions(original=[],overrides=[]){
+ const result=copy(Array.isArray(original)?original:[]);
+ for(const row of overrides){
+  const key=conditionKey(row.Name),matches=result.map((entry,index)=>conditionKey(entry.Name)===key?index:-1).filter(index=>index>=0);
+  if(matches.length>1)throw new Error(`Der Zustand „${row.Name}“ ist mehrfach vorhanden. Bitte die Quelldatei prüfen.`);
+  if(matches.length)result[matches[0]]={...result[matches[0]],...row,Name:result[matches[0]].Name};else result.push(copy(row));
+ }
+ return result;
+}
 export function memberStateKey(member){
  return JSON.stringify([member.InventoryId?'id':member._group,String(member.InventoryId||member.Name||'').normalize('NFC').trim()]);
 }
 export function stateResources(character){
  const entries=[{key:'root',name:character.profile.name,resources:character.resources??[]}];
- if(!character.profile.companionGroup)for(const member of readCompanions(character)){
+ const members=readCompanions(character),counts=new Map();for(const member of members){const key=memberStateKey(member);counts.set(key,(counts.get(key)??0)+1);}
+ if(!character.profile.companionGroup)for(const member of members){
   const key=memberStateKey(member);
-  if(readCompanions(character).filter(row=>memberStateKey(row)===key).length!==1)continue;
+  if(counts.get(key)!==1)continue;
   entries.push({key,name:member.Name,resources:[{name:'LE',value:member.CurrentLe,max:member.MaxLe},{name:'AE',value:member.CurrentAstralEnergy,max:member.AstralEnergy},{name:'KE',value:member.CurrentKarmaEnergy,max:member.KarmaEnergy}]});
  }
  return entries.map(entry=>({...entry,resources:entry.resources.filter(row=>Number.isFinite(row.value)&&Number.isFinite(row.max)&&(row.name==='LE'||row.max>0))})).filter(entry=>entry.resources.length);
@@ -25,11 +37,11 @@ export function validateLocalState(state={}){
   const {simple=[],complex=[]}=state.conditions;
   if(!Array.isArray(simple)||!Array.isArray(complex)||simple.length>100||complex.length>100)throw new Error('Die Zustandsliste ist ungültig.');
   result.conditions={simple:simple.map(row=>{
-   if(typeof row.Name!=='string'||row.Name.length>100||typeof row.IsActive!=='boolean'||typeof row.IsSuppressed!=='boolean')throw new Error('Ein Zustand ist ungültig.');
-   return {Name:row.Name,IsActive:row.IsActive,IsSuppressed:row.IsSuppressed};
+   if(typeof row.Name!=='string'||row.Name.length>100||['IsActive','IsSuppressed'].some(key=>Object.hasOwn(row,key)&&typeof row[key]!=='boolean'))throw new Error('Ein Zustand ist ungültig.');
+   return {Name:row.Name,...(Object.hasOwn(row,'IsActive')?{IsActive:row.IsActive}:{}),...(Object.hasOwn(row,'IsSuppressed')?{IsSuppressed:row.IsSuppressed}:{})};
   }),complex:complex.map(row=>{
-   if(typeof row.Name!=='string'||row.Name.length>100||!Number.isSafeInteger(row.Level)||row.Level<0||row.Level>4||![0,1,2,3].includes(row.Suppression))throw new Error('Eine Zustandsstufe ist ungültig.');
-   return {Name:row.Name,Level:row.Level,Suppression:row.Suppression};
+   if(typeof row.Name!=='string'||row.Name.length>100||Object.hasOwn(row,'Level')&&(!Number.isSafeInteger(row.Level)||row.Level<0||row.Level>4)||Object.hasOwn(row,'Suppression')&&![0,1,2,3].includes(row.Suppression))throw new Error('Eine Zustandsstufe ist ungültig.');
+   return {Name:row.Name,...(Object.hasOwn(row,'Level')?{Level:row.Level}:{}),...(Object.hasOwn(row,'Suppression')?{Suppression:row.Suppression}:{})};
   })};
  }
  if(state.resources){
@@ -52,10 +64,31 @@ export function conditionRows(character){
  let raw;try{raw=JSON.parse(character.sourceJSON.replace(/^\uFEFF/,''));}catch{return null;}
  if(raw.Format||character.profile.companionGroup||character.profile.retinueOnly)return null;
  const saved=character.localState?.conditions;
- const simple=copy(saved?.simple??raw.SimpleConditions??[]),complex=copy(saved?.complex??raw.ComplexConditions??[]);
- for(const name of SIMPLE_STATES)if(!simple.some(row=>row.Name===name))simple.push({Name:name,IsActive:false,IsSuppressed:false});
- for(const name of COMPLEX_STATES)if(!complex.some(row=>row.Name===name))complex.push({Name:name,Level:0,Suppression:0});
- return {simple:simple.map(row=>({Name:row.Name,IsActive:row.IsActive===true,IsSuppressed:row.IsSuppressed===true})),complex:complex.map(row=>({Name:row.Name,Level:row.Level??0,Suppression:typeof row.Suppression==='string'?({None:0,All:1,OneLevel:2,TwoLevels:3})[row.Suppression]??0:row.Suppression??0}))};
+ const simple=mergeConditions(raw.SimpleConditions,saved?.simple),complex=mergeConditions(raw.ComplexConditions,saved?.complex);
+ for(const name of SIMPLE_STATES)if(!simple.some(row=>conditionKey(row.Name)===conditionKey(name)))simple.push({Name:name,IsActive:false,IsSuppressed:false});
+ for(const name of COMPLEX_STATES)if(!complex.some(row=>conditionKey(row.Name)===conditionKey(name)))complex.push({Name:name,Level:0,Suppression:0});
+ return {simple:simple.map(row=>({Name:row.Name,IsActive:row.IsActive===true,IsSuppressed:row.IsSuppressed===true})),complex:complex.map(row=>({Name:row.Name,Level:row.Level??0,Suppression:suppression(row.Suppression)}))};
+}
+export function compactLocalState(character,state){
+ const clean=validateLocalState(state);
+ if(typeof character.sourceJSON!=='string')return clean;
+ const raw=JSON.parse(character.sourceJSON.replace(/^\uFEFF/,''));
+ if(clean.conditions){
+  const one=(name,rows)=>{const matches=(Array.isArray(rows)?rows:[]).filter(row=>conditionKey(row.Name)===conditionKey(name));return matches.length<=1?matches[0]??{}:null;};
+  clean.conditions.simple=clean.conditions.simple.map(row=>{const original=one(row.Name,raw.SimpleConditions),patch={Name:row.Name};for(const key of ['IsActive','IsSuppressed'])if(Object.hasOwn(row,key)&&(original===null||row[key]!==(original[key]===true)))patch[key]=row[key];return patch;}).filter(row=>Object.keys(row).length>1);
+  clean.conditions.complex=clean.conditions.complex.map(row=>{const original=one(row.Name,raw.ComplexConditions),patch={Name:row.Name};for(const key of ['Level','Suppression'])if(Object.hasOwn(row,key)&&(original===null||row[key]!==(key==='Level'?original.Level??0:suppression(original.Suppression))))patch[key]=row[key];return patch;}).filter(row=>Object.keys(row).length>1);
+ }
+ if(clean.resources){
+  const original=normalizeCharacter(raw,character.importedAt),baseline=new Map(stateResources(original).map(entry=>[entry.key,Object.fromEntries(entry.resources.map(row=>[row.name,row.value]))]));
+  for(const [key,values] of Object.entries(clean.resources)){
+   const before=character.retinueImportEnabled===false&&key!=='root'?character.localStateBase?.resources?.[key]:baseline.get(key);
+   for(const [name,value] of Object.entries(values))if(before&&Object.hasOwn(before,name)&&before[name]===value)delete values[name];
+   if(!Object.keys(values).length)delete clean.resources[key];
+  }
+  if(!Object.keys(clean.resources).length)delete clean.resources;
+ }
+ if(clean.offHand!==undefined&&clean.offHand===(raw.ActiveOffHandWeaponId??''))delete clean.offHand;
+ return clean;
 }
 export function withPlayState(character,state){
  const clean=validateLocalState(state);
@@ -71,7 +104,7 @@ export function withPlayState(character,state){
  }
  if(clean.conditions){
   if(npc||raw.Format===RETINUE_FORMAT)throw new Error('Automatische Zustandsänderungen werden für Pedipalpus-Charaktere unterstützt.');
-  raw.SimpleConditions=clean.conditions.simple;raw.ComplexConditions=clean.conditions.complex;
+  raw.SimpleConditions=mergeConditions(raw.SimpleConditions,clean.conditions.simple);raw.ComplexConditions=mergeConditions(raw.ComplexConditions,clean.conditions.complex);
   const visit=(value,depth=0)=>{
    if(!value||typeof value!=='object')return;
    if(depth>64)throw new Error('Die Attributstruktur ist zu tief verschachtelt.');
@@ -114,7 +147,7 @@ export function withPlayState(character,state){
 }
 export function retainPlayState(previous,next,{conditions=true,resources=true,offHand=true}={}){
  if(!previous?.localState)return next;
- const state=validateLocalState(previous.localState),kept={version:1};
+ const state=compactLocalState(previous,previous.localState),kept={version:1};
  if(conditions&&state.conditions)kept.conditions=state.conditions;
  if(resources&&state.resources){
   kept.resources=state.resources;
