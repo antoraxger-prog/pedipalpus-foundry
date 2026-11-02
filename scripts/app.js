@@ -370,7 +370,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const overviews=content.querySelector('.pp-companion-overviews');if(overviews)overviews.hidden=!visibleMembers;
     allRows.filter(row=>!row.hidden).forEach(row=>{count++;scales.add(row.dataset.scale);});
     const scope = content.querySelector('.pp-search-scope');
-    if (scope) scope.hidden = !query;
+    if (scope) {scope.hidden=!query;scope.textContent=query?`${count} ${this.t(count===1?'Probe':'Proben')} · ${this.t('Suche in allen Bereichen')}`:this.t('Suche in allen Bereichen');}
     const empty = content.querySelector('.pp-no-results');
     if (empty) empty.hidden = count > 0 || visibleMembers > 0;
     const focus = content.querySelector('.pp-focus');
