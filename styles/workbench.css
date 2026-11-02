@@ -230,3 +230,7 @@
 
 .pedipalpus-app .pp-info-button[data-has-note="true"] { color:var(--pp-accent); }
 .pedipalpus-app .pp-note-mark { position:absolute; width:5px; height:5px; top:-2px; right:-2px; border-radius:50%; background:var(--pp-accent); box-shadow:0 0 0 1px var(--pp-surface); pointer-events:none; }
+
+.pedipalpus-dialog .pp-note-editor textarea { display:block; margin-top:4px; resize:vertical; line-height:1.4; }
+.pedipalpus-dialog .pp-note-help { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:4px; color:var(--pp-muted,inherit); }
+.pedipalpus-dialog .pp-note-help output { font-variant-numeric:tabular-nums; white-space:nowrap; font-size:11px; }

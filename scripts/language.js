@@ -1,5 +1,10 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Schaden':'Aua', 'Beschreibung':'Was Ding ist', 'Regeln':'So geht Ding', 'Kosten':'Was Ding kostet',
+  'Dauer':'Wie lange', 'Zauberdauer':'Wie lange zaubern', 'Reichweite':'Wie weit', 'Wirkungsdauer':'Wie lange wirkt', 'Besonderheiten':'Was Ding extra kann',
+  'AE':'Zauberkraft', 'KE':'Götterkraft',
+  'Strg+Enter: Notiz speichern':'Strg+Enter: Merktext merken', 'Zeichen':'Zeichen',
+  'Nur für dich gespeichert. Originaldaten und andere Spieler bleiben unverändert.':'Nur dein Merktext. Altes Blatt und andere Leute bleiben gleich.',
   'Informationen und meine Spielnotiz':'Zahlen und mein Merktext', 'Notiz vorhanden':'Merktext da',
   'Probe oder Notiz suchen …':'Können oder Merktext suchen …', 'Kampfprobe oder Notiz suchen …':'Hauen oder Merktext suchen …',
   'Mehrere Wörter; Umlaute auch als ae/oe/ue oder a/o/u. Strg+F zur Suche, Pfeiltasten zu Proben, Pos1/Ende zur ersten/letzten Probe, Esc zurück. Eigene Spielnotizen werden mit durchsucht.':'Mehr Wörter gehen. Umlaute ohne Punkte gehen auch. Strg+F suchen. Pfeile wählen. Pos1 ganz vorn. Ende ganz hinten. Esc zurück. Dein Merktext wird auch gesucht.',

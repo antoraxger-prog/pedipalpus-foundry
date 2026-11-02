@@ -4,6 +4,7 @@ import {conditionRows,stateResources,memberStateKey} from './play-state.js';
 import {readCompanions} from './retinue.js';
 import {checkReference,referenceKey,resolveCheck} from './workbench.js';
 import {companionKey,refreshCompanions} from './companions.js';
+import {checkDisplayName} from './ork-talents.js';
 const e=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const figurePreferences=(prefs,id)=>prefs.figures?.[id]??{theme:'',rememberTheme:false,notes:{},weaponSets:[],activeSet:''};
 export const figureTheme=(prefs,id,fallback)=>{const figure=figurePreferences(prefs,id);return figure.rememberTheme&&figure.theme?figure.theme:fallback;};
@@ -58,10 +59,22 @@ export async function playStateDialog(app,{memberKey=null}={}){
 export async function infoDialog(app,checkId){
  const character=getCharacter(app.actor),check=character?.checks.find(row=>row.id===checkId);if(!check)throw new Error('Die Fähigkeit ist nicht mehr vorhanden.');
  resolveCheck(character,checkReference(check));
- const actorId=app.actorId,key=referenceKey(checkReference(check)),figure=figurePreferences(app.preferences,actorId);
- const answer=await foundry.applications.api.DialogV2.wait({window:{title:check.name},classes:app.dialogClasses,position:{width:480},modal:true,rejectClose:false,
- content:`${check.damage?`<p><strong>Schaden:</strong> ${e(check.damage)}</p>`:''}${(check.info??[]).map(row=>`<p><strong>${e(row.label)}</strong><br>${e(row.text)}</p>`).join('')}${check.reason?`<p>${e(check.reason)}</p>`:''}<label>Meine Spielnotiz<textarea name="abilityNote" rows="4" maxlength="2000">${e(figure.notes?.[key])}</textarea></label><p>Nur für dich gespeichert. Originaldaten und andere Spieler bleiben unverändert.</p>`,
- buttons:[{action:'save',label:'Notiz speichern',callback:(_ev,_button,dialog)=>({note:dialog.element.querySelector('[name="abilityNote"]').value})},{action:'cancel',label:'Schließen',callback:()=>false}]});
+ const actorId=app.actorId,key=referenceKey(checkReference(check)),figure=figurePreferences(app.preferences,actorId),t=text=>app.t(text);
+ const actionLabel=({attack:'Angriff',parry:'Parade',ranged:'Fernkampf'})[check.combat?.type];
+ const title=app.language==='ork'&&actionLabel?`${check.combat.weaponName} · ${t(actionLabel)}`:checkDisplayName(check,app.language),hintId=`pp-note-help-${foundry.utils.randomID()}`;
+ const detailLabels=new Set(['Beschreibung','Regeln','Kosten','AE','KE','Dauer','Zauberdauer','Reichweite','Wirkungsdauer','Hinweise','Besonderheiten']);
+ const answer=await foundry.applications.api.DialogV2.wait({window:{title},classes:app.dialogClasses,position:{width:480},modal:true,rejectClose:false,
+ content:`${title!==check.name?`<p class="pp-original-name">${e(check.name)}</p>`:''}${check.damage?`<p><strong>${e(t('Schaden'))}:</strong> ${e(check.damage)}</p>`:''}${(check.info??[]).map(row=>`<p><strong>${e(detailLabels.has(row.label)?t(row.label):row.label)}</strong><br>${e(row.text)}</p>`).join('')}${check.reason?`<p>${e(check.reason)}</p>`:''}<div class="pp-note-editor"><label>${e(t('Meine Spielnotiz'))}<textarea name="abilityNote" rows="4" maxlength="2000" aria-describedby="${hintId}">${e(figure.notes?.[key])}</textarea></label><div class="pp-note-help" id="${hintId}"><small>${e(t('Strg+Enter: Notiz speichern'))}</small><output data-note-count aria-live="off" aria-label="${e(t('Zeichen'))}"></output></div><p>${e(t('Nur für dich gespeichert. Originaldaten und andere Spieler bleiben unverändert.'))}</p></div>`,
+ buttons:[{action:'save',label:t('Notiz speichern'),callback:(_ev,_button,dialog)=>({note:dialog.element.querySelector('[name="abilityNote"]').value})},{action:'cancel',label:t('Schließen'),callback:()=>false}],
+ render:(_event,dialog)=>{
+  const field=dialog.element.querySelector('[name="abilityNote"]'),counter=dialog.element.querySelector('[data-note-count]');
+  const update=()=>{counter.textContent=`${field.value.length} / ${field.maxLength}`;};
+  update();field.addEventListener('input',update);field.focus({preventScroll:true});field.setSelectionRange(field.value.length,field.value.length);
+  field.addEventListener('keydown',event=>{
+   if(event.isComposing||event.repeat||event.key!=='Enter'||!event.ctrlKey&&!event.metaKey||event.altKey||event.shiftKey)return;
+   event.preventDefault();event.stopPropagation();dialog.element.querySelector('[data-action="save"]')?.click();
+  });
+ }});
  if(!answer||typeof answer!=='object')return;
  if(app.actorId!==actorId)throw new Error('Die Figur wurde inzwischen gewechselt.');
  const latest=figurePreferences(app.preferences,actorId);await setFigure(app,{...latest,notes:{...(latest.notes??{}),[key]:answer.note}});

@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.7
+# Pedipalpus – Proben · 1.11.8
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.7 markiert persönliche Spielnotizen an der Probe und nimmt sie in die Suche auf. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.8 übersetzt das Info-/Notizfenster im Ork-Modus und erleichtert die Notizeingabe mit Zeichenanzeige und Strg+Enter. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Notizfenster und Ork-Beschriftungen in 1.11.8
+
+Das Info-/Notizfenster verwendet nun ebenfalls die passende Sprache für Titel, Beschriftungen und Knöpfe. Im Ork-Modus steht der ursprüngliche Probenname klein unter dem vereinfachten Titel. Die importierten Regeltexte, Werte und Schadensformeln bleiben wortgetreu erhalten; unbekannte zusätzliche Überschriften werden ebenfalls unverändert angezeigt.
+
+Beim Öffnen steht die Eingabemarke am Ende der vorhandenen Notiz. Eine Zeichenanzeige zeigt den Platz innerhalb der bisherigen Begrenzung von 2000 Zeichen. Enter bleibt ein Zeilenumbruch; Strg+Enter oder Command+Enter speichert über denselben Knopf wie bisher. Schließen verwirft ungespeicherte Änderungen.
+
+Die Notizmarkierung, Suche und Trennung nach Person und Figur bleiben erhalten. Kein Neuimport und keine Änderung der gespeicherten Notizstruktur erforderlich.
 
 ## Eigene Spielnotizen wiederfinden in 1.11.7
 
