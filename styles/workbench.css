@@ -33,7 +33,7 @@
 .pedipalpus-app .pp-root .pp-table .pp-favorite-cell { width: 29px; padding: 3px 2px; }
 .pedipalpus-app .pp-root button.pp-favorite-button { display: inline-grid; place-items: center; width: 26px; min-width: 26px; height: 30px; padding: 0; background: transparent; border-color: transparent; box-shadow: none; font: 20px/1 'Segoe UI',sans-serif; color: var(--pp-muted); }
 .pedipalpus-app .pp-root button.pp-favorite-button[aria-pressed="true"] { color: #d3a44c; }
-.pedipalpus-app .pp-root[data-theme="fantasy"] button.pp-favorite-button[aria-pressed="true"], .pedipalpus-app .pp-root[data-theme="light"] button.pp-favorite-button[aria-pressed="true"] { color: #855708; }
+.pedipalpus-app .pp-root[data-theme="fantasy"] button.pp-favorite-button[aria-pressed="true"], .pedipalpus-app .pp-root[data-theme="light"] button.pp-favorite-button[aria-pressed="true"], .pedipalpus-app .pp-root[data-theme="aristocrat"] button.pp-favorite-button[aria-pressed="true"] { color: #855708; }
 .pedipalpus-app .pp-root[data-theme="ork"] button.pp-favorite-button[aria-pressed="true"] { color: #8b2a1a; }
 .pedipalpus-app .pp-root button.pp-favorite-button:hover:not(:disabled) { color: var(--pp-text); background: var(--pp-hover); }
 .pedipalpus-app .pp-root .pp-value { width: 42px; }
@@ -208,6 +208,7 @@
 .pedipalpus-app .pp-root .pp-rating { font-size:calc(15px * var(--pp-font-scale,1))!important; }
 .pedipalpus-app .pp-root[data-density="comfortable"] .pp-check-name { font-size:calc(14px * var(--pp-font-scale,1))!important; }
 .pedipalpus-app .pp-root[data-high-contrast="true"] .pp-rating { font-weight:900; text-shadow:none; outline:1px solid currentColor; }
+.pedipalpus-app .pp-root[data-high-contrast="true"] :focus-visible { outline:3px solid currentColor; outline-offset:2px; }
 .pedipalpus-app .pp-root[data-high-contrast="true"] .pp-trio { font-weight:700; color:var(--pp-text); }
 .pedipalpus-app .pp-root[data-calm-rows="true"] .pp-check-row > td { background:var(--pp-surface)!important; }
 .pedipalpus-app .pp-root[data-calm-rows="true"] .pp-check-row::after { opacity:0!important; }

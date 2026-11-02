@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.13
+# Pedipalpus – Proben · 1.11.14
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.13 hält Zustandsfelder in schmalen Spielstandsfenstern erreichbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.14 verstärkt den Tastaturfokus im Kontrastmodus und Favoriten im Aristocrat-Design. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Deutlicherer Tastaturfokus in 1.11.14
+
+Bei aktiviertem erhöhtem Kontrast erhalten fokussierte Bedienelemente einen stärkeren Rahmen. Am Fertigkeitswert unterscheidet er sich dadurch deutlich von der dauerhaft sichtbaren dünnen Umrandung. Der Rahmen bleibt auch bei reduzierter Bewegung sichtbar; ohne erhöhten Kontrast bleibt die bisherige Fokusdarstellung erhalten.
+
+Ausgewählte Favoritensterne im Aristocrat-Design verwenden in Probenliste und Schnellleiste einen dunkleren Goldton, damit sie auf dem hellen Papier klarer erkennbar sind. Favoritenauswahl, Würfelverhalten, Daten und persönliche Einstellungen bleiben erhalten; kein Neuimport erforderlich.
 
 ## Zustandsfelder in schmalen Fenstern in 1.11.13
 
