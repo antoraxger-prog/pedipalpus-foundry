@@ -476,6 +476,7 @@ export class PedipalpusApp extends ApplicationV2 {
         if (field.dataset.action==='preset') field.disabled=!this.actor?.isOwner;
         if (field.dataset.action==='export') field.disabled=!this.actor?.isOwner || !getCharacter(this.actor)?.sourceJSON;
         if (field.dataset.action==='diagnostic') field.disabled=false;
+        if (field.dataset.action==='token') field.disabled=!this.actor?.isOwner || Boolean(this.token) || canvas.tokens?.controlled?.length!==1;
         if (['weapons','info'].includes(field.dataset.action))field.disabled=false;
         if(field.dataset.action==='playstate')field.disabled=!this.actor?.isOwner;
         if(field.dataset.action==='companion-state')field.disabled=!this.actor?.isOwner||field.dataset.identityValid!=='true';

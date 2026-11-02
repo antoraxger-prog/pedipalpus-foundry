@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.17
+# Pedipalpus – Proben · 1.11.18
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.17 ergänzt Mausrad-Zoom direkt im Bildausschnitt-Editor. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.18 korrigiert das Verknüpfen vorhandener Szenen-Token über die Optionen. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,11 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Neu in 1.11.18
+
+- Vorhandene Szenen-Token lassen sich auch direkt nach dem Öffnen der Optionen oder einem Wechsel des Probenbereichs verknüpfen. Der Knopf bleibt nach dem Fensteraufbau nicht mehr versehentlich gesperrt.
+- Position, Größe, Drehung, Tokenbild und Charakterwerte bleiben beim Verknüpfen erhalten. Die Bestätigung beim Wechsel von einem eigenen auf das gemeinsame Charakterblatt bleibt bestehen.
 
 ## Bildausschnitt mit dem Mausrad zoomen in 1.11.17
 
