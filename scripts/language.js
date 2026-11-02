@@ -1,5 +1,9 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Informationen und meine Spielnotiz':'Zahlen und mein Merktext', 'Notiz vorhanden':'Merktext da',
+  'Probe oder Notiz suchen …':'Können oder Merktext suchen …', 'Kampfprobe oder Notiz suchen …':'Hauen oder Merktext suchen …',
+  'Mehrere Wörter; Umlaute auch als ae/oe/ue oder a/o/u. Strg+F zur Suche, Pfeiltasten zu Proben, Pos1/Ende zur ersten/letzten Probe, Esc zurück. Eigene Spielnotizen werden mit durchsucht.':'Mehr Wörter gehen. Umlaute ohne Punkte gehen auch. Strg+F suchen. Pfeile wählen. Pos1 ganz vorn. Ende ganz hinten. Esc zurück. Dein Merktext wird auch gesucht.',
+
   'Energien bearbeiten':'Kraft ändern',
   'Die Figur wurde inzwischen entfernt oder ersetzt. Bitte erneut auswählen.':'Figur weg oder ersetzt. Noch mal wählen.',
   'Die Importfigur wurde inzwischen entfernt oder ersetzt. Bitte erneut auswählen.':'Figur für Blatt weg oder ersetzt. Noch mal wählen.',

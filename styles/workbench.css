@@ -227,3 +227,6 @@
 .pedipalpus-app .pp-energy-track[data-energy-level="reduced"] > span { background:#b18430; }
 .pedipalpus-app .pp-energy-track[data-energy-level="low"] > span { background:repeating-linear-gradient(135deg,#a63c32 0 3px,#e29a76 3px 5px); }
 .pedipalpus-app .pp-energy-track[data-energy-level="empty"] { background:repeating-linear-gradient(135deg,#5f2523 0 3px,#c77d69 3px 5px); }
+
+.pedipalpus-app .pp-info-button[data-has-note="true"] { color:var(--pp-accent); }
+.pedipalpus-app .pp-note-mark { position:absolute; width:5px; height:5px; top:-2px; right:-2px; border-radius:50%; background:var(--pp-accent); box-shadow:0 0 0 1px var(--pp-surface); pointer-events:none; }

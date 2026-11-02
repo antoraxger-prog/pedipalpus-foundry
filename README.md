@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.6
+# Pedipalpus – Proben · 1.11.7
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.6 zeigt geänderte Schadensformeln vor dem Übernehmen eines Imports an, auch wenn Probenwert und Berechnung gleich bleiben. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.7 markiert persönliche Spielnotizen an der Probe und nimmt sie in die Suche auf. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Eigene Spielnotizen wiederfinden in 1.11.7
+
+Ein kleiner Punkt am Info-Knopf zeigt, dass zu dieser Probe eine eigene Spielnotiz gespeichert ist. Die bestehende Suche berücksichtigt nun auch den Notiztext: Namen und Notizwörter lassen sich kombinieren, Umlaute funktionieren wie bisher auch als ae/oe/ue. Das gilt für Fertigkeiten, eigene Kampfproben und Begleiter im jeweiligen Fensterbereich.
+
+Die Notizen bleiben getrennt nach Person und Figur. Sie werden weiterhin im Infofenster bearbeitet und erst mit „Notiz speichern“ übernommen. Abbrechen erhält den bisherigen Text; eine leere oder nur aus Leerzeichen bestehende Notiz entfernt Markierung und Suchtreffer. Beim Würfeln wird der Notiztext nicht in den Chat übernommen.
+
+Nach einem neu sortierten Import folgt die Notiz ihrer eindeutigen Probe. Bei mehrfach vorhandenen gleichen Proben wird die gespeicherte Notiz keiner davon zugewiesen; sie bleibt für eine spätere eindeutige Zuordnung erhalten. Importierte Daten, Bilder und Rechte werden durch Notizen und Suche nicht verändert. Alle neun Designs sind unterstützt, im Ork-Modus heißt die Markierung „Merktext da“.
+
+Kein Neuimport und keine Änderung der gespeicherten Notizstruktur erforderlich.
 
 ## Schadensänderungen beim Import vergleichen in 1.11.6
 
