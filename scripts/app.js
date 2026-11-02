@@ -95,6 +95,7 @@ export class PedipalpusApp extends ApplicationV2 {
   }
   async _renderHTML() {
     const actors = visibleActors();
+    const visibleNames = new Map(actors.map(item=>[item.id,item.name]));
     const actor = actors.find(actor => actor.id === this.actorId) ?? null;
     if (!actor) this.actorId = null;
     this.theme=figureTheme(this.preferences,this.actorId,savedDesign());
@@ -104,7 +105,7 @@ export class PedipalpusApp extends ApplicationV2 {
     const keys = type => (this.preferences[type][actor?.id] ?? []).flatMap(ref => {
       try { return [resolveCheck(current,ref).id]; } catch { return []; }
     });
-    return renderView({ actors: actors.map(item => ({ id: item.id, name: item.name, hasCharacter: !!getCharacter(item),npc:getCharacter(item)?.sourceFormat===NPC_FORMAT })),
+    return renderView({ actors: actors.map(item => {const sourceId=item.getFlag(MODULE_ID,'companion')?.sourceActorId;return { id: item.id, name: item.name, hasCharacter: !!getCharacter(item),npc:getCharacter(item)?.sourceFormat===NPC_FORMAT,companion:!!sourceId,companionSourceName:visibleNames.get(sourceId)??'' };}),
       actor, character: getCharacter(actor), status: connectionStatus(),rollBlock:companionRollIssue(actor),
       canImport: actors.some(actor => actor.canUserModify(game.user, 'update')) || foundry.documents.Actor.canUserCreate(game.user),
       token: this.token, canLinkToken: actor?.isOwner && !this.token && canvas.tokens?.controlled?.length === 1,

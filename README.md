@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.11
+# Pedipalpus – Proben · 1.11.12
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.11 korrigiert die Tastatursteuerung bei zugeklappten Begleitern. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.12 macht gleichnamige Begleiter in der Charakterauswahl unterscheidbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Begleiter in der Charakterauswahl unterscheiden in 1.11.12
+
+Verknüpfte Begleiter tragen in der Charakterauswahl den Zusatz „Gefolge: Hauptfigur“. So lassen sich gleichnamige Tiere, Dämonen und Untote verschiedener Figuren unterscheiden. Der Zusatz folgt dem aktuellen Foundry-Namen der Hauptfigur. Im Ork-Modus steht dort schlicht „Bei: Hauptfigur“.
+
+Ist die Hauptfigur nicht sichtbar oder nicht mehr vorhanden, erscheint nur „Gefolge“, ohne ihren Namen offenzulegen. NSC-Kennzeichnungen bleiben erhalten. Die Beschriftung vergibt keine Rechte und ändert weder Namen noch Zuordnungen oder Charakterdaten; kein Neuimport erforderlich.
 
 ## Begleiter mit der Tastatur erreichen in 1.11.11
 

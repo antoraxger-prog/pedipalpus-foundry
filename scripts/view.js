@@ -148,7 +148,10 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   const isFavorite = check => favorites.has(keyOf(check));
   const isRecent = check => recent.has(keyOf(check));
   const frozen = busy ? 'disabled' : '';
-  const options = actors.map(item => `<option value="${e(item.id)}" ${item.id === actor?.id ? 'selected' : ''}>${e(item.name)}${item.npc?' [NSC]':''}${item.hasCharacter ? '' : ' · noch kein Import'}</option>`).join('');
+  const options = actors.map(item => {
+    const companionLabel=item.companion?(item.companionSourceName?`${language==='ork'?'Bei':'Gefolge'}: ${item.companionSourceName}`:language==='ork'?'Mitläufer':'Gefolge'):'';
+    return `<option value="${e(item.id)}" ${item.id === actor?.id ? 'selected' : ''}>${e(item.name)}${item.npc?' [NSC]':''}${companionLabel?` [${e(companionLabel)}]`:''}${item.hasCharacter ? '' : ' · noch kein Import'}</option>`;
+  }).join('');
   const image = safePortrait(actor?.getFlag?.('pedipalpus-foundry','portraitFraming')?actor?.prototypeToken?.texture?.src:actor?.img)||safePortrait(actor?.img);
   const portraitMarkup=image?`<img class="pp-portrait-medallion" src="${e(image)}" alt="" loading="lazy">`:`<span class="pp-portrait-medallion pp-portrait-placeholder" aria-hidden="true">${categoryIcon('attributes')}</span>`;
   const switches = character?.profile?.companionGroup||character?.profile?.retinueOnly?'':mode === 'full'
