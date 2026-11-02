@@ -243,7 +243,7 @@ Nach dem Speichern des Spielstands werden die verknüpften Begleiter einzeln akt
 
 Zum Wiederholen den **Spielstand** erneut öffnen und **Speichern** wählen. Ohne geänderte Eingaben werden nur die Begleiter mit dem bereits gespeicherten Stand abgeglichen; der Hauptcharakter wird dabei nicht erneut geschrieben. **Abbrechen** bleibt ohne Änderungen. Ein inzwischen veränderter Stand oder verlorene Rechte erfordern erneutes Öffnen.
 
-Ändert sich der Hauptcharakter während eines Abgleichs, wird er entfernt oder verliert der Benutzer seine Bearbeitungsrechte, stoppen weitere Übernahmen. Bereits abgeschlossene Änderungen werden nicht automatisch zurückgerollt. Der Fehler beim Speichern des Hauptcharakters selbst bleibt ein Fehler und startet keinen Begleiterabgleich. Die Änderungen benötigen keine Datenmigrationund keinen erneuten Import.
+Ändert sich der Hauptcharakter während eines Abgleichs, wird er entfernt oder verliert der Benutzer seine Bearbeitungsrechte, stoppen weitere Übernahmen. Bereits abgeschlossene Änderungen werden nicht automatisch zurückgerollt. Der Fehler beim Speichern des Hauptcharakters selbst bleibt ein Fehler und startet keinen Begleiterabgleich. Die Änderungen benötigen keine Datenmigration und keinen erneuten Import.
 
 ## Import und Tokenbilder in 1.9.6
 
@@ -495,7 +495,7 @@ Im Bildeditor oder unter **Einstellungen → Eigenen Rahmen hinzufügen** eine t
 
 Der Rahmen wird beim Hinzufügen dauerhaft für deinen Foundry-Benutzer in dieser Welt gespeichert und erscheint anschließend unter **Tokenrahmen**, auch für neue Charaktere, NSCs und Begleiter. Dieselbe Datei erneut hinzuzufügen erzeugt kein Duplikat. Das Hinzufügen ist unabhängig vom späteren Speichern oder Abbrechen des Bildausschnitts. Bis zu 50 eigene Rahmen können gespeichert werden. Zum Hochladen sind die üblichen Foundry-Uploadrechte nötig; ein Spielleiterkonto ist dafür nicht erforderlich.
 
-Bereits mit eigenen Rahmen erstellte Charaktere und Begleiter behalten die benötigten Bildverweise. Andere berechtigte Nutzer können deren Bildausschnitt daher ebenfalls weiterbearbeiten, auch wenn sie den Rahmen nicht in ihrer persönlichen Auswahl haben. Die bisherigen Concrete-, Silver-Thin- und Undead-Rahmen bleiben nutzbar. EigeneRahmen werden auf dem Foundry-Server gespeichert und nicht in die lokale Pedipalpus-Datei oder auf GitHub übernommen.
+Bereits mit eigenen Rahmen erstellte Charaktere und Begleiter behalten die benötigten Bildverweise. Andere berechtigte Nutzer können deren Bildausschnitt daher ebenfalls weiterbearbeiten, auch wenn sie den Rahmen nicht in ihrer persönlichen Auswahl haben. Die bisherigen Concrete-, Silver-Thin- und Undead-Rahmen bleiben nutzbar. Eigene Rahmen werden auf dem Foundry-Server gespeichert und nicht in die lokale Pedipalpus-Datei oder auf GitHub übernommen.
 
 ## Werte aktualisieren
 
