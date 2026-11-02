@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.8
+# Pedipalpus – Proben · 1.11.9
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.8 übersetzt das Info-/Notizfenster im Ork-Modus und erleichtert die Notizeingabe mit Zeichenanzeige und Strg+Enter. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.9 erklärt fehlende oder mehrfach gleichnamige Waffen bei der Waffenset-Auswahl. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Waffenset-Auswahl nachvollziehen in 1.11.9
+
+Mehrfach gleichnamige Waffen verschwinden nicht mehr kommentarlos aus der Set-Auswahl. Sie erscheinen ausgegraut mit dem Hinweis, sie in Pedipalpus eindeutig zu benennen. Das Waffenset-Fenster lässt sich auch öffnen, wenn nur solche Waffen vorhanden sind. Eine mehrdeutige Waffe wird weiterhin keinem Set zugeordnet.
+
+Gespeicherte Sets mit fehlenden oder nicht mehr eindeutigen Waffen tragen in der Auswahl den Zusatz „Unvollständig“. Im Waffenset-Fenster werden die betroffenen Waffennamen genannt. Beim aktiven unvollständigen Set bleibt wie bisher die vollständige Waffenliste sichtbar. Das Set wird weder automatisch gelöscht noch umgeschrieben.
+
+Eindeutige Waffen können weiterhin für neue Sets ausgewählt werden. Abbrechen erhält die bisherige Auswahl, und alte Sets werden nur nach ausdrücklicher Auswahl zum Entfernen gelöscht. Begleiter, importierte Charakterdaten und Nebenhandregeln bleiben erhalten. Beschriftungen des Waffenset-Fensters passen auch zum Ork-Modus.
+
+Kein Neuimport und keine Änderung der gespeicherten Set-Struktur erforderlich.
 
 ## Notizfenster und Ork-Beschriftungen in 1.11.8
 

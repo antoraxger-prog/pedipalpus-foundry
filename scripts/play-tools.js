@@ -9,10 +9,11 @@ const e=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 export const figurePreferences=(prefs,id)=>prefs.figures?.[id]??{theme:'',rememberTheme:false,notes:{},weaponSets:[],activeSet:''};
 export const figureTheme=(prefs,id,fallback)=>{const figure=figurePreferences(prefs,id);return figure.rememberTheme&&figure.theme?figure.theme:fallback;};
 export const weaponIdentity=check=>JSON.stringify([check.id.split(':')[1],check.combat?.weaponName]);
-export function weaponChoices(character){
+export function weaponChoices(character,{includeUnavailable=false}={}){
  const groups=new Map();
  for(const check of character?.checks??[]){if(check.kind!=='combat'||check.companionGroup||check.fixedCombat)continue;const instance=check.id.replace(/:(attack|parry|ranged)$/,'');if(!groups.has(instance))groups.set(instance,{key:weaponIdentity(check),name:check.combat.weaponName});}
- const values=[...groups.values()];return values.filter(row=>values.filter(other=>other.key===row.key).length===1);
+ const values=[...groups.values()],counts=new Map();for(const row of values)counts.set(row.key,(counts.get(row.key)??0)+1);
+ return includeUnavailable?values.map(row=>({...row,unavailable:counts.get(row.key)!==1})):values.filter(row=>counts.get(row.key)===1);
 }
 const setFigure=async(app,figure)=>app.persist({...app.preferences,figures:{...(app.preferences.figures??{}),[app.actorId]:figure}});
 const linkState=link=>JSON.stringify(link?.sourceActorId?[link.sourceActorId,link.key,link.active!==false]:null);
@@ -81,13 +82,15 @@ export async function infoDialog(app,checkId){
  await app.render({force:true});
 }
 export async function weaponSetDialog(app){
- const actor=app.actor,character=getCharacter(actor),figure=figurePreferences(app.preferences,actor.id),weapons=weaponChoices(character);
+ const actor=app.actor,character=getCharacter(actor),figure=figurePreferences(app.preferences,actor.id),weapons=weaponChoices(character,{includeUnavailable:true}),t=text=>app.t(text);
  if(!weapons.length&&!figure.weaponSets.length)throw new Error('Keine eindeutig zugeordneten eigenen Waffen vorhanden.');
+ const available=new Set(weapons.filter(row=>!row.unavailable).map(row=>row.key));
+ const missing=set=>set.weapons.filter(key=>!available.has(key)).map(key=>{try{const name=JSON.parse(key)?.[1];if(typeof name==='string'&&name.trim())return name;}catch{}return t('Unbekannte Waffe');});
  let raw;try{raw=JSON.parse(character.sourceJSON);}catch{}
  const offhands=!raw?.Format?(raw?.ParryWeapons??[]).filter(row=>row.InventoryItemId&&row.OnPerson!==false&&!row.CarrierAnimalId&&(row.Quantity??1)>0&&row.Handedness==='Einhändig'):[];
- const answer=await foundry.applications.api.DialogV2.wait({window:{title:'Waffensets'},classes:app.dialogClasses,position:{width:500},modal:true,rejectClose:false,
- content:`<p>Eigene Auswahl für das Kampfbrett. Alle Begleiter bleiben sichtbar. Entfernte oder mehrdeutige Waffen werden nicht geraten.</p>${figure.weaponSets.map((set,i)=>`<label><input type="checkbox" data-remove-set="${i}"> ${e(set.name)} entfernen</label>`).join('')}<label>Neues Set <input name="setName" maxlength="60" placeholder="Zum Beispiel Schwert und Schild"></label>${weapons.map((weapon,i)=>`<label><input data-set-weapon="${i}" type="checkbox"> ${e(weapon.name)}</label>`).join('')}${offhands.length&&actor.isOwner?`<label>Aktive Nebenhand<select name="setOffHand"><option value="unchanged">Unverändert</option><option value="">Keine</option>${offhands.map(row=>`<option value="${e(row.InventoryItemId)}">${e(row.Name)}</option>`).join('')}</select></label>`:''}`,
- buttons:[{action:'save',label:'Speichern',callback:(_ev,_button,dialog)=>({remove:Array.from(dialog.element.querySelectorAll('[data-remove-set]:checked')).map(field=>Number(field.dataset.removeSet)),name:dialog.element.querySelector('[name="setName"]').value.trim(),weapons:Array.from(dialog.element.querySelectorAll('[data-set-weapon]:checked')).map(field=>weapons[Number(field.dataset.setWeapon)].key),offHand:dialog.element.querySelector('[name="setOffHand"]')?.value??'unchanged'})},{action:'cancel',label:'Abbrechen',callback:()=>false}]});
+ const answer=await foundry.applications.api.DialogV2.wait({window:{title:t('Waffensets')},classes:app.dialogClasses,position:{width:500},modal:true,rejectClose:false,
+ content:`<p>${e(t('Eigene Auswahl für das Kampfbrett. Alle Begleiter bleiben sichtbar. Entfernte oder mehrdeutige Waffen werden nicht geraten.'))}</p>${figure.weaponSets.map((set,i)=>{const absent=missing(set);return `<div class="pp-set-entry"><label><input type="checkbox" data-remove-set="${i}"> ${e(set.name)} ${e(t('Entfernen'))}</label>${absent.length?`<p class="pp-set-warning">${e(t('Fehlend oder mehrfach vorhanden'))}: ${e([...new Set(absent)].join(', '))}</p>`:''}</div>`;}).join('')}<label>${e(t('Neues Set'))} <input name="setName" maxlength="60" placeholder="${e(t('Zum Beispiel Schwert und Schild'))}"></label>${weapons.map((weapon,i)=>`<label class="pp-set-choice" ${weapon.unavailable?'data-unavailable="true"':''}><input data-set-weapon="${i}" type="checkbox" ${weapon.unavailable?'disabled':''}> <span>${e(weapon.name)}${weapon.unavailable?`<small>${e(t('Gleichnamige Waffen bitte in Pedipalpus eindeutig benennen.'))}</small>`:''}</span></label>`).join('')}${offhands.length&&actor.isOwner?`<label>${e(t('Aktive Nebenhand'))}<select name="setOffHand"><option value="unchanged">${e(t('Unverändert'))}</option><option value="">${e(t('Keine'))}</option>${offhands.map(row=>`<option value="${e(row.InventoryItemId)}">${e(row.Name)}</option>`).join('')}</select></label>`:''}`,
+ buttons:[{action:'save',label:t('Speichern'),callback:(_ev,_button,dialog)=>({remove:Array.from(dialog.element.querySelectorAll('[data-remove-set]:checked')).map(field=>Number(field.dataset.removeSet)),name:dialog.element.querySelector('[name="setName"]').value.trim(),weapons:Array.from(dialog.element.querySelectorAll('[data-set-weapon]:checked')).map(field=>weapons[Number(field.dataset.setWeapon)].key),offHand:dialog.element.querySelector('[name="setOffHand"]')?.value??'unchanged'})},{action:'cancel',label:t('Abbrechen'),callback:()=>false}]});
  if(!answer||typeof answer!=='object')return;
  if(app.actorId!==actor.id||game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen gewechselt oder entfernt. Bitte das Waffenset erneut öffnen.');
  const sets=figure.weaponSets.filter((_set,i)=>!answer.remove.includes(i));

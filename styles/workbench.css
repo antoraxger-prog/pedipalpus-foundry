@@ -234,3 +234,10 @@
 .pedipalpus-dialog .pp-note-editor textarea { display:block; margin-top:4px; resize:vertical; line-height:1.4; }
 .pedipalpus-dialog .pp-note-help { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:4px; color:var(--pp-muted,inherit); }
 .pedipalpus-dialog .pp-note-help output { font-variant-numeric:tabular-nums; white-space:nowrap; font-size:11px; }
+
+.pedipalpus-dialog .pp-set-choice { display:flex; align-items:flex-start; gap:6px; }
+.pedipalpus-dialog .pp-set-choice > input { flex-shrink:0; }
+.pedipalpus-dialog .pp-set-choice > span { min-width:0; overflow-wrap:anywhere; }
+.pedipalpus-dialog .pp-set-choice small { display:block; font-size:11px; }
+.pedipalpus-dialog .pp-set-choice[data-unavailable="true"] > span { opacity:.7; }
+.pedipalpus-dialog .pp-set-warning { margin:3px 0 10px 20px; padding-left:7px; border-left:2px solid var(--pp-accent,#a78a53); font-size:11px; overflow-wrap:anywhere; }

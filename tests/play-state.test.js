@@ -104,6 +104,16 @@ test('Weapon sets use semantic identities, tolerate reorder and fall back visibl
  raw.MeleeWeapons=[];const stale=renderView({actor:{id:'a',isOwner:true},character:snapshot(raw),status:{ready:true},mode:'battle',preferences:prefs});assert.match(stale,/Set unvollständig/);assert.match(stale,/data-check-id="combat:RangedWeapons/);
  assert.equal(weaponIdentity(data.checks.find(row=>row.id==='combat:MeleeWeapons:0:attack')),rapier.key);
 });
+test('Weapon choices can explain duplicate names without offering them as safe set identities',()=>{
+ const raw=retinueFixture();raw.MeleeWeapons.push({...raw.MeleeWeapons[0]});const data=snapshot(raw),before=JSON.stringify(data);
+ const safe=weaponChoices(data),all=weaponChoices(data,{includeUnavailable:true});
+ assert.equal(safe.some(row=>row.name==='Rapier'),false);assert.equal(all.filter(row=>row.name==='Rapier').length,2);assert.ok(all.filter(row=>row.name==='Rapier').every(row=>row.unavailable));
+ assert.equal(all.length,4);assert.ok(safe.every(row=>!Object.hasOwn(row,'unavailable')));assert.ok(all.filter(row=>row.name!=='Rapier').every(row=>!row.unavailable));assert.equal(JSON.stringify(data),before);
+});
+test('Weapon status distinguishes weapon instances from their attack/parry rows and never includes companions',()=>{
+ const data=snapshot(retinueFixture()),safe=weaponChoices(data),all=weaponChoices(data,{includeUnavailable:true});
+ assert.deepEqual(all.map(({key,name})=>({key,name})),safe);assert.equal(all.filter(row=>row.name==='Rapier').length,1);assert.ok(all.every(row=>!row.unavailable));assert.equal(all.some(row=>row.name.includes('Skelett')),false);
+});
 test('Notes, details and companion shortcuts do not inject HTML or replace the actual roll reference',()=>{
  const data=local(),check=data.checks.find(row=>row.id==='animals:0:0:attack'),html=renderView({actor:{id:'a',isOwner:true},character:data,status:{ready:true},mode:'battle',favoriteKeys:[check.id]});
  assert.match(html,/pp-companion-quick/);assert.match(html,/data-action="roll"[^>]*data-check="animals:0:0:attack"/);

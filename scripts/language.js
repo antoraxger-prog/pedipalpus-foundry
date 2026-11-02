@@ -1,5 +1,10 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Eigene Auswahl für das Kampfbrett. Alle Begleiter bleiben sichtbar. Entfernte oder mehrdeutige Waffen werden nicht geraten.':'Deine Waffen zusammen wählen. Freunde bleiben da. Fehlende oder doppelte Namen werden nicht geraten.',
+  'Fehlend oder mehrfach vorhanden':'Waffe weg oder Name doppelt', 'Unvollständig':'Nicht ganz', 'Unbekannte Waffe':'Waffe ohne Namen',
+  'Neues Set':'Neue Waffen zusammen', 'Zum Beispiel Schwert und Schild':'Schwert und Schild zum Beispiel',
+  'Gleichnamige Waffen bitte in Pedipalpus eindeutig benennen.':'Waffen heißen gleich. In Pedipalpus andere Namen geben.',
+  'Aktive Nebenhand':'Waffe in zweiter Hand', 'Unverändert':'So lassen',
   'Schaden':'Aua', 'Beschreibung':'Was Ding ist', 'Regeln':'So geht Ding', 'Kosten':'Was Ding kostet',
   'Dauer':'Wie lange', 'Zauberdauer':'Wie lange zaubern', 'Reichweite':'Wie weit', 'Wirkungsdauer':'Wie lange wirkt', 'Besonderheiten':'Was Ding extra kann',
   'AE':'Zauberkraft', 'KE':'Götterkraft',
