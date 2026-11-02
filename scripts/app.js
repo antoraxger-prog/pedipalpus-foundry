@@ -142,6 +142,11 @@ export class PedipalpusApp extends ApplicationV2 {
       this.search = event.target.value;
       this.filterChecks(content);
     });
+    content.querySelector('[data-search-clear]')?.addEventListener('click',()=>{
+      if(this.busy||this.referenceBusy)return;
+      this.search='';const search=content.querySelector('[name="search"]');search.value='';this.filterChecks(content);
+      const list=content.querySelector('.pp-check-list');if(list)list.scrollTop=0;search.focus();
+    });
     content.querySelector('[data-filter-reset]')?.addEventListener('click',()=>{
       if(this.busy||this.referenceBusy)return;
       this.search='';this.category='all';
@@ -329,6 +334,7 @@ export class PedipalpusApp extends ApplicationV2 {
     if (direction) direction.textContent = label;
   }
   filterChecks(content = this.element) {
+    const clear=content.querySelector('[data-search-clear]');if(clear)clear.hidden=!this.search;
     const query = this.search.trim(),terms=searchTerms(query);
     const armorView=this.mode==='battle'&&this.category==='armors'&&!query;
     content.querySelector('.pp-check-list')?.toggleAttribute('hidden',armorView);

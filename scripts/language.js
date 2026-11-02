@@ -1,5 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Suche leeren':'Suche weg',
   'Eigene Auswahl für das Kampfbrett. Alle Begleiter bleiben sichtbar. Entfernte oder mehrdeutige Waffen werden nicht geraten.':'Deine Waffen zusammen wählen. Freunde bleiben da. Fehlende oder doppelte Namen werden nicht geraten.',
   'Fehlend oder mehrfach vorhanden':'Waffe weg oder Name doppelt', 'Unvollständig':'Nicht ganz', 'Unbekannte Waffe':'Waffe ohne Namen',
   'Neues Set':'Neue Waffen zusammen', 'Zum Beispiel Schwert und Schild':'Schwert und Schild zum Beispiel',
@@ -207,7 +208,7 @@ export function localizeSurface(root, theme, character = null, actor = null, tok
     if(button.title)button.title=t(button.title);
     if(['administration','battle','ring','full'].includes(button.dataset.action))button.setAttribute('aria-label',button.title);
   });
-  for (const selector of ['[name="actor"]','[name="theme"]','[name="category"]','[name="search"]','[name="modifier"]','[name="modifierDirection"]','[name="focus"]','[data-action="portrait"]','.pp-focus']) {
+  for (const selector of ['[name="actor"]','[name="theme"]','[name="category"]','[name="search"]','[data-search-clear]','[name="modifier"]','[name="modifierDirection"]','[name="focus"]','[data-action="portrait"]','.pp-focus']) {
     const element = root.querySelector(selector);
     for (const key of ['title','aria-label','placeholder']) if (element?.hasAttribute(key)) element.setAttribute(key,t(element.getAttribute(key)));
   }

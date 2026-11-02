@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.18
+# Pedipalpus – Proben · 1.11.19
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.18 korrigiert das Verknüpfen vorhandener Szenen-Token über die Optionen. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.19 ergänzt einen direkt bedienbaren Löschknopf im Suchfeld. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Suche mit einem Klick leeren in 1.11.19
+
+Ein kleiner Löschknopf im Suchfeld erscheint bei eingegebenem Text. Er leert die Suche, setzt die Liste an den Anfang und den Fokus zurück ins Suchfeld. Der gewählte Probenbereich, Waffensets und ein noch unbenutzter Modifikator bleiben erhalten. Die Bedienung mit Esc bleibt verfügbar.
+
+Der Knopf folgt dem gewählten Theme und ist mit Tab sowie Enter oder Leertaste erreichbar. Auch Beobachter können ihre Suche leeren; Charakterdaten und Rechte bleiben unverändert. Kein Neuimport nötig.
 
 ## Neu in 1.11.18
 

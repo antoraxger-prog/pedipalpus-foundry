@@ -25,6 +25,12 @@
 .pedipalpus-app .pp-administration select { margin: 0; }
 .pedipalpus-app .pp-root .pp-filters { gap: 6px; grid-template-columns: 150px minmax(100px,1fr); }
 .pedipalpus-app .pp-root .pp-filters select, .pedipalpus-app .pp-root .pp-filters input { margin-top: 0; }
+.pedipalpus-app .pp-root .pp-search { position:relative; min-width:0; }
+.pedipalpus-app .pp-root .pp-search > label { display:block; }
+.pedipalpus-app .pp-root .pp-search input[type="search"] { padding-right:35px; }
+.pedipalpus-app .pp-root .pp-search input::-webkit-search-cancel-button { -webkit-appearance:none; }
+.pedipalpus-app .pp-root .pp-search button.pp-search-clear { position:absolute; right:3px; top:50%; transform:translateY(-50%); width:25px; height:25px; min-height:25px; padding:0; margin:0; line-height:1; }
+.pedipalpus-app .pp-root .pp-search-clear svg { width:12px; height:12px; fill:none; stroke:currentColor; stroke-width:2; vertical-align:middle; }
 .pedipalpus-app .pp-root .pp-modifier { gap: 7px; }
 .pedipalpus-app .pp-root .pp-wheel-hint { font-size: 10px; gap: 6px; }
 .pedipalpus-app .pp-table .pp-favorite-cell { width: 31px; padding-left: 3px; padding-right: 2px; }
