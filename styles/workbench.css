@@ -1,4 +1,5 @@
 .pedipalpus-app .pp-root { gap: 6px; container-type: inline-size; }
+.pedipalpus-app .window-content .pp-root[data-theme] { overflow-y:auto; }
 .pedipalpus-app .pp-no-results p { margin:0 0 8px; }
 .pedipalpus-app .pp-root .pp-no-results button { width:auto; max-width:100%; min-height:28px; padding:3px 10px; font-size:12px; white-space:normal; }
 .pedipalpus-app .pp-play-toolbar { display: grid; grid-template-columns: 36px minmax(100px,1fr) auto; gap: 7px; align-items: center; }

@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.22
+# Pedipalpus – Proben · 1.11.23
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.22 erklärt sichtbar, wenn die Würfelanbindung fehlt oder nicht zur installierten Version passt. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.23 hält Inhalte auch in sehr niedrigen Fenstern mit großer Schrift erreichbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Sehr niedrige Fenster bedienen in 1.11.23
+
+Wenn große Schrift, komfortable Darstellung oder zusätzliche Anzeigen nicht in die Fensterhöhe passen, lässt sich nun auch die gesamte Oberfläche vertikal scrollen. Die eigentliche Probenliste wird dadurch nicht mehr unterhalb des Fensters abgeschnitten. Bei ausreichend Platz bleibt das zusätzliche Scrollen unnötig.
+
+Beim Neuaufbau derselben Ansicht bleiben die äußere Scrollposition und die Position innerhalb der Probenliste erhalten. Tastaturfokus und Strg+F bringen die jeweiligen Bedienelemente ins Sichtfeld. Daten, Rechte und Einstellungen bleiben erhalten; kein Neuimport nötig.
 
 ## Sichtbare Verbindungshinweise in 1.11.22
 

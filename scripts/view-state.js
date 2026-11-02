@@ -11,7 +11,7 @@ function controlKey(control){
 export function captureViewState(element){
  const root=rootOf(element);if(!root)return null;
  const active=element.ownerDocument.activeElement,own=active&&root.contains(active),list=root.querySelector('.pp-check-list');
- return {identity:identity(root),scrollTop:list?.scrollTop??0,scrollLeft:list?.scrollLeft??0,quickbar:root.querySelector('.pp-quickbar')?.open,
+ return {identity:identity(root),rootScrollTop:root.scrollTop,scrollTop:list?.scrollTop??0,scrollLeft:list?.scrollLeft??0,quickbar:root.querySelector('.pp-quickbar')?.open,
   focus:own?controlKey(active):null,...(own&&typeof active.selectionStart==='number'?{selection:[active.selectionStart,active.selectionEnd,active.selectionDirection]}:{})};
 }
 export function restoreViewState(element,state,{focusOnly=false}={}){
@@ -28,4 +28,5 @@ export function restoreViewState(element,state,{focusOnly=false}={}){
   }
  }
  const list=root.querySelector('.pp-check-list');if(!focusOnly&&list){list.scrollTop=state.scrollTop;list.scrollLeft=state.scrollLeft;}
+ if(!focusOnly)root.scrollTop=state.rootScrollTop??0;
 }
