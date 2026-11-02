@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.3
+# Pedipalpus – Proben · 1.11.4
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.3 stoppt veraltete separate Begleiterbild-Uploads und Spielstandänderungen an zwischenzeitlich entfernten oder ersetzten Figuren. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.4 erleichtert das Ordnen der Favoriten per Tastatur. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Favoriten per Tastatur ordnen in 1.11.4
+
+Beim Verschieben bleibt der Fokus auf dem verschobenen Favoriten. Am Anfang und Ende sind unpassende Richtungspfeile gesperrt; erreicht ein Favorit den Rand, wechselt der Fokus zum verfügbaren Gegenpfeil. Nach dem Entfernen folgt der nächste Eintrag, beim letzten Eintrag der vorherige. Ist die Liste leer, bleibt der Fokus im Favoritenbereich.
+
+Die Schaltflächen nennen für die Sprachausgabe zusätzlich den zugehörigen Probennamen und zeigen einen deutlichen Tastaturfokus. Abbrechen verwirft die geänderte Reihenfolge und entfernte Favoriten; erst Speichern übernimmt sie. Die Bereinigung nicht mehr verfügbarer Favoriten bleibt eine ausdrückliche Aktion.
+
+Bestehende Einstellungen, Figuren und Favoriten bleiben erhalten. Kein Neuimport erforderlich.
 
 ## Begleiterbilder und Spielstandsfenster in 1.11.3
 

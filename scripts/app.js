@@ -544,15 +544,32 @@ export class PedipalpusApp extends ApplicationV2 {
         dialog.element.querySelector('[data-token-refresh]').addEventListener('click',async event=>{const button=event.target;button.disabled=true;try{const actor=this.actor,expected=portraitState(actor),image=actor.img,style=dialog.element.querySelector('[name="tokenFrame"]').value,framed=await tokenFromActor(actor,style);await applyPortrait(actor,image,message=>this.notify('warn',message),await uploadPortrait(framed.token),framingFor(framed),expected);frameStatus.textContent=this.t('Tokenbild erstellt.');}catch(error){frameStatus.textContent=this.t(error.message);}finally{button.disabled=false;}});
         const host=dialog.element.querySelector('.pp-favorite-editor');
         const availability=()=>favoriteAvailability(getCharacter(this.actor),draft.favorites[this.actorId]||[]);
-        const update=()=>{const rows=availability();host.innerHTML=(rows.map(({reference:ref,check,reason},index)=>`<div><span>${e(checkDisplayName(ref,this.language))}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}${check?'':`<small class="pp-original-name" title="${e(this.t(reason))}">${t('Nicht verfügbar')}</small>`}</span><button type="button" data-favorite-operation="up" data-index="${index}" aria-label="${t('Nach oben')}">↑</button><button type="button" data-favorite-operation="down" data-index="${index}" aria-label="${t('Nach unten')}">↓</button><button type="button" data-favorite-operation="remove" data-index="${index}" aria-label="${t('Entfernen')}">×</button></div>`).join('') || `<p>${t('Noch keine Favoriten.')}</p>`)+(rows.some(row=>!row.check)?`<button type="button" data-favorite-operation="unavailable">${t('Nicht verfügbare Favoriten entfernen')}</button>`:'');};
+        host.tabIndex=-1;host.setAttribute('aria-label',this.t('Favoriten ordnen'));
+        const update=(focusIndex,operation)=>{
+          const rows=availability();
+          host.innerHTML=(rows.map(({reference:ref,check,reason},index)=>{
+            const name=checkDisplayName(ref,this.language);
+            const button=(action,label,symbol,disabled=false)=>`<button type="button" data-favorite-operation="${action}" data-index="${index}" aria-label="${e(this.t(label))}: ${e(name)}" ${disabled?'disabled':''}>${symbol}</button>`;
+            return `<div><span>${e(name)}${this.language==='ork' && ref.kind==='skill'?`<small class="pp-original-name">${e(ref.name)}</small>`:''}${check?'':`<small class="pp-original-name" title="${e(this.t(reason))}">${t('Nicht verfügbar')}</small>`}</span>${button('up','Nach oben','↑',index===0)}${button('down','Nach unten','↓',index===rows.length-1)}${button('remove','Entfernen','×')}</div>`;
+          }).join('') || `<p>${t('Noch keine Favoriten.')}</p>`)+(rows.some(row=>!row.check)?`<button type="button" data-favorite-operation="unavailable">${t('Nicht verfügbare Favoriten entfernen')}</button>`:'');
+          if(focusIndex===undefined)return;
+          const index=Math.max(0,Math.min(focusIndex,rows.length-1)),buttons=host.querySelectorAll(`[data-index="${index}"]`);
+          const target=Array.from(buttons).find(button=>button.dataset.favoriteOperation===operation&&!button.disabled)
+            ||Array.from(buttons).find(button=>!button.disabled)||host;
+          target.focus({preventScroll:true});target.scrollIntoView({block:'nearest'});
+        };
         update();
         host.addEventListener('click',event=>{
-          const button=event.target.closest('[data-favorite-operation]');if(!button)return;
-          if(button.dataset.favoriteOperation==='unavailable'){draft.favorites[this.actorId]=availability().filter(row=>row.check).map(row=>row.reference);update();return;}
+          const button=event.target.closest('[data-favorite-operation]');if(!button||button.disabled)return;
+          const operation=button.dataset.favoriteOperation;
+          if(operation==='unavailable'){draft.favorites[this.actorId]=availability().filter(row=>row.check).map(row=>row.reference);update(0,'remove');return;}
           const refs=draft.favorites[this.actorId] || [],index=Number(button.dataset.index);if(!Number.isInteger(index)||!refs[index])return;
-          if(button.dataset.favoriteOperation==='remove')draft.favorites[this.actorId]=refs.filter((_ref,i)=>i!==index);
-          else draft.favorites=moveFavorite(draft,this.actorId,refs[index],button.dataset.favoriteOperation).favorites;
-          update();
+          if(operation==='remove'){draft.favorites[this.actorId]=refs.filter((_ref,i)=>i!==index);update(index,'remove');}
+          else {
+            const key=referenceKey(refs[index]);
+            draft.favorites=moveFavorite(draft,this.actorId,refs[index],operation).favorites;
+            update(draft.favorites[this.actorId].findIndex(ref=>referenceKey(ref)===key),operation);
+          }
         });
         const volume=dialog.element.querySelector('[name="volume"]');
         volume.addEventListener('input',()=>{dialog.element.querySelector('[data-volume]').textContent=`${Math.round(Number(volume.value)*100)}%`;});

@@ -92,6 +92,9 @@
 .pedipalpus-dialog .pp-favorite-editor > div { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
 .pedipalpus-dialog .pp-favorite-editor span { flex: 1; overflow-wrap: anywhere; }
 .pedipalpus-dialog .pp-favorite-editor button { flex: 0 0 30px; }
+.pedipalpus-dialog .pp-favorite-editor button:disabled { opacity: .35; cursor: default; }
+.pedipalpus-dialog .pp-favorite-editor button:focus-visible,
+.pedipalpus-dialog .pp-favorite-editor:focus-visible { outline: 2px solid var(--pp-accent, #c9aa6e); outline-offset: 2px; }
 .pedipalpus-dialog .pp-import-diff { max-height: 320px; overflow: auto; }
 .pedipalpus-dialog .pp-import-diff table { width: 100%; }
 .pedipalpus-dialog textarea { width: 100%; }
