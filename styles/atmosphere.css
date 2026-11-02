@@ -237,6 +237,7 @@
 .pedipalpus-app .pp-battle-inventory h3 { margin:0 0 8px; font:600 15px Georgia,serif; }
 .pedipalpus-app .pp-armor-card { border:1px solid var(--pp-border); padding:7px; margin-bottom:6px; background:var(--pp-row-alt); }
 .pedipalpus-app .pp-armor-card header { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.pedipalpus-app .pp-armor-card header strong { min-width:0; overflow-wrap:anywhere; }
 .pedipalpus-app .pp-armor-card header span { font-size:11px; white-space:nowrap; }
 .pedipalpus-app .pp-armor-card > div { display:flex; align-items:center; gap:16px; margin-top:7px; }
 .pedipalpus-app .pp-armor-card label { display:flex; align-items:center; gap:6px; font-size:12px; }

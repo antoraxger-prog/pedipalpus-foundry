@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.24
+# Pedipalpus – Proben · 1.11.25
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.24 hält lange Waffen- und Begleiternamen auch in schmalen Kampffenstern vollständig lesbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.25 hält lange Rüstungsnamen und ihre Werte auch in schmalen Fenstern lesbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,10 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Rüstungsübersicht in 1.11.25
+
+Lange Rüstungsnamen brechen innerhalb ihrer Karte um, sodass RS und BE sichtbar bleiben. Die Position in einer längeren Rüstungsliste bleibt nach dem Ändern von Häkchen oder einem Neuaufbau derselben Ansicht erhalten. Keine Änderung an den Rüstungsregeln oder Datenformaten; kein Neuimport nötig.
 
 ## Lange Kampfbezeichnungen in 1.11.24
 
