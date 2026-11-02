@@ -197,7 +197,7 @@
 .pedipalpus-app .pp-play-controls { display:flex; flex:0 0 auto; align-items:center; gap:4px; flex-wrap:wrap; }
 .pedipalpus-app .pp-play-controls button,.pedipalpus-app .pp-play-controls select { width:auto; min-height:24px; height:26px; font-size:11px; margin:0; padding:2px 6px; }
 .pedipalpus-app .pp-play-controls select { flex:1; min-width:90px; }
-.pedipalpus-app .pp-root .pp-name-cell { position:relative; padding-right:23px; }
+.pedipalpus-app .pp-root .pp-table td.pp-name-cell { position:relative; padding-right:23px; }
 .pedipalpus-app .pp-root .pp-info-button { position:absolute; right:2px; top:5px; display:inline-grid; place-items:center; width:19px; min-width:19px; height:20px; min-height:20px; padding:0; margin:0; vertical-align:middle; font-size:13px; line-height:1; }
 .pedipalpus-app .pp-weapon-header th { position:relative; }
 .pedipalpus-app .pp-damage-actions { display:inline-flex; gap:3px; margin-left:8px; vertical-align:middle; }

@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.15
+# Pedipalpus – Proben · 1.11.16
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.15 macht die vollständige Favoritenliste direkt aus der Schnellleiste erreichbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.16 hält Probennamen und Info-Knöpfe auch in schmalen Tabellenzeilen getrennt. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Probennamen und Info-Knöpfe in 1.11.16
+
+Der Platz für den Info-Knopf in einer Probenzeile wird zuverlässig freigehalten. Allgemeine Tabellenabstände können diesen Platz nicht mehr verdrängen. Lange Namen umbrechen vor dem Knopf und werden nicht von ihm überlagert, auch bei größerer Schrift und in schmalen Fenstern.
+
+Die Korrektur gilt ebenso für Kampfaktionen und Begleiterproben. Anklicken des Namens würfelt weiterhin normal; der Info-Knopf öffnet Regeln und persönliche Notizen. Daten, Rechte und Einstellungen bleiben erhalten; kein Neuimport erforderlich.
 
 ## Alle Favoriten aus der Schnellleiste in 1.11.15
 
