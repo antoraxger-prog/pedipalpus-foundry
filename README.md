@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.9
+# Pedipalpus – Proben · 1.11.10
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.9 erklärt fehlende oder mehrfach gleichnamige Waffen bei der Waffenset-Auswahl. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.10 verbessert die Umbrüche in schmalen Einstellungs- und Notizfenstern. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Schmale Einstellungs- und Notizfenster in 1.11.10
+
+Einstellungsfelder können bei Platzmangel unter ihre Beschriftung umbrechen. Auswahlfelder und Datei-Importfelder bleiben innerhalb des verfügbaren Inhaltsbereichs, auch bei längeren Namen eigener Tokenrahmen. Die Lautstärkeanzeige und das Mausrad-/Würfelverhalten bleiben unverändert.
+
+Lange Regeltexte und Links im Info-/Notizfenster werden umgebrochen. Der Text wird dabei nicht gekürzt oder umgeschrieben. Notizeingabe, Zeichenanzeige und Strg-/Command+Enter bleiben unterstützt.
+
+Die Darstellung wurde bei schmalen Dialogen mit größerer UI-Schrift und in allen neun Designs geprüft. Speichern und Abbrechen behalten ihre bisherigen Funktionen. Gespeicherte Werte, Quelldaten, Bilder und Rechte bleiben erhalten; kein Neuimport erforderlich.
 
 ## Waffenset-Auswahl nachvollziehen in 1.11.9
 

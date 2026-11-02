@@ -86,8 +86,11 @@
 .pedipalpus-app .pp-root[data-density="comfortable"] .pp-dice-button,
 .pedipalpus-app .pp-root[data-density="comfortable"] button.pp-favorite-button { min-width: 36px; min-height: 36px; }
 .pedipalpus-app .pp-root[data-density="comfortable"] .pp-check-name { font-size: 14px; }
-.pedipalpus-dialog .pp-preferences label { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 8px 0; }
-.pedipalpus-dialog .pp-preferences select { min-width: 170px; }
+.pedipalpus-dialog .pp-preferences { min-width: 0; overflow-wrap: anywhere; }
+.pedipalpus-dialog .pp-preferences label { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; margin: 8px 0; }
+.pedipalpus-dialog .pp-preferences select { width: 170px; min-width: 0; max-width: 100%; }
+.pedipalpus-dialog .pp-preferences input[type="file"] { flex: 1 1 100%; min-width: 0; width: 100%; max-width: 100%; }
+.pedipalpus-dialog .pp-preferences label > span { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
 .pedipalpus-dialog .pp-preferences input[type="range"] { max-width: 190px; }
 .pedipalpus-dialog .pp-favorite-editor > div { display: flex; gap: 5px; align-items: center; padding: 4px 0; }
 .pedipalpus-dialog .pp-favorite-editor span { flex: 1; overflow-wrap: anywhere; }
@@ -231,7 +234,8 @@
 .pedipalpus-app .pp-info-button[data-has-note="true"] { color:var(--pp-accent); }
 .pedipalpus-app .pp-note-mark { position:absolute; width:5px; height:5px; top:-2px; right:-2px; border-radius:50%; background:var(--pp-accent); box-shadow:0 0 0 1px var(--pp-surface); pointer-events:none; }
 
-.pedipalpus-dialog .pp-note-editor textarea { display:block; margin-top:4px; resize:vertical; line-height:1.4; }
+.pedipalpus-dialog .pp-check-info { min-width:0; overflow-wrap:anywhere; }
+.pedipalpus-dialog .pp-note-editor textarea { display:block; box-sizing:border-box; max-width:100%; margin-top:4px; resize:vertical; line-height:1.4; }
 .pedipalpus-dialog .pp-note-help { display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:4px; color:var(--pp-muted,inherit); }
 .pedipalpus-dialog .pp-note-help output { font-variant-numeric:tabular-nums; white-space:nowrap; font-size:11px; }
 
