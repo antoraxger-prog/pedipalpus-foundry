@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.12
+# Pedipalpus – Proben · 1.11.13
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.12 macht gleichnamige Begleiter in der Charakterauswahl unterscheidbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.13 hält Zustandsfelder in schmalen Spielstandsfenstern erreichbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Zustandsfelder in schmalen Fenstern in 1.11.13
+
+Im Spielstandsfenster dürfen Zustandswert und Unterdrückung bei wenig Platz auf getrennte Zeilen umbrechen. Dadurch ragt beispielsweise „Überanstrengung“ bei größerer UI-Schrift nicht mehr seitlich aus dem verfügbaren Bereich.
+
+Speichern, Abbrechen, Plus-/Minusknöpfe und die Energieübernahme zwischen Hauptfigur und verknüpften Begleitern behalten ihre bisherigen Funktionen. Datenformat, Werte und Rechte bleiben erhalten; kein Neuimport erforderlich.
 
 ## Begleiter in der Charakterauswahl unterscheiden in 1.11.12
 
