@@ -672,8 +672,8 @@ export class PedipalpusApp extends ApplicationV2 {
     const companionPictures=new Map();
     this.importFolders??={};this.importSelections??={};
     const answer = await DialogV2.wait({
-      window: { title: this.t('Charakter / NSC / Gefolge importieren') }, position: { width: 550 },
-      classes: this.dialogClasses, content: renderImportOptions(actors, this.actorId, canCreate, this.preferences.tokenFrame,importKind), modal:true, rejectClose: false,
+      window: { title: this.t('Charakter / NSC / Gefolge importieren') }, position: { width: 550, top:24 },
+      classes: [...this.dialogClasses,'pp-import-dialog'], content: renderImportOptions(actors, this.actorId, canCreate, this.preferences.tokenFrame,importKind), modal:true, rejectClose: false,
       buttons: [{ action: 'import', label:this.t('Importieren'), icon: 'fa-solid fa-file-import', disabled: true,
         callback: (_event, _button, dialog) => {
           if (!pending) { this.notify('warn', 'Bitte zuerst eine gültige Charakterdatei auswählen.'); return null; }

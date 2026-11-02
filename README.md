@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.25
+# Pedipalpus – Proben · 1.11.26
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.25 hält lange Rüstungsnamen und ihre Werte auch in schmalen Fenstern lesbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.26 macht längere Charakter-, NSC- und Gefolgsimporte scrollbar und hält die Abschlussknöpfe sichtbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,10 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Scrollbares Importfenster in 1.11.26
+
+Das Formular für Charakter-, NSC- und Gefolgsimporte hat einen eigenen Scrollbereich, dessen Höhe sich nach der verfügbaren Fensterhöhe richtet. Importieren und Abbrechen bleiben darunter sichtbar. Das Fenster öffnet sich mit Abstand zur oberen Bildschirmkante, damit auch umfangreiche Begleiter- und Bildoptionen erreichbar bleiben. Importzuordnung, Daten und Rechte bleiben unverändert; kein Neuimport bestehender Figuren nötig.
 
 ## Rüstungsübersicht in 1.11.25
 

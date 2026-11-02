@@ -160,8 +160,9 @@
 }
 
 .pedipalpus-dialog .pp-import-preview { max-height:140px; overflow:auto; overflow-wrap:anywhere; }
+.pedipalpus-dialog.pp-import-dialog .pp-import { box-sizing:border-box; max-height:min(640px,60vh,calc(100dvh - 240px)); overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; overflow-wrap:anywhere; padding:0 6px 4px 0; }
 .pedipalpus-dialog .pp-import-kinds { display:flex; gap:8px; margin-bottom:12px; }
-.pedipalpus-dialog .pp-import-kinds button { flex:1; min-width:0; }
+.pedipalpus-dialog .pp-import-kinds button { flex:1; min-width:0; white-space:normal; overflow-wrap:anywhere; }
 .pedipalpus-dialog .pp-import-kinds button[aria-pressed="true"] { outline:2px solid currentColor; outline-offset:-3px; font-weight:bold; }
 .pedipalpus-dialog .pp-import-panel[hidden] { display:none; }
 .pedipalpus-dialog .pp-import [hidden] { display:none !important; }
