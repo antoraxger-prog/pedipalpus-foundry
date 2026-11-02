@@ -1,7 +1,8 @@
+import { MODULE_ID } from './data.js';
 import { COMPANION_GROUPS,isCompanionCheck } from './retinue.js';
 import { buildCommand } from './commands.js';
 import { tokenStyles, customFrameFor, savedFrames } from './tokens.js';
-import { companionKey,companionEntries,companionActor,companionImportTargets } from './companions.js';
+import { companionKey,companionEntries,companionActor,companionImportTargets,companionImportLabel } from './companions.js';
 import { armorItems,armorFingerprint } from './equipment.js';
 import { characterFocus } from './combat.js';
 import { uiText } from './language.js';
@@ -277,5 +278,5 @@ export function renderCompanionRules(member,language='fantasy'){
 export function renderCompanionImportOptions(character,actorId){
  const members=companionEntries(character),targets=companionImportTargets(actorId),canCreate=foundry.documents.Actor.canUserCreate(game.user);
  if(!members.length)return '<p class="pp-hint">Keine Begleiter in dieser Datei.</p>';
- return `<p class="pp-hint">Für jeden Begleiter einen neuen Token-Eintrag anlegen oder einen eigenen Begleiter bzw. leeren Foundry-Eintrag aktualisieren. Vorhandene Hauptcharaktere und NSCs sind geschützt.</p>${members.map((member,index)=>{let key='',linked=null;try{key=companionKey(character,index);linked=companionActor(actorId,key);}catch{}return `<label>${e(member.Name)}<select data-companion-import-index="${index}" ${key?'':'disabled'}><option value="">Keinen Token ändern</option>${canCreate?'<option value="new">Neuen Token-Eintrag anlegen</option>':''}${targets.map(target=>`<option value="${e(target.id)}" ${linked?.id===target.id?'selected':''}>${e(target.name)} aktualisieren</option>`).join('')}</select></label><label>Bild für ${e(member.Name)} (optional)<input data-companion-picture-index="${index}" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp" ${key?'':'disabled'}></label>`;}).join('')}`;
+ return `<p class="pp-hint">Für jeden Begleiter eine vorhandene Figur aus dem Figurenverzeichnis auswählen oder einen neuen Token-Eintrag anlegen. Auch einzelne importierte Wesen und Begleiter aus anderen Imports sind auswählbar und werden diesem Import zugeordnet. Ordner und Figurenkennung bleiben erhalten; ohne Bildübernahme auch die bisherigen Bilder. Hauptcharaktere, NSCs und Figuren mit eigenen Begleitern bleiben geschützt.</p>${members.map((member,index)=>{let key='',linked=null;try{key=companionKey(character,index);linked=companionActor(actorId,key);}catch{}return `<label>${e(member.Name)}<select data-companion-import-index="${index}" ${key?'':'disabled'}><option value="">Keinen Token ändern</option>${canCreate?'<option value="new">Neuen Token-Eintrag anlegen</option>':''}${targets.map(target=>{const label=companionImportLabel(target),duplicate=targets.filter(other=>companionImportLabel(other)===label).length>1,otherSource=target.getFlag(MODULE_ID,'companion')?.sourceActorId;return `<option value="${e(target.id)}" ${linked?.id===target.id?'selected':''}>${e(label)}${duplicate?' · '+e(target.id):''} aktualisieren${otherSource&&otherSource!==actorId?' (anderer Import)':''}</option>`;}).join('')}</select></label><label>Bild für ${e(member.Name)} (optional)<input data-companion-picture-index="${index}" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp" ${key?'':'disabled'}></label>`;}).join('')}`;
 }

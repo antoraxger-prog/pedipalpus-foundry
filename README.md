@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.27
+# Pedipalpus – Proben · 1.11.28
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.27 übernimmt Gefolge auch direkt aus gespeicherten Charakteren oder NSC im ausgewählten Pedipalpus-Ordner. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.28 kann vorhandene Begleiterfiguren aus dem Figurenverzeichnis gezielt aktualisieren und zeigt ihre Ordnerpfade an. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Vorhandene Begleiterfiguren in 1.11.28
+
+Beim Import unter jedem Begleiter die vorhandene Figur aus dem Figurenverzeichnis als Ziel auswählen. Auch Begleiter aus einem früheren Import, einzeln importierte Wesen und leere Einträge sind verfügbar, sofern die nötigen Bearbeitungsrechte bestehen. Die Auswahl zeigt den Ordnerpfad; bei gleichen Namen im selben Ordner zusätzlich die Figurenkennung. Hauptcharaktere, normale NSC und Figuren mit eigenen Begleitern bleiben geschützt.
+
+Die gewählte Figur wird aktualisiert und dem aktuellen Import zugeordnet. Ihre Kennung und ihr Ordner bleiben erhalten; ohne Bildübernahme auch ihre Bilder. Bestehende Rechte bleiben erhalten, eine gewählte Spielerzuweisung wird ergänzt. Wiederholter Import verwendet die zugeordneten Figuren weiter. Zwei Begleiter können nicht dasselbe Ziel überschreiben. Eine zwischenzeitlich geänderte frühere Hauptfigur oder fehlende Rechte verhindern die Übernahme.
+
+Bei einer Datei mit nur einem Wesen erfolgt die Auswahl oben unter **In Foundry speichern als**. Eine gewählte verknüpfte Begleiterfigur wird dann als eigenständiges Wesen aktualisiert und vom früheren Import gelöst; das Fenster weist vorab darauf hin. Ihre bisherige Hauptfigur bleibt unverändert, und es entsteht kein zweiter Actor. Der Änderungsvergleich kann abgebrochen werden.
 
 ## Gefolge aus dem Pedipalpus-Ordner in 1.11.27
 

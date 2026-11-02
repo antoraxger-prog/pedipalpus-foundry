@@ -1,4 +1,4 @@
-import { MODULE_ID, FLAG, SCHEMA_VERSION } from './data.js';
+import { MODULE_ID, FLAG, SCHEMA_VERSION, validSnapshot } from './data.js';
 import { getCharacter,ownerAssignment,assignOwner } from './storage.js';
 import { uploadPortrait,applyPortrait,framingFor,portraitState } from './portraits.js';
 import { tokenFromActor } from './tokens.js';
@@ -73,9 +73,17 @@ export async function refreshCompanions(source,warn=message=>ui.notifications.wa
 export function companionImportTargets(sourceActorId){
  return game.actors.contents.filter(actor=>{
   if(actor.id===sourceActorId||!actor.canUserModify(game.user,'update'))return false;
+  if(game.actors.contents.some(other=>other.getFlag(MODULE_ID,'companion')?.sourceActorId===actor.id))return false;
   const link=actor.getFlag(MODULE_ID,'companion');
-  return link?.sourceActorId?link.sourceActorId===sourceActorId:!getCharacter(actor);
- });
+  if(link?.sourceActorId){const previous=game.actors.get(link.sourceActorId);return link.sourceActorId===sourceActorId||!previous||previous.canUserModify(game.user,'update');}
+  const character=getCharacter(actor);
+  return !character||Boolean(character.profile.companionGroup&&companionEntries(character).length===1&&character.checks.every(isCompanionCheck));
+ }).sort((a,b)=>companionImportLabel(a).localeCompare(companionImportLabel(b),'de')||a.id.localeCompare(b.id));
+}
+export function companionImportLabel(actor){
+ const path=[],seen=new Set();let folder=actor.folder;
+ while(folder&&path.length<32&&!seen.has(folder)){seen.add(folder);path.unshift(String(folder.name??''));folder=folder.folder;}
+ return [...path.filter(Boolean),actor.name||'Ohne Namen'].join(' / ');
 }
 export const companionTargetState=actor=>JSON.stringify({character:getCharacter(actor),link:actor?.getFlag(MODULE_ID,'companion'),name:actor?.name,img:actor?.img,token:actor?.prototypeToken?.texture?.src,ownership:actor?.ownership,framing:actor?.getFlag(MODULE_ID,'portraitFraming')});
 const targetState=companionTargetState;
@@ -89,10 +97,11 @@ export function prepareCompanionImport(character,sourceActorId,selections=[]){
    if(!foundry.documents.Actor.canUserCreate(game.user))throw new Error('Du darfst keine neuen Begleiter-Einträge anlegen.');
   }else{
    if(used.has(row.targetId))throw new Error('Zwei Begleiter dürfen nicht denselben Token-Eintrag überschreiben.');used.add(row.targetId);
-   if(!targets.some(actor=>actor.id===row.targetId))throw new Error('Dieses Importziel ist kein eigener Begleiter oder leerer Foundry-Eintrag.');
+   if(!targets.some(actor=>actor.id===row.targetId))throw new Error('Dieses Importziel ist kein bearbeitbarer Begleiter oder leerer Foundry-Eintrag. Hauptcharaktere, NSC und Figuren mit eigenen Begleitern bleiben geschützt.');
   }
   const target=game.actors.get(row.targetId);
-  return {index:row.index,key,targetId:row.targetId,expected:target?targetState(target):null,active:active.map(actor=>({id:actor.id,expected:targetState(actor)}))};
+  const previous=game.actors.get(target?.getFlag(MODULE_ID,'companion')?.sourceActorId);
+  return {index:row.index,key,targetId:row.targetId,expected:target?targetState(target):null,active:active.map(actor=>({id:actor.id,expected:targetState(actor)})),...(previous&&previous.id!==sourceActorId?{previousSource:{id:previous.id,expected:targetState(previous)}}:{})};
  });
  for(const row of plan){const link=game.actors.get(row.targetId)?.getFlag(MODULE_ID,'companion');if(link?.key!==row.key&&plan.some(other=>other.key===link?.key))throw new Error('Ein bisheriger Begleiter ist zugleich Importziel und selbst zur Aktualisierung ausgewählt. Bitte getrennte Ziele wählen.');}
  return plan;
@@ -131,4 +140,14 @@ export async function applyCompanionImport(source,plan=[],{includeImages=true,ow
  }
  const keys=companionEntries(character).flatMap((_member,index)=>{try{return [companionKey(character,index)];}catch{return [];}});
  await refreshCompanions(source,warn,{skipKeys:keys});
+}
+
+export async function saveStandaloneCompanion(snapshot,actorId,plan,portrait=null,{ownerId='',warn}={}){
+ if(!validSnapshot(snapshot)||!snapshot.profile.retinueOnly||!snapshot.profile.companionGroup||companionEntries(snapshot).length!==1||plan?.length!==1||plan[0].index!==0||plan[0].targetId!==actorId)throw new Error('Bitte ein einzelnes Wesen und eine vorhandene Begleiterfigur auswählen.');
+ const actor=game.actors.get(actorId),expectedPortrait=portraitState(actor),ownership=ownerAssignment(ownerId);
+ const verify=()=>{if(game.actors.get(actorId)!==actor||!actor?.canUserModify(game.user,'update'))throw new Error('Die gewählte Begleiterfigur wurde entfernt oder ist nicht mehr bearbeitbar.');verifyCompanionImport(snapshot,null,plan);ownerAssignment(ownerId);};
+ verify();const image=portrait?await uploadPortrait(portrait):null,token=portrait?await uploadPortrait(portrait.token??portrait):null;verify();
+ await actor.update({name:snapshot.profile.name,'prototypeToken.name':snapshot.profile.name,[`flags.${MODULE_ID}.${FLAG}`]:snapshot,[`flags.${MODULE_ID}.companion`]:{...actor.getFlag(MODULE_ID,'companion'),sourceActorId:null,key:null,active:false,replacedBy:null},...Object.fromEntries(Object.entries(ownership).map(([id,level])=>[`ownership.${id}`,level]))});
+ if(image)await applyPortrait(actor,image,warn,token,framingFor(portrait),expectedPortrait);
+ return actor;
 }

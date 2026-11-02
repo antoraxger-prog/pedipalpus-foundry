@@ -12,7 +12,7 @@ import { loadWorkbench, updateWorkbench, validateWorkbench, checkReference, refe
 import { compareCharacters } from './import-diff.js';
 import { playFeedback, notifyFeedback, prepareFeedback } from './feedback.js';
 import { COMPANION_GROUPS,isCompanionCheck,memberAttributes,withCompanionAttributes,retainCompanionChoices,withCompanionImport } from './retinue.js';
-import { companionEntries,companionKey,companionActor,saveCompanion,companionTargetState,prepareCompanionImport,verifyCompanionImport,applyCompanionImport,companionRollIssue } from './companions.js';
+import { companionEntries,companionKey,companionActor,saveCompanion,companionTargetState,prepareCompanionImport,verifyCompanionImport,applyCompanionImport,saveStandaloneCompanion,companionImportTargets,companionImportLabel,companionRollIssue } from './companions.js';
 import { characterFiles, readCharacterWithPortrait,matchCompanionPictures } from './character-folder.js';
 import { tokenStyles, importCustomFrame, savedFrames, prepareTokenPortrait, tokenFromActor, importTokenFrames, savedPortraitFraming, portraitFromActor } from './tokens.js';
 import { writeCharacterBundle } from './bundle.js';
@@ -681,12 +681,14 @@ export class PedipalpusApp extends ApplicationV2 {
           const ownerId=dialog.element.querySelector('[name="ownerId"]')?.value||'';ownerAssignment(ownerId);
           const companionPlan=includeCompanions?prepareCompanionImport(pending,actorId,Array.from(dialog.element.querySelectorAll('[data-companion-import-index]')).map(field=>({index:Number(field.dataset.companionImportIndex),targetId:field.value}))):[];
           if (includeImages&&(portraitBusy || portraitError)) throw new Error('Bitte ein gültiges Bild auswählen oder die Bildauswahl leeren.');
-          return { snapshot: pending, portrait:includeImages?portrait:null, companionPictures:includeImages&&includeCompanions?Array.from(companionPictures.values()):[], includeImages,includeCompanions,companionPlan,ownerId,source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
+          const standalonePlan=pending.profile.retinueOnly&&pending.profile.companionGroup&&actorId&&companionImportTargets(null).some(actor=>actor.id===actorId)?prepareCompanionImport(pending,null,[{index:0,targetId:actorId}]):null;
+          return { standalonePlan,snapshot: pending, portrait:includeImages?portrait:null, companionPictures:includeImages&&includeCompanions?Array.from(companionPictures.values()):[], includeImages,includeCompanions,companionPlan,ownerId,source:pendingSource,tokenFrame:dialog.element.querySelector('[name="tokenFrame"]').value, actorId: dialog.element.querySelector('[name="destination"]').value || null };
         } }, { action: 'cancel', label:this.t('Abbrechen'), callback: () => false }],
       render: (_event, dialog) => {
         localizeDialog(dialog.element,this.language==='ork'?'ork':'fantasy');
         const destination=dialog.element.querySelector('[name="destination"]');
-        const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled; };
+        const destinationOptions=destination.innerHTML,targetNotice=document.createElement('p');targetNotice.className='pp-hint';targetNotice.hidden=true;destination.closest('label').after(targetNotice);
+        const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled;targetNotice.hidden=!(pending?.profile.retinueOnly&&pending.profile.companionGroup&&game.actors.get(destination.value)?.getFlag(MODULE_ID,'companion')?.sourceActorId);targetNotice.textContent=this.t('Diese Begleiterfigur wird als eigenes Wesen aktualisiert und vom bisherigen Import gelöst. Figurenkennung, Ordner und bisherige Rechte bleiben erhalten; ohne Bildübernahme auch ihre Bilder.'); };
         const images=dialog.element.querySelector('[name="includeImages"]'),companions=dialog.element.querySelector('[name="includeCompanions"]'),companionOptions=dialog.element.querySelector('[data-companion-import-options]');
         const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending&&!(pending.profile.retinueOnly&&pending.profile.companionGroup)?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.language==='ork'?'ork':'fantasy');
           companionOptions.querySelectorAll('[data-companion-picture-index]').forEach(field=>field.addEventListener('change',()=>{const index=Number(field.dataset.companionPictureIndex),file=field.files?.[0];if(!file){companionPictures.delete(index);return;}companionPictures.set(index,{index,key:companionKey(pending,index),file});const select=companionOptions.querySelector(`[data-companion-import-index="${index}"]`);if(!select.value&&Array.from(select.options).some(row=>row.value==='new'))select.value='new';dialog.element.querySelector('[data-companion-picture-status]').textContent=`${companionPictures.size} Begleiterbilder zugeordnet.`;}));
@@ -748,7 +750,11 @@ export class PedipalpusApp extends ApplicationV2 {
             portraitPackaged=images.checked&&imageTicket===portraitSequence?packagedPortrait:null;portrait=images.checked?(portraitManual || portraitPackaged):null;
             if(portrait && !portraitBusy && !portraitError)dialog.element.querySelector('.pp-portrait-preview').textContent=this.t(`Bild ausgewählt: ${portrait.file.name}`);
             pending = parsed;pendingSource=source??{fileName:file.name};lastRead={file,source,files,expectedKind};
-            for(const option of destination.options){const target=getCharacter(game.actors.get(option.value));option.disabled=Boolean(target&&(target.sourceFormat??'character')!==(parsed.sourceFormat??'character'));}
+            const standaloneTargets=parsed.profile.retinueOnly&&parsed.profile.companionGroup?companionImportTargets(null):[],previousDestination=destination.value;
+            destination.innerHTML=destinationOptions;
+            for(const target of standaloneTargets){let option=Array.from(destination.options).find(row=>row.value===target.id);if(!option){option=document.createElement('option');option.value=target.id;destination.append(option);}option.textContent=companionImportLabel(target)+' aktualisieren';}
+            if(Array.from(destination.options).some(option=>option.value===previousDestination))destination.value=previousDestination;
+            for(const option of destination.options){const actor=game.actors.get(option.value),target=getCharacter(actor);option.disabled=Boolean((actor?.getFlag(MODULE_ID,'companion')?.sourceActorId||target&&(target.sourceFormat??'character')!==(parsed.sourceFormat??'character'))&&!standaloneTargets.some(row=>row.id===option.value));}
             if(destination.selectedOptions[0]?.disabled){const compatible=Array.from(destination.options).find(option=>!option.disabled);if(compatible)destination.value=compatible.value;}
             companions.disabled=Boolean(parsed.profile.retinueOnly);if(parsed.profile.retinueOnly)companions.checked=true;
             renderCompanions();syncButton();
@@ -850,8 +856,10 @@ export class PedipalpusApp extends ApplicationV2 {
     answer.snapshot=retainNpcChoices(previous,answer.snapshot);
     if(includeCompanions)answer.snapshot=retainCompanionChoices(previous,answer.snapshot);
     answer.snapshot=withCompanionImport(previous,answer.snapshot,includeCompanions);
-    const plan=includeCompanions?(answer.companionPlan??prepareCompanionImport(answer.snapshot,answer.actorId,companionEntries(answer.snapshot).flatMap((_member,index)=>{try{const existing=companionActor(answer.actorId,companionKey(answer.snapshot,index));return existing?[{index,targetId:existing.id}]:[];}catch{return [];}}))):[];
+    const standalonePlan=answer.standalonePlan??null;
+    const plan=includeCompanions&&!standalonePlan?(answer.companionPlan??prepareCompanionImport(answer.snapshot,answer.actorId,companionEntries(answer.snapshot).flatMap((_member,index)=>{try{const existing=companionActor(answer.actorId,companionKey(answer.snapshot,index));return existing?[{index,targetId:existing.id}]:[];}catch{return [];}}))):[];
     if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
+    if(standalonePlan)verifyCompanionImport(answer.snapshot,null,standalonePlan);
     if(!includeImages)answer.portrait=null;
     if(previous){
       const differences=compareCharacters(previous,answer.snapshot);
@@ -880,8 +888,9 @@ export class PedipalpusApp extends ApplicationV2 {
     }
     if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame,previousFraming??undefined);
     if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
-    const actor = await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId,portraitExpected});
-    if(includeCompanions)await applyCompanionImport(actor,plan,{includeImages,portraits:preparedCompanionPictures,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
+    if(standalonePlan)verifyCompanionImport(answer.snapshot,null,standalonePlan);
+    const actor = standalonePlan?await saveStandaloneCompanion(answer.snapshot,answer.actorId,standalonePlan,answer.portrait,{ownerId:answer.ownerId,warn:message=>this.notify('warn',message)}):await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId,portraitExpected});
+    if(includeCompanions&&!standalonePlan)await applyCompanionImport(actor,plan,{includeImages,portraits:preparedCompanionPictures,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
     this.selectActor(actor.id);
     if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame,includeImages,includeCompanions});
     try{await this.persist({...this.preferences,actorId:actor.id,category:'all'});}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Der Charakter wurde importiert. Die persönliche Auswahl konnte nicht gespeichert werden.');}
