@@ -245,7 +245,9 @@ export function renderView({ actors = [], actor, character, status = {}, canImpo
   }
   const activeConditions=character.characterRulesVersion?[...(character.conditions?.simple??[]).filter(row=>row.active).map(row=>row.name),...(character.conditions?.complex??[]).filter(row=>row.level>0).map(row=>`${row.name} ${row.level}`)]:[];
   const conditionInfo=activeConditions.length?`<div class="pp-rule-state" title="Gespeicherte Zustände aus Pedipalpus; Unterdrückung ist berücksichtigt. Die angezeigten Probenwerte enthalten die automatischen Abzüge bereits.">Zustände: ${e(activeConditions.join(' · '))}</div>`:'';
-  return `${openRoot}${toolbar}${admin}${rollBlock?`<p class="pp-warning" role="status">${e(rollBlock)}</p>`:''}${filters}${modifierControl}${presetControl}${focusControl}${playControls}${conditionInfo}${quickbar}${mode==='battle'?renderBattleInventory(character,actor,busy,language):''}${list}${fixedStatus}</div>`;
+  const connectionIssue=!status.ready||status.directReady===false?status.message:mode==='battle'&&status.combatReady===false&&checks.some(check=>check.kind==='combat')?'Kampfproben benötigen Ucurifunke – Proben ab 1.0.14.':'';
+  const rollIssue=rollBlock||connectionIssue;
+  return `${openRoot}${toolbar}${admin}${rollIssue?`<p class="pp-warning" role="status">${e(rollIssue)}</p>`:''}${filters}${modifierControl}${presetControl}${focusControl}${playControls}${conditionInfo}${quickbar}${mode==='battle'?renderBattleInventory(character,actor,busy,language):''}${list}${fixedStatus}</div>`;
 }
 
 function renderBattleInventory(character,actor,busy,language) {

@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.21
+# Pedipalpus – Proben · 1.11.22
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.21 zeigt bei aktiver Suche die Zahl der passenden Proben an. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.22 erklärt sichtbar, wenn die Würfelanbindung fehlt oder nicht zur installierten Version passt. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Sichtbare Verbindungshinweise in 1.11.22
+
+Wenn „Ucurifunke – Proben“ fehlt, zu alt ist, seine Befehle noch nicht geladen sind oder eine neuere Version eine angepasste Direktwurf-Anbindung benötigt, erscheint der vorhandene Korrekturhinweis direkt im Fenster. Gesperrte Würfelknöpfe lassen sich dadurch leichter einordnen.
+
+Bei älteren unterstützten Versionen erscheint der Hinweis auf benötigte Kampfunterstützung nur im Kampfbereich. Mit funktionierender Anbindung verschwindet er wieder. Bestehende Hinweise zu ersetzten oder fehlenden Begleitern bleiben vorrangig. Würfellogik, Daten und Rechte bleiben unverändert; kein Neuimport nötig.
 
 ## Suchergebnisse zählen in 1.11.21
 
