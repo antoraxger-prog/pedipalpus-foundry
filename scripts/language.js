@@ -1,5 +1,6 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Die Figur wurde inzwischen entfernt oder ersetzt. Bitte erneut auswählen.':'Figur weg oder ersetzt. Noch mal wählen.',
   'Die Importfigur wurde inzwischen entfernt oder ersetzt. Bitte erneut auswählen.':'Figur für Blatt weg oder ersetzt. Noch mal wählen.',
   'Die Exportfigur wurde inzwischen gewechselt, entfernt oder ist nicht mehr zugänglich. Bitte erneut auswählen.':'Figur für Paket anders, weg oder nicht mehr deine. Noch mal wählen.',
   'Die Figur oder ihr Bild wurde inzwischen geändert. Bitte das Austauschpaket erneut erstellen.':'Figur oder Gesicht anders. Paket noch mal machen.',

@@ -28,6 +28,7 @@ export async function saveFocus(actor, focus) {
 
 export async function savePlayState(actor,state,expected,warn=message=>ui.notifications.warn(message)){
  if(!actor?.isOwner||!actor.canUserModify(game.user,'update'))throw new Error('Zum Ändern des Spielstands werden Besitzerrechte benötigt.');
+ if(game.actors.get(actor.id)!==actor)throw new Error('Die Figur wurde inzwischen entfernt oder ersetzt. Bitte erneut auswählen.');
  const before=getCharacter(actor);
  if(!before||JSON.stringify(before)!==expected)throw new Error('Die Daten wurden inzwischen geändert. Bitte den Spielstand erneut öffnen.');
  const next=withPlayState(before,compactLocalState(before,state));

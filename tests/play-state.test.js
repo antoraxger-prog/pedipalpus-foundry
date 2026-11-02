@@ -116,6 +116,7 @@ test('Bulk portraits match exact saved filenames or unique creature names; ambig
 test('State writes require owner/update rights and reject stale data before any write',async()=>{
  let data=snapshot(retinueFixture()),writes=0;globalThis.game={user:{id:'owner'},actors:{contents:[]}};
  const actor={id:'owner-actor',isOwner:false,canUserModify:()=>true,getFlag:(_namespace,key)=>key==='character'?data:undefined,async setFlag(_namespace,_key,value){writes++;data=value;}};
+ game.actors.contents.push(actor);game.actors.get=id=>game.actors.contents.find(row=>row.id===id);
  await assert.rejects(savePlayState(actor,{version:1},JSON.stringify(data)),/Besitzerrechte/);actor.isOwner=true;
  await assert.rejects(savePlayState(actor,{version:1},'stale'),/inzwischen geändert/);assert.equal(writes,0);
  await savePlayState(actor,{version:1,resources:{root:{LE:8}}},JSON.stringify(data));assert.equal(writes,1);assert.equal(data.resources[0].value,8);

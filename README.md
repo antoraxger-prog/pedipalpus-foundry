@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.2
+# Pedipalpus – Proben · 1.11.3
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.2 sichert Import und Austauschpaket gegen zwischenzeitlich entfernte Figuren, geänderte Daten und verlorene Rechte ab. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.3 stoppt veraltete separate Begleiterbild-Uploads und Spielstandänderungen an zwischenzeitlich entfernten oder ersetzten Figuren. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,16 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Begleiterbilder und Spielstandsfenster in 1.11.3
+
+Der separate Bild-/Token-Editor eines Begleiters prüft vor und nach den Uploads, ob Hauptfigur und bisheriger Begleiter noch dieselben aktuellen Foundry-Einträge sind. Entfernte Figuren, ersetzte Einträge mit gleicher Kennung und geänderte Quellzuordnungen stoppen den Vorgang vor den Begleiteränderungen. Dadurch entsteht aus einer während des Uploads gelöschten Hauptfigur kein neuer verwaister Begleiter.
+
+Für einen neuen Begleiter werden die Erstellungsrechte nach dem Upload erneut geprüft. Bereits vorhandene eigene Begleiter dürfen weiterhin ein neues Bild erhalten, auch wenn der Spieler keine neuen Figuren anlegen darf. Rechte, bestehende Zuordnungen und aktuelle Werte werden bei den erkannten Abbrüchen erhalten. Bereits hochgeladene Bilddateien werden nicht automatisch gelöscht.
+
+Ein schon geöffnetes Spielstandsfenster kann keine Energien mehr auf ein inzwischen entferntes oder durch einen anderen Eintrag ersetztes Hauptblatt schreiben. Bestehende Begleiter werden dabei nicht synchronisiert oder verändert. Normales Speichern und Wiederholen fehlgeschlagener Begleiteraktualisierungen bleiben erhalten.
+
+Kein Neuimport bestehender Figuren erforderlich. Die Prüfung ersetzt keine gemeinsame Transaktion über mehrere Dokumente.
 
 ## Import und Export absichern in 1.11.2
 
