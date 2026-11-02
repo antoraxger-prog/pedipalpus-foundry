@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.16
+# Pedipalpus – Proben · 1.11.17
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.16 hält Probennamen und Info-Knöpfe auch in schmalen Tabellenzeilen getrennt. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.17 ergänzt Mausrad-Zoom direkt im Bildausschnitt-Editor. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Bildausschnitt mit dem Mausrad zoomen in 1.11.17
+
+Über dem geladenen Vorschaubild vergrößert beziehungsweise verkleinert das Mausrad den Ausschnitt in Schritten von 5 Prozent. Die bisherigen Grenzen von 100 bis 300 Prozent gelten weiterhin. Zoomregler und Prozentanzeige folgen der Änderung; Ziehen und Pfeiltasten bleiben verwendbar.
+
+Strg-/Command-Mausrad wird nicht abgefangen. Ohne gültiges geladenes Bild verändert das Mausrad keinen Ausschnitt. Der Zoom bleibt bis zum Bestätigen ein Entwurf; Abbrechen erhält das gespeicherte Bild und Token. Gespeicherte Ausschnitte, eigene Rechteckrahmen und die Wiederherstellung nach einer fehlerhaften Bildauswahl bleiben unterstützt. Daten und Rechte bleiben erhalten; kein Neuimport erforderlich.
 
 ## Probennamen und Info-Knöpfe in 1.11.16
 

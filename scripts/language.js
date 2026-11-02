@@ -70,6 +70,7 @@ const words = {
   'Favoriten':'Lieblingsdinge', 'Meine Favoriten':'Lieblingsdinge', 'Zuletzt verwendet':'Eben getan', 'Zuletzt benutzt':'Eben getan',
   'Schnellleiste':'Schnell tun', 'Hinweise':'Kurz erklärt', 'Berechnung ansehen':'Zahl erklären',
   'Alle Favoriten':'Alle Lieblingsdinge',
+  'Bild im Rahmen ziehen. Mausrad oder Regler zum Vergrößern.':'Gesicht schieben. Mausrad oder Regler macht größer.',
   'Aus Favoriten entfernen':'Nicht mehr Lieblingsding', 'Zu Favoriten hinzufügen':'Mein Lieblingsding',
   'Kampfbrett öffnen':'Hauen zeigen', 'Probenring öffnen':'Lieblingskreis holen',
   'Vollständiges Fenster öffnen':'Alles zeigen', 'Probenring schließen':'Kreis weg',

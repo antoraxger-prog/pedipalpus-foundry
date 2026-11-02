@@ -2,7 +2,7 @@ import {tokenStyles,importCustomFrame,DEFAULT_CROP,normalizeCrop,portraitWindowG
 import {preparePortrait} from './portraits.js';
 import {escapeHTML as e} from './view.js';
 export function portraitEditorHTML(style='concrete',frame=null){
- return `<div class="pp-portrait-editor"><label>Bilddatei<input name="portraitFile" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><label>Tokenrahmen<select name="tokenFrame">${tokenStyles(frame).map(([key,label])=>`<option value="${key}" ${key===style?'selected':''}>${e(label)}</option>`).join('')}</select></label>${customFrameImportHTML()}<div class="pp-crop-stage"></div><p class="pp-hint">Bild im Rahmen ziehen. Zum Vergrößern den Regler verwenden.</p><label>Vergrößerung<input type="range" name="portraitZoom" min="1" max="3" step="0.05" value="1"><output data-crop-zoom>100 %</output></label><button type="button" data-crop-reset>Ausschnitt zurücksetzen</button><button type="button" data-crop-recover hidden>Letztes gültiges Bild</button><p class="pp-portrait-preview" role="status">Bild auswählen oder vorhandenes Bild ausrichten.</p></div>`;
+ return `<div class="pp-portrait-editor"><label>Bilddatei<input name="portraitFile" type="file" accept=".png,.jpg,.jpeg,.bmp,.webp"></label><label>Tokenrahmen<select name="tokenFrame">${tokenStyles(frame).map(([key,label])=>`<option value="${key}" ${key===style?'selected':''}>${e(label)}</option>`).join('')}</select></label>${customFrameImportHTML()}<div class="pp-crop-stage"></div><p class="pp-hint">Bild im Rahmen ziehen. Mausrad oder Regler zum Vergrößern.</p><label>Vergrößerung<input type="range" name="portraitZoom" min="1" max="3" step="0.05" value="1"><output data-crop-zoom>100 %</output></label><button type="button" data-crop-reset>Ausschnitt zurücksetzen</button><button type="button" data-crop-recover hidden>Letztes gültiges Bild</button><p class="pp-portrait-preview" role="status">Bild auswählen oder vorhandenes Bild ausrichten.</p></div>`;
 }
 export function customFrameImportHTML(){return '<details class="pp-custom-frame-import"><summary>Eigenen Rahmen hinzufügen</summary><label>Rahmenbild<input name="customFrameFile" type="file" accept=".png,.webp,image/png,image/webp"></label><p class="pp-hint pp-custom-frame-hint">Transparentes PNG oder WebP mit geschlossenem Rand und freier Mitte. Rechteckige Bilder sind möglich. Neue Rahmen bleiben für spätere Verwendung gespeichert.</p><p data-custom-frame-status role="status"></p></details>';}
 export function fillFrameOptions(select,selected,frame=null){select.innerHTML=tokenStyles(frame).map(([id,name])=>`<option value="${e(id)}" ${id===selected?'selected':''}>${e(name)}</option>`).join('');}
@@ -13,13 +13,19 @@ export class PortraitEditor{
   const stage=root.querySelector('.pp-crop-stage');
   this.canvas=root.ownerDocument.createElement('canvas');this.canvas.width=512;this.canvas.height=512;this.canvas.tabIndex=0;this.canvas.setAttribute('role','img');this.canvas.setAttribute('aria-label','Bildausschnitt. Bild mit der Maus verschieben oder Pfeiltasten verwenden.');stage.replaceChildren(this.canvas);
   this.style=style;this.crop=normalizeCrop(crop);this.frame=crop?.frame??null;this.onState=onState;this.sequence=0;this.closed=false;this.ready=false;this.events=new AbortController();
-  const listen=(element,type,fn)=>element.addEventListener(type,fn,{signal:this.events.signal});
+  const listen=(element,type,fn,options={})=>element.addEventListener(type,fn,{...options,signal:this.events.signal});
   listen(root.querySelector('[name="customFrameFile"]'),'change',event=>{const file=event.target.files?.[0];event.target.value='';this.addFrame(file);});
   listen(root.querySelector('[name="portraitFile"]'),'change',event=>{const file=event.target.files?.[0];event.target.value='';if(file)this.load(()=>preparePortrait(file),DEFAULT_CROP);});
   this.recover=root.querySelector('[data-crop-recover]');
   listen(this.recover,'click',()=>this.restore());
   listen(root.querySelector('[name="tokenFrame"]'),'change',event=>{this.style=event.target.value;if(this.portrait)this.load(()=>this.portrait,this.crop);});
   listen(root.querySelector('[name="portraitZoom"]'),'input',event=>{if(!this.ready)return;this.crop={...this.crop,zoom:Number(event.target.value)};this.draw();});
+  listen(this.canvas,'wheel',event=>{
+   if(!this.ready||this.importingFrame||!event.deltaY||event.ctrlKey||event.metaKey)return;
+   event.preventDefault();
+   const zoom=Math.max(1,Math.min(3,Math.round((this.crop.zoom+(event.deltaY < 0 ? 0.05 : -0.05))*100)/100));
+   if(zoom!==this.crop.zoom){this.crop={...this.crop,zoom};this.draw();}
+  },{passive:false});
   listen(root.querySelector('[data-crop-reset]'),'click',()=>{if(this.ready){this.crop={...DEFAULT_CROP};this.draw();}});
   listen(this.canvas,'pointerdown',event=>{if(!this.ready||event.button!==0)return;event.preventDefault();this.canvas.focus();this.drag={id:event.pointerId,x:event.clientX,y:event.clientY,crop:{...this.crop,...(this.frame?{frame:this.frame}:{})}};this.canvas.setPointerCapture(event.pointerId);this.canvas.classList.add('pp-dragging');});
   listen(this.canvas,'pointermove',event=>{if(this.drag?.id!==event.pointerId||!this.ready)return;const box=this.canvas.getBoundingClientRect();this.move((event.clientX-this.drag.x)*512/box.width,(event.clientY-this.drag.y)*512/box.height,this.drag.crop);});
