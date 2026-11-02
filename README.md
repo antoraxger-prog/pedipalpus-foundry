@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.26
+# Pedipalpus – Proben · 1.11.27
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.26 macht längere Charakter-, NSC- und Gefolgsimporte scrollbar und hält die Abschlussknöpfe sichtbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.27 übernimmt Gefolge auch direkt aus gespeicherten Charakteren oder NSC im ausgewählten Pedipalpus-Ordner. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Gefolge aus dem Pedipalpus-Ordner in 1.11.27
+
+Unter **Gefolge importieren → Pedipalpus-Ordner auswählen** erscheinen gespeicherte Charaktere aus `SavedCharacters`, NSC aus `SavedNpcs` und vorbereitete Gefolgsdateien im gewählten Ordner. Einen Eintrag auswählen, um ausschließlich dessen Begleiter zu übernehmen. Ein zuvor im Charakter- oder NSC-Import gewählter Ordner steht auch hier bereit. Namen gleicher Dateien bleiben durch den Ordnerpfad unterscheidbar.
+
+Normalerweise steckt das Gefolge in `SavedCharacters/<Charaktername>.json`; eine gesonderte Gefolgsdatei ist dafür nicht erforderlich. Das Modul legt daraus einen eigenen Gefolgseintrag an oder aktualisiert einen kompatiblen Gefolgseintrag. Hauptcharaktere und NSC bleiben getrennte Importziele. Neue oder vorhandene verknüpfte Token-Einträge lassen sich wie bisher pro Begleiter zuordnen. Vorbereitete Gefolgs-JSON und Einzelpakete bleiben unterstützt.
+
+Bei einer gemerkten Dateiquelle liest Aktualisieren weiterhin nur das Gefolge. NSC-Gefolgsproben behalten ihre Regeln für die Attributauswahl. Das Bild des Hauptcharakters wird nicht als Gefolgsbild übernommen; ein einzelnes Wesen kann sein eigenes hinterlegtes Bild nutzen. Fehlende vollständige Wesenattribute oder mehrdeutige Kennungen werden gemeldet, statt Werte oder Zuordnungen zu erfinden.
 
 ## Scrollbares Importfenster in 1.11.26
 

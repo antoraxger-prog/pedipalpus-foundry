@@ -1,11 +1,13 @@
 import { parseCharacter } from './data.js';
 import { readCharacterFile } from './bundle.js';
+import { retinueSourceJSON } from './retinue-source.js';
 
 const path=file=>String(file.webkitRelativePath||file.name||'').replace(/\\/g,'/').normalize('NFC');
 export function characterFiles(files,kind='all') {
   const all=Array.from(files??[]);
   if(all.length>10000)throw new Error('Bitte nur den Pedipalpus-Ordner oder den Charakterordner auswählen.');
   const json=all.filter(file=>/\.json$/i.test(file.name));
+  if(kind==='retinue')return json.filter(file=>/(?:^|\/)(?:SavedCharacters|SavedNpcs)\//i.test(path(file))||path(file).split('/').length<=2).sort((a,b)=>path(a).localeCompare(path(b),'de'));
   const isNpc=file=>/(?:^|\/)SavedNpcs\//i.test(path(file))||/\.nsc\.json$/i.test(file.name);
   const matching=json.filter(file=>kind==='all'||(kind==='npc'?isNpc(file):!isNpc(file)&&!/(?:^|\/)SavedNpcs\//i.test(path(file))));
   const saved=matching.filter(file=>/(?:^|\/)(?:SavedCharacters|SavedNpcs)\//i.test(path(file)));
@@ -22,9 +24,9 @@ export function matchingPortrait(files,filename) {
   if(matches.length>1)throw new Error('Das Charakterbild ist im ausgewählten Ordner mehrfach vorhanden. Bitte das richtige Bild einzeln auswählen.');
   return matches[0]??null;
 }
-export async function readCharacterWithPortrait(file,files=[],{includePortrait=true}={}) {
-  const imported=await readCharacterFile(file,{includePortrait}),character=parseCharacter(imported.json);
-  return {...imported,portrait:includePortrait?(imported.portrait??matchingPortrait(files,character.profile.portraitFileName)):null};
+export async function readCharacterWithPortrait(file,files=[],{includePortrait=true,retinueOnly=false}={}) {
+  const imported=await readCharacterFile(file,{includePortrait}),json=retinueOnly?retinueSourceJSON(imported.json):imported.json,character=parseCharacter(json);
+  return {...imported,json,portrait:includePortrait?((json===imported.json?imported.portrait:null)??matchingPortrait(files,character.profile.portraitFileName)):null};
 }
 
 export function matchCompanionPictures(members,files){

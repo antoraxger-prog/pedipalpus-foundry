@@ -44,7 +44,7 @@ export function parseCharacter(json, importedAt = new Date().toISOString()) {
 
 export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
   if(raw?.Format===RETINUE_FORMAT){
-    if(raw.Version!==1||'Npc' in raw||'PrimaryAttributes' in raw||typeof raw.Name!=='string'||!raw.Name.trim()||raw.Name.length>120||/[|\r\n]/.test(raw.Name))throw new Error('Gefolgsdatei: Name oder Version ist ungültig.');
+    if(raw.Version!==1||'Npc' in raw||'PrimaryAttributes' in raw||typeof raw.Name!=='string'||!raw.Name.trim()||raw.Name.length>120||/[|\r\n]/.test(raw.Name)||raw.NpcRules!==undefined&&typeof raw.NpcRules!=='boolean')throw new Error('Gefolgsdatei: Name oder Version ist ungültig.');
     for(const [collection] of COMPANION_GROUPS){
       if(raw[collection]!==undefined&&(!Array.isArray(raw[collection])||raw[collection].some(row=>!row||typeof row!=='object'||Array.isArray(row))))throw new Error('Gefolgsdatei: Eine Gefolgsliste ist ungültig.');
     }
@@ -57,7 +57,7 @@ export function normalizeCharacter(raw, importedAt = new Date().toISOString()) {
       for(const field of ['Attacks','MundaneAbilities','MagicalAbilities','DivineAbilities'])if(member[field]!==undefined&&(!Array.isArray(member[field])||member[field].some(row=>!row||typeof row!=='object'||Array.isArray(row))))throw new Error('Gefolgsdatei: Die Probenliste ist ungültig.');
     }
     const selected={Version:17,Name:raw.Name,PrimaryAttributes:[],Notes:text(raw.Notes),PortraitFileName:text(raw.PortraitFileName),...Object.fromEntries(COMPANION_GROUPS.map(([collection])=>[collection,raw[collection]??[]]))};
-    const snapshot=normalizeBaseCharacter(selected,importedAt,false,true),single=members.length===1?members[0]:null;
+    const snapshot=normalizeBaseCharacter(selected,importedAt,raw.NpcRules===true,true),single=members.length===1?members[0]:null;
     return {...snapshot,sourceFormat:RETINUE_FORMAT,sourceVersion:1,profile:{...snapshot.profile,retinueOnly:true,...(single?{companionGroup:single._group,race:text(single.Species)}:{})},attributes:single?memberAttributes(single):[],resources:single?[{name:'LE',value:single.CurrentLe??null,max:single.MaxLe??null},{name:'AE',value:single.CurrentAstralEnergy??null,max:single.AstralEnergy??null},{name:'KE',value:single.CurrentKarmaEnergy??null,max:single.KarmaEnergy??null}].filter(row=>row.name==='LE'||Number.isFinite(row.max)&&row.max>0):[]};
   }
   if(raw&&typeof raw==='object'&&'Format' in raw){
