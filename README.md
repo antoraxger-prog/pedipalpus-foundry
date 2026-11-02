@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.4
+# Pedipalpus – Proben · 1.11.5
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.4 erleichtert das Ordnen der Favoriten per Tastatur. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.5 zeigt die Lebensenergie von Begleitern als kompakte Leiste direkt in der eingeklappten Kampfzeile. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Begleiter im Kampf im Blick behalten in 1.11.5
+
+Tiere, Dämonen und Untote zeigen unter ihrer LE-Zahl eine kleine Lebensenergieleiste, auch bei eingeklappten Proben. Grün steht für mehr als die Hälfte, Gold für bis zur Hälfte; bei höchstens einem Viertel erscheint eine rot schraffierte Anzeige. Bei null oder negativen LE bleibt eine leere, schraffierte Markierung. Die genauen Zahlen sind weiterhin sichtbar und werden auch für die Sprachausgabe benannt.
+
+Ein Klick auf Zahl oder Leiste öffnet wie bisher den Energie-Editor. Negative Werte und Werte über dem Maximum bleiben erhalten; nur die grafische Füllung wird auf 0–100 % begrenzt. Bei unbekanntem oder nicht positivem Maximum erscheint keine irreführende Leiste. Die Anzeige löst keine Regelabzüge, Zustände oder Datenänderungen aus.
+
+Alle Designs bleiben unterstützt; der Ork-Modus nennt den Editor „Kraft ändern“. Bestehende Figuren und Bilder bleiben erhalten, ein Neuimport ist nicht erforderlich.
 
 ## Favoriten per Tastatur ordnen in 1.11.4
 

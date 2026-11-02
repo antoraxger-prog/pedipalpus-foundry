@@ -69,6 +69,17 @@ try {
   await upload(raw);const actorId=await page.locator('[name="actor"]').inputValue();
   await page.locator('[data-action="battle"]').click();
   assert.equal(await page.locator('.pp-companion-section[open]').count(),0);
+  const lifeButton=()=>page.locator('.pp-companion-section').first().locator('.pp-companion-energy');
+  assert.equal(await lifeButton().locator('.pp-energy-track').getAttribute('data-energy-level'),'full');
+  assert.equal(await lifeButton().locator('.pp-energy-track > span').evaluate(fill=>fill.style.width),'70%');
+  assert.match(await lifeButton().getAttribute('aria-label'),/Skelett.*LE 14 \/ 20/);
+  const meterBoxes=await lifeButton().evaluate(button=>({button:button.getBoundingClientRect().toJSON(),track:button.querySelector('.pp-energy-track').getBoundingClientRect().toJSON()}));
+  assert.ok(meterBoxes.track.width>20&&meterBoxes.track.height>=4);
+  assert.ok(meterBoxes.track.left>=meterBoxes.button.left&&meterBoxes.track.right<=meterBoxes.button.right);
+  await lifeButton().click({position:{x:meterBoxes.button.width/2,y:meterBoxes.button.height-2}});
+  await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();
+  assert.equal(await page.locator('.pp-companion-section[open]').count(),0);
+  console.log('PASS: A collapsed companion shows an actual bounded LE gauge and clicking its gauge opens only the energy editor.');
   await page.locator('[name="modifier"]').fill('2');let before=await page.evaluate(()=>testMessages.length);
   await page.locator('.pp-companion-quick [data-check="animals:0:0:attack"]').click();await idle();
   assert.equal(await page.evaluate(()=>testMessages.length),before+1);assert.equal(await page.locator('.pp-companion-section[open]').count(),0);assert.equal(await page.locator('[name="modifier"]').inputValue(),'0');
@@ -80,6 +91,9 @@ try {
   let saved=await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character'),actorId);
   assert.equal(saved.resources[0].value,12);assert.equal(saved.retinue[0].CurrentLe,3);assert.equal(saved.checks.find(row=>row.name==='Geographie').value,6);assert.equal(saved.sourceJSON,sourceBefore);
   assert.match(await page.locator('.pp-companion-section').first().textContent(),/LE 3 \/ 20/);
+  assert.equal(await lifeButton().locator('.pp-energy-track').getAttribute('data-energy-level'),'low');
+  assert.equal(await lifeButton().locator('.pp-energy-track > span').evaluate(fill=>fill.style.width),'15%');
+  assert.match(await lifeButton().getAttribute('aria-label'),/LE 3 \/ 20/);
   console.log('PASS: Local conditions and root/companion energy changes update visible values while the imported file stays byte-identical.');
 
   await action('playstate');await page.locator('[data-resource-row="0"][data-energy="LE"]').fill('1');await page.locator('.mock-dialog [data-action="cancel"]').click();await idle();assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').resources[0].value,actorId),12);
@@ -143,6 +157,32 @@ try {
 
   await page.locator('[name="actor"]').selectOption(parentId);await idle();await page.evaluate(()=>{for(const app of foundry.applications.api.ApplicationV2.instances())app.setPosition({width:560,height:650});});
   if(await page.locator('.pp-root').getAttribute('data-mode')!=='battle')await page.locator('[data-action="battle"]').click();
+  const energyBaseline=await page.evaluate(id=>structuredClone(game.actors.get(id).getFlag('pedipalpus-foundry','character')),parentId);
+  const showEnergy=async(current,maximum)=>{await page.evaluate(async({id,current,maximum})=>{const actor=game.actors.get(id),data=structuredClone(actor.getFlag('pedipalpus-foundry','character'));Object.assign(data.retinue[0],{CurrentLe:current,MaxLe:maximum});await actor.setFlag('pedipalpus-foundry','character',data);}, {id:parentId,current,maximum});await idle();};
+  for(const[current,maximum,level,width]of [[0,20,'empty','0%'],[-5,20,'empty','0%'],[5,20,'low','25%'],[10,20,'reduced','50%'],[11,20,'full','55%'],[30,20,'full','100%']]){
+    await showEnergy(current,maximum);
+    assert.match(await lifeButton().textContent(),new RegExp(`LE ${current} / ${maximum}`));
+    assert.equal(await lifeButton().locator('.pp-energy-track').getAttribute('data-energy-level'),level);
+    assert.equal(await lifeButton().locator('.pp-energy-track > span').evaluate(fill=>fill.style.width),width);
+    assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').sourceJSON,parentId),energyBaseline.sourceJSON);
+  }
+  for(const maximum of [0,-1,'20',null]){await showEnergy(5,maximum);assert.equal(await lifeButton().locator('.pp-energy-track').count(),0);}
+  console.log('PASS: LE gauges clamp their visual fill without changing negative or excess values; unknown/nonpositive maxima show numbers without a misleading bar.');
+  await showEnergy(3,20);
+  for(const theme of ['fantasy','ork','dark','light','demonic','aristocrat','warrior','arcane','sneaky']){
+    if(!await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
+    await page.locator('[name="theme"]').selectOption(theme);await page.locator(`.pp-root[data-theme="${theme}"]`).waitFor();await idle();
+    const visibleMeters=page.locator('.pp-companion-energy .pp-energy-track');assert.equal(await visibleMeters.count(),3);
+    const tracks=await visibleMeters.evaluateAll(tracks=>tracks.map(track=>({width:track.getBoundingClientRect().width,parent:track.parentElement.getBoundingClientRect().width,height:track.getBoundingClientRect().height})));assert.ok(tracks.every(track=>track.width>20&&track.width<=track.parent&&track.height>=4),theme);
+    assert.equal(await lifeButton().locator('.pp-energy-track').getAttribute('aria-hidden'),'true');
+    assert.match(await lifeButton().getAttribute('aria-label'),new RegExp(`${theme==='ork'?'Kraft ändern':'Energien bearbeiten'}.*LE 3 / 20`));
+  }
+  if(!await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();await page.locator('[name="theme"]').selectOption('fantasy');await page.locator('.pp-root[data-theme="fantasy"]').waitFor();await idle();
+  await page.locator('[data-action="collapse-companions"]').click();await idle();
+  if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
+  await page.locator('.pp-root').screenshot({path:path.resolve(root,'../artifacts/begleiter-le-1.11.5.png')});
+  await page.evaluate(async({id,data})=>{await game.actors.get(id).setFlag('pedipalpus-foundry','character',data);},{id:parentId,data:energyBaseline});await idle();
+  console.log('PASS: Animal, demon and undead LE gauges fit all nine themes; the Ork label retains the exact numbers and existing data are restored.');
   if(await page.locator('.pp-administration').isVisible())await page.locator('[data-action="administration"]').click();
   await page.locator('.pp-root').screenshot({path:path.resolve(root,'../artifacts/spielkomfort-1.8.0.png')});
   await page.evaluate(()=>{for(const actor of game.actors.contents)actor.isOwner=false;});await page.evaluate(async()=>{for(const app of foundry.applications.api.ApplicationV2.instances())await app.render({force:true});});
