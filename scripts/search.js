@@ -6,7 +6,8 @@ export function matchesSearch(value,terms){const text=fold(value);return terms.e
 export function visibleRollButtons(root){
  return Array.from(root.querySelectorAll('.pp-check-row .pp-dice-button[data-blind="false"], .pp-companion-quick [data-action="roll"]')).filter(button=>{
   if(button.disabled||!button.getClientRects().length)return false;
-  const quick=button.closest('.pp-companion-quick');return !quick||!button.closest('[data-companion-section]')?.open;
+  const quick=button.closest('.pp-companion-quick'),section=button.closest('[data-companion-section]');
+  return quick?!section?.open:!section||section.open;
  });
 }
 

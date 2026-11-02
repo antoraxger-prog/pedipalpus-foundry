@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.10
+# Pedipalpus – Proben · 1.11.11
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.10 verbessert die Umbrüche in schmalen Einstellungs- und Notizfenstern. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.11 korrigiert die Tastatursteuerung bei zugeklappten Begleitern. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Begleiter mit der Tastatur erreichen in 1.11.11
+
+Pfeil hoch/runter sowie Pos1/Ende berücksichtigen bei zugeklappten Begleitern nur die sichtbaren Schnellwürfe. Die Navigation bleibt dadurch beim Wechsel vom Tier zum Dämon oder Untoten nicht mehr an einer ausgeblendeten Probe hängen.
+
+Bei geöffneten Begleitern sind ihre sichtbaren Proben erreichbar. Die Suche und gemischt auf-/zugeklappte Listen bleiben unterstützt. Enter auf einem gewählten Würfelknopf löst weiterhin genau diese normale Probe aus. Charakterdaten, Rechte und gespeicherte Einstellungen bleiben erhalten; kein Neuimport erforderlich.
 
 ## Schmale Einstellungs- und Notizfenster in 1.11.10
 
