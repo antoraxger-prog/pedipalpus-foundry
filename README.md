@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.14
+# Pedipalpus – Proben · 1.11.15
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.14 verstärkt den Tastaturfokus im Kontrastmodus und Favoriten im Aristocrat-Design. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.15 macht die vollständige Favoritenliste direkt aus der Schnellleiste erreichbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,12 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Alle Favoriten aus der Schnellleiste in 1.11.15
+
+Bei mehr als sechs aktuellen Favoriten zeigt die Schnellleiste beispielsweise „6 / 60“ und den Knopf „Alle Favoriten“. Er wechselt zum vorhandenen Favoritenfilter der Probenansicht, leert die Suche und zeigt die Liste von oben. Die Schnellleiste klappt dabei zu, damit mehr Platz für die vollständige Liste bleibt. Mit höchstens sechs Favoriten bleibt die bisherige kompakte Kopfzeile erhalten.
+
+Der Modifikator für die nächste Probe bleibt erhalten. Der Zugang funktioniert auch per Tastatur und für Beobachter; Würfelrechte werden dadurch nicht erweitert. Im Ork-Modus heißt er „Alle Lieblingsdinge“. Reihenfolge, nicht mehr verfügbare gespeicherte Referenzen und die getrennten Favoriten je Figur bleiben erhalten; kein Neuimport erforderlich.
 
 ## Deutlicherer Tastaturfokus in 1.11.14
 

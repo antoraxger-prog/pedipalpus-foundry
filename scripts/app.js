@@ -176,6 +176,15 @@ export class PedipalpusApp extends ApplicationV2 {
       this.filterChecks(content);
       if(this.mode==='full')this.persist({...this.preferences,category:this.category}).catch(error => this.notify('error',error.message));
     });
+    content.querySelector('[data-show-favorites]')?.addEventListener('click',event=>{
+      event.preventDefault();event.stopPropagation();
+      if(this.busy||this.referenceBusy)return;
+      const category=content.querySelector('[name="category"]');
+      category.value='favorites';category.dispatchEvent(new Event('change',{bubbles:true}));
+      const quickbar=content.querySelector('.pp-quickbar');if(quickbar)quickbar.open=false;
+      const list=content.querySelector('.pp-check-list');if(list)list.scrollTop=0;
+      content.querySelector('[name="search"]').focus();
+    });
     content.querySelectorAll('[data-action]').forEach(button => button.addEventListener('click', () => { if(!button.disabled && button.dataset.dragging!=='true')this.onAction(button); }));
     content.querySelectorAll('.pp-check-name, .pp-dice-button').forEach(name => {
       name.draggable = true;
