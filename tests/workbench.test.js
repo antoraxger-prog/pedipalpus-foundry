@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { combatFixture } from './fixture.js';
+import { combatFixture,retinueFixture,npcFixture } from './fixture.js';
 import { normalizeCharacter, MODULE_ID } from '../scripts/data.js';
 import { withFocus } from '../scripts/combat.js';
 import { checkReference, resolveCheck, referenceKey, groupWeaponChecks, DEFAULT_WORKBENCH,
@@ -173,4 +173,30 @@ test('Import comparison reports duplicate references and changed probe component
   rapier.combat.baseValue -= 1;
   assert.ok(compareCharacters(before, after).some(row => row.label === 'Rapier · Angriff · Berechnung'));
   assert.equal(compareCharacters(before, after).some(row => row.label === 'Rapier · Angriff'), false);
+});
+
+test('Import comparison exposes changed weapon damage even when the roll itself is unchanged',()=>{
+  const raw=combatFixture();raw.MeleeWeapons[0].Damage='1W6+2';const before=normalizeCharacter(raw);raw.MeleeWeapons[0].Damage='2W6+1';
+  const after=normalizeCharacter(raw),snapshot=JSON.stringify({before,after});
+  assert.equal(attack(before).value,attack(after).value);
+  assert.ok(compareCharacters(before,after).some(row=>row.label==='Rapier · Angriff · Schaden'&&row.before===attack(before).damage&&row.after===attack(after).damage&&row.type==='changed'));
+  assert.equal(JSON.stringify({before,after}),snapshot);
+});
+
+test('Import comparison exposes animal, demon, undead and NPC attack damage changes',()=>{
+  for(const raw of [retinueFixture(),npcFixture()]){
+    const before=normalizeCharacter(raw),after=structuredClone(before);
+    const attacks=after.checks.filter(check=>check.kind==='combat'&&check.combat?.type!=='parry');assert.ok(attacks.length>2);
+    for(const check of attacks)check.damage='2W6+3';
+    const rows=compareCharacters(before,after).filter(row=>row.label.endsWith(' · Schaden'));
+    for(const check of attacks)assert.ok(rows.some(row=>row.label===`${check.name} · Schaden`&&row.after==='2W6+3'),check.name);
+  }
+});
+
+test('Import damage comparison distinguishes addition/removal, ignores blank omissions and refuses ambiguous assignments',()=>{
+  const before=normalizeCharacter(combatFixture()),after=structuredClone(before);const old=attack(before),next=attack(after);
+  delete old.damage;next.damage='1W6';assert.ok(compareCharacters(before,after).some(row=>row.label==='Rapier · Angriff · Schaden'&&row.before==='–'&&row.after==='1W6'));
+  old.damage='1W6';delete next.damage;assert.ok(compareCharacters(before,after).some(row=>row.label==='Rapier · Angriff · Schaden'&&row.before==='1W6'&&row.after==='–'));
+  delete old.damage;next.damage='  ';assert.deepEqual(compareCharacters(before,after),[]);
+  after.checks.push({...next,damage:'3W6'});const rows=compareCharacters(before,after);assert.ok(rows.some(row=>row.type==='ambiguous'));assert.equal(rows.some(row=>row.label==='Rapier · Angriff · Schaden'),false);
 });

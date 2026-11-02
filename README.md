@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.5
+# Pedipalpus – Proben · 1.11.6
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.5 zeigt die Lebensenergie von Begleitern als kompakte Leiste direkt in der eingeklappten Kampfzeile. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.6 zeigt geänderte Schadensformeln vor dem Übernehmen eines Imports an, auch wenn Probenwert und Berechnung gleich bleiben. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,14 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Schadensänderungen beim Import vergleichen in 1.11.6
+
+Der Importvergleich nennt nun auch geänderte Schadensformeln mit bisherigem und neuem Wert. Eine reine Schadensänderung öffnet damit ebenfalls den Vergleich, selbst wenn Angriffswert, Attribute und Berechnung unverändert sind. Das gilt für eigene Waffen, Begleiterangriffe und das getrennte NSC-Datenmodell.
+
+Erhält eine bereits vorhandene Probe erstmals eine Schadensformel oder fällt sie weg, erscheint das ebenfalls im Vergleich. Fehlende und leere Angaben zählen gleich; unveränderte Schadensdaten erzeugen keine zusätzlichen Dialoge. Bei mehrdeutigen Probenzuordnungen bleibt die vorhandene Warnung erhalten, statt Schäden einer Waffe zu erraten.
+
+Abbrechen erhält die bisherige Figur. Erst Übernehmen importiert die neuen Daten nach den bestehenden Regeln. Bilder, Token-Zuordnungen, Besitzerrechte und die getrennten Charakter-/NSC-Importziele bleiben erhalten. Kein Neuimport bestehender Figuren erforderlich.
 
 ## Begleiter im Kampf im Blick behalten in 1.11.5
 

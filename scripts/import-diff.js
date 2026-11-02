@@ -6,6 +6,7 @@ import { readCompanions } from './retinue.js';
 const printable = value => value === null || value === undefined ? '–' : value;
 const attributes = check => (check.attributes ?? []).map(att => `${att.name}: ${printable(att.value)}`).join(' · ');
 const calculation = check => check.combat ? `${check.combat.skillName}: ${printable(check.combat.skillValue)} · Basis ${printable(check.combat.baseValue)} · Fokus ${printable(check.combat.focusValue)} · Waffenbonus ${printable(check.combat.weaponModifier)} · BE ${printable(check.combat.mobilityPenalty)}` : '';
+const damage = check => typeof check.damage==='string' && check.damage.trim() ? check.damage.trim() : null;
 
 function collect(character) {
   const result = new Map();
@@ -45,6 +46,7 @@ export function compareCharacters(previous, next) {
     if (oldCheck.value !== newCheck.value) add(label, oldCheck.value, newCheck.value);
     if (attributes(oldCheck) !== attributes(newCheck)) add(`${label} · Probenattribute`, attributes(oldCheck) || null, attributes(newCheck) || null);
     if (calculation(oldCheck) !== calculation(newCheck)) add(`${label} · Berechnung`, calculation(oldCheck) || null, calculation(newCheck) || null);
+    if (damage(oldCheck) !== damage(newCheck)) add(`${label} · Schaden`, damage(oldCheck), damage(newCheck));
     if ((oldCheck.reason ?? '') !== (newCheck.reason ?? '')) add(`${label} · Verfügbarkeit`, oldCheck.reason || 'Vollständig', newCheck.reason || 'Vollständig');
   }
   const oldArmor=armorItems(previous),newArmor=armorItems(next);
