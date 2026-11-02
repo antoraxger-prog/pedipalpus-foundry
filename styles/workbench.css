@@ -54,7 +54,7 @@
 .pedipalpus-app .pp-root button.pp-dice-button { width: 31px; height: 31px; min-height: 31px; }
 .pedipalpus-app .pp-root button.pp-blind-button { width: 31px; }
 .pedipalpus-app .pp-table td:last-child { width: 77px; }
-.pedipalpus-app .pp-weapon-header th { position: static; top: auto; padding: 5px 8px; text-align: left; font-weight: 600; border-top: 2px solid var(--pp-border); }
+.pedipalpus-app .pp-weapon-header th { position: static; top: auto; padding: 5px 8px; text-align: left; font-weight: 600; border-top: 2px solid var(--pp-border); overflow-wrap:anywhere; }
 .pedipalpus-app .pp-weapon-header small { display: inline; margin-left: 7px; font-weight: normal; font-family: 'Segoe UI',sans-serif; }
 .pedipalpus-app .pp-root[data-theme="fantasy"] .pp-weapon-header th { background: url('../assets/parchment.svg'),linear-gradient(#dcc490,#cfb27c); }
 .pedipalpus-app .pp-root[data-theme="ork"] .pp-weapon-header th { background: #746441 url('../assets/ork-hide.svg'); color: #f4e6c6; }
@@ -168,7 +168,7 @@
 .pedipalpus-dialog .pp-folder-source { font-size:.9em; overflow-wrap:anywhere; }
 .pedipalpus-app .pp-companion-overviews { display: grid; gap: 7px; margin-top: 8px; }
 .pedipalpus-app .pp-companion-section { min-width: 0; border: 1px solid var(--pp-border); border-radius: 4px; background: var(--pp-surface); }
-.pedipalpus-app .pp-companion-section > summary { cursor: pointer; padding: 8px; color: var(--pp-text); }
+.pedipalpus-app .pp-companion-section > summary { cursor: pointer; padding: 8px; color: var(--pp-text); overflow-wrap:anywhere; }
 .pedipalpus-app .pp-companion-section > summary strong { margin-right: 8px; }
 .pedipalpus-app .pp-companion-section > summary span { font: 11px/1.4 'Segoe UI',sans-serif; color: var(--pp-muted); }
 .pedipalpus-app .pp-companion-section[open] > summary { border-bottom: 1px solid var(--pp-border); }

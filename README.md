@@ -1,8 +1,8 @@
-# Pedipalpus – Proben · 1.11.23
+# Pedipalpus – Proben · 1.11.24
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.23 hält Inhalte auch in sehr niedrigen Fenstern mit großer Schrift erreichbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.24 hält lange Waffen- und Begleiternamen auch in schmalen Kampffenstern vollständig lesbar. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
 
 ## Pedipalpus als Grundlage
 
@@ -17,6 +17,10 @@ Der Fork ist derzeit privat und nur für GitHub-Konten mit Zugriffsfreigabe erre
 - Foundry VTT 14
 - Simple Worldbuilding
 - Ucurifunke – Proben 1.0.14 für Kampf- und Gefolgsproben; ohne diese Proben bleiben 1.0.8–1.0.14 nutzbar
+
+## Lange Kampfbezeichnungen in 1.11.24
+
+Waffenüberschriften und Begleiterkarten brechen lange Namen, Herkunfts- und Artenangaben bei Bedarf um. Auch zusammengesetzte Wörter verbreitern die Kampfliste dadurch nicht mehr über das Fenster hinaus. Würfel-, Energie- und Bildfunktionen bleiben erreichbar. Keine Änderung an Werten oder Importformaten; kein Neuimport nötig.
 
 ## Sehr niedrige Fenster bedienen in 1.11.23
 
@@ -239,7 +243,7 @@ Nach dem Speichern des Spielstands werden die verknüpften Begleiter einzeln akt
 
 Zum Wiederholen den **Spielstand** erneut öffnen und **Speichern** wählen. Ohne geänderte Eingaben werden nur die Begleiter mit dem bereits gespeicherten Stand abgeglichen; der Hauptcharakter wird dabei nicht erneut geschrieben. **Abbrechen** bleibt ohne Änderungen. Ein inzwischen veränderter Stand oder verlorene Rechte erfordern erneutes Öffnen.
 
-Ändert sich der Hauptcharakter während eines Abgleichs, wird er entfernt oder verliert der Benutzer seine Bearbeitungsrechte, stoppen weitere Übernahmen. Bereits abgeschlossene Änderungen werden nicht automatisch zurückgerollt. Der Fehler beim Speichern des Hauptcharakters selbst bleibt ein Fehler und startet keinen Begleiterabgleich. Die Änderungen benötigen keine Datenmigration und keinen erneuten Import.
+Ändert sich der Hauptcharakter während eines Abgleichs, wird er entfernt oder verliert der Benutzer seine Bearbeitungsrechte, stoppen weitere Übernahmen. Bereits abgeschlossene Änderungen werden nicht automatisch zurückgerollt. Der Fehler beim Speichern des Hauptcharakters selbst bleibt ein Fehler und startet keinen Begleiterabgleich. Die Änderungen benötigen keine Datenmigrationund keinen erneuten Import.
 
 ## Import und Tokenbilder in 1.9.6
 
@@ -491,7 +495,7 @@ Im Bildeditor oder unter **Einstellungen → Eigenen Rahmen hinzufügen** eine t
 
 Der Rahmen wird beim Hinzufügen dauerhaft für deinen Foundry-Benutzer in dieser Welt gespeichert und erscheint anschließend unter **Tokenrahmen**, auch für neue Charaktere, NSCs und Begleiter. Dieselbe Datei erneut hinzuzufügen erzeugt kein Duplikat. Das Hinzufügen ist unabhängig vom späteren Speichern oder Abbrechen des Bildausschnitts. Bis zu 50 eigene Rahmen können gespeichert werden. Zum Hochladen sind die üblichen Foundry-Uploadrechte nötig; ein Spielleiterkonto ist dafür nicht erforderlich.
 
-Bereits mit eigenen Rahmen erstellte Charaktere und Begleiter behalten die benötigten Bildverweise. Andere berechtigte Nutzer können deren Bildausschnitt daher ebenfalls weiterbearbeiten, auch wenn sie den Rahmen nicht in ihrer persönlichen Auswahl haben. Die bisherigen Concrete-, Silver-Thin- und Undead-Rahmen bleiben nutzbar. Eigene Rahmen werden auf dem Foundry-Server gespeichert und nicht in die lokale Pedipalpus-Datei oder auf GitHub übernommen.
+Bereits mit eigenen Rahmen erstellte Charaktere und Begleiter behalten die benötigten Bildverweise. Andere berechtigte Nutzer können deren Bildausschnitt daher ebenfalls weiterbearbeiten, auch wenn sie den Rahmen nicht in ihrer persönlichen Auswahl haben. Die bisherigen Concrete-, Silver-Thin- und Undead-Rahmen bleiben nutzbar. EigeneRahmen werden auf dem Foundry-Server gespeichert und nicht in die lokale Pedipalpus-Datei oder auf GitHub übernommen.
 
 ## Werte aktualisieren
 
