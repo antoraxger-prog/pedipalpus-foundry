@@ -40,3 +40,23 @@ test('An import without images keeps independently changed portrait and prototyp
  await saveCharacter(snapshot,actor.id,null,()=>{},JSON.stringify(snapshot),{portraitExpected:expected});
  assert.deepEqual(counts,{flags:1,images:0,uploads:0});assert.equal(actor.img,'independent-portrait.png');assert.equal(actor.prototypeToken.texture.src,'independent-token.png');
 });
+
+test('A player without upload permission can import values without replacing existing artwork',async()=>{
+ const {snapshot,actor,counts,portrait}=runtime(),expected=portraitState(actor),next=structuredClone(snapshot),warnings=[];
+ game.user.isGM=false;game.user.can=()=>false;
+ next.checks[0].value++;
+ await saveCharacter(next,actor.id,portrait,message=>warnings.push(message),JSON.stringify(snapshot),{portraitExpected:expected});
+ assert.equal(actor.getFlag('pedipalpus-foundry','character').checks[0].value,next.checks[0].value);
+ assert.equal(portraitState(actor),expected);
+ assert.deepEqual(counts,{flags:1,images:0,uploads:0});
+ assert.match(warnings[0],/Upload-Rechte fehlen/);
+});
+
+test('Losing upload permission between portrait and token uploads still imports values and keeps both images',async()=>{
+ const {snapshot,actor,counts,portrait}=runtime(),expected=portraitState(actor),picker=foundry.applications.apps.FilePicker.implementation,warnings=[];
+ const upload=picker.upload;picker.upload=async(...args)=>{const result=await upload(...args);game.user.isGM=false;return result;};
+ await saveCharacter(snapshot,actor.id,{...portrait,token:portrait},message=>warnings.push(message),JSON.stringify(snapshot),{portraitExpected:expected});
+ assert.deepEqual(counts,{flags:1,images:0,uploads:1});
+ assert.equal(portraitState(actor),expected);
+ assert.match(warnings[0],/Upload-Rechte fehlen/);
+});

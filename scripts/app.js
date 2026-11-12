@@ -5,7 +5,7 @@ import { connectionStatus, executeCheck } from './commands.js';
 import { getCharacter, visibleActors, saveCharacter, linkToken, saveFocus, saveArmorState,ownerAssignment,matchesWrittenSnapshot } from './storage.js';
 import { renderView, renderImportOptions, updateFocusView, renderCompanionImportOptions, escapeHTML, viewCategories } from './view.js';
 import { withFocus, characterFocus } from './combat.js';
-import { preparePortrait, uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
+import { canUploadPortrait, IMAGE_UPLOAD_SKIPPED, preparePortrait, uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
 import { savedDesign, initializeDesign, saveDesign, THEMES } from './design.js';
 import { uiText, localizeSurface, localizeDialog } from './language.js';
 import { loadWorkbench, updateWorkbench, validateWorkbench, checkReference, referenceKey, resolveCheck, toggleFavorite, moveFavorite, recordRecent,favoriteAvailability } from './workbench.js';
@@ -116,7 +116,14 @@ export class PedipalpusApp extends ApplicationV2 {
     this.element.dataset.ppTheme = this.theme;
     content.innerHTML = result;
     this.companionOpen??=new Map();
-    content.querySelectorAll('[data-companion-section]').forEach(section=>{const key=JSON.stringify([this.actorId,section.dataset.companionSection]);section.open=this.companionOpen.get(key)??Boolean(getCharacter(this.actor)?.profile.companionGroup);section.querySelector('summary').addEventListener('click',()=>requestAnimationFrame(()=>this.companionOpen.set(key,section.open)));});
+    this.companionAttributesOpen ??= new Map();
+    content.querySelectorAll('[data-companion-section]').forEach(section => {
+      const key = JSON.stringify([this.actorId, section.dataset.companionSection]);
+      section.open = this.companionOpen.get(key) ?? Boolean(getCharacter(this.actor)?.profile.companionGroup);
+      section.querySelector('[data-companion-card]').addEventListener('click', () => requestAnimationFrame(() => this.companionOpen.set(key, section.open)));
+      const attributes = section.querySelector('[data-companion-attributes]');
+      attributes?.querySelector('summary').addEventListener('click', () => requestAnimationFrame(() => this.companionAttributesOpen.set(key, attributes.open)));
+    });
     if(this.audioElement!==content){
       this.audioElement=content;
       const prepare=()=>{prepareFeedback(this.effects);};
@@ -364,7 +371,15 @@ export class PedipalpusApp extends ApplicationV2 {
       section.hidden=armorView||!(rows.some(row=>!row.hidden)||!query&&(this.category==='all'||this.category===section.dataset.inventory));
       card.hidden=false;
       if(!section.hidden)visibleMembers++;
-      section.open=query&&!section.hidden?true:(this.companionOpen?.get(JSON.stringify([this.actorId,section.dataset.companionSection]))??Boolean(getCharacter(this.actor)?.profile.companionGroup));
+      const key = JSON.stringify([this.actorId, section.dataset.companionSection]);
+      section.open = query && !section.hidden ? true : (this.companionOpen?.get(key) ?? Boolean(getCharacter(this.actor)?.profile.companionGroup));
+      const attributes = section.querySelector('[data-companion-attributes]');
+      if (attributes) {
+        const hasMatchingRows = Boolean(attributes.querySelector('.pp-check-row:not([hidden])'));
+        const showSearchMatch = Boolean(query && !match);
+        attributes.hidden = !hasMatchingRows;
+        attributes.open = hasMatchingRows && (showSearchMatch || (this.companionAttributesOpen?.get(key) ?? false));
+      }
       section.querySelectorAll('.pp-weapon-header').forEach(header=>{const ids=JSON.parse(header.dataset.checkIds||'[]');header.hidden=!rows.some(row=>!row.hidden&&ids.includes(row.dataset.checkId));});
     });
     const overviews=content.querySelector('.pp-companion-overviews');if(overviews)overviews.hidden=!visibleMembers;
@@ -690,7 +705,17 @@ export class PedipalpusApp extends ApplicationV2 {
         const destinationOptions=destination.innerHTML,targetNotice=document.createElement('p');targetNotice.className='pp-hint';targetNotice.hidden=true;destination.closest('label').after(targetNotice);
         const syncButton = () => { dialog.element.querySelector('button[data-action="import"]').disabled = !pending || portraitBusy || portraitError || !destination.selectedOptions.length || destination.selectedOptions[0].disabled;targetNotice.hidden=!(pending?.profile.retinueOnly&&pending.profile.companionGroup&&game.actors.get(destination.value)?.getFlag(MODULE_ID,'companion')?.sourceActorId);targetNotice.textContent=this.t('Diese Begleiterfigur wird als eigenes Wesen aktualisiert und vom bisherigen Import gelöst. Figurenkennung, Ordner und bisherige Rechte bleiben erhalten; ohne Bildübernahme auch ihre Bilder.'); };
         const images=dialog.element.querySelector('[name="includeImages"]'),companions=dialog.element.querySelector('[name="includeCompanions"]'),companionOptions=dialog.element.querySelector('[data-companion-import-options]');
+        if(!canUploadPortrait()){
+          images.checked=false;images.disabled=true;
+          const hint=document.createElement('p');hint.className='pp-hint';hint.textContent=this.t(IMAGE_UPLOAD_SKIPPED);images.closest('label').after(hint);
+        }
+        const updateImageControls=()=>{
+          dialog.element.querySelector('[data-image-options]').hidden=!images.checked;
+          for(const field of companionOptions.querySelectorAll('[data-companion-picture-index]'))field.closest('label').hidden=!images.checked;
+        };
+        updateImageControls();
         const renderCompanions=()=>{companionOptions.hidden=!companions.checked;companionOptions.innerHTML=pending&&!(pending.profile.retinueOnly&&pending.profile.companionGroup)?renderCompanionImportOptions(pending,destination.value||null):'';localizeDialog(companionOptions,this.language==='ork'?'ork':'fantasy');
+          updateImageControls();
           companionOptions.querySelectorAll('[data-companion-picture-index]').forEach(field=>field.addEventListener('change',()=>{const index=Number(field.dataset.companionPictureIndex),file=field.files?.[0];if(!file){companionPictures.delete(index);return;}companionPictures.set(index,{index,key:companionKey(pending,index),file});const select=companionOptions.querySelector(`[data-companion-import-index="${index}"]`);if(!select.value&&Array.from(select.options).some(row=>row.value==='new'))select.value='new';dialog.element.querySelector('[data-companion-picture-status]').textContent=`${companionPictures.size} Begleiterbilder zugeordnet.`;}));
         };
         dialog.element.querySelector('[name="companionPictures"]').addEventListener('change',event=>{
@@ -766,7 +791,7 @@ export class PedipalpusApp extends ApplicationV2 {
         };
         images.addEventListener('change',async()=>{
           const ticket=++portraitSequence,read=readSequence;portraitBusy=false;portraitError=false;portraitManual=null;portraitPackaged=null;portrait=null;imageInput.value='';
-          dialog.element.querySelector('[data-image-options]').hidden=!images.checked;syncButton();
+          updateImageControls();syncButton();
           if(!pending&&lastRead){const {file,source,files,expectedKind}=lastRead;await readFile(file,source,null,{files,expectedKind});return;}
           if(!images.checked||!pending||!lastRead)return;
           portraitBusy=true;syncButton();
@@ -851,7 +876,7 @@ export class PedipalpusApp extends ApplicationV2 {
   async acceptImport(answer) {
     if (!answer?.snapshot) return;
     const importActor=game.actors.get(answer.actorId),previous=getCharacter(importActor),previousFraming=savedPortraitFraming(importActor),portraitExpected=importActor?portraitState(importActor):undefined;
-    const includeCompanions=answer.snapshot.profile.retinueOnly?true:answer.includeCompanions??true,includeImages=answer.includeImages??true;
+    const includeCompanions=answer.snapshot.profile.retinueOnly?true:answer.includeCompanions??true,wantImages=answer.includeImages??true;
     ownerAssignment(answer.ownerId);
     answer.snapshot=retainNpcChoices(previous,answer.snapshot);
     if(includeCompanions)answer.snapshot=retainCompanionChoices(previous,answer.snapshot);
@@ -860,7 +885,6 @@ export class PedipalpusApp extends ApplicationV2 {
     const plan=includeCompanions&&!standalonePlan?(answer.companionPlan??prepareCompanionImport(answer.snapshot,answer.actorId,companionEntries(answer.snapshot).flatMap((_member,index)=>{try{const existing=companionActor(answer.actorId,companionKey(answer.snapshot,index));return existing?[{index,targetId:existing.id}]:[];}catch{return [];}}))):[];
     if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
     if(standalonePlan)verifyCompanionImport(answer.snapshot,null,standalonePlan);
-    if(!includeImages)answer.portrait=null;
     if(previous){
       const differences=compareCharacters(previous,answer.snapshot);
       if(differences.length||previous.localState){
@@ -879,6 +903,7 @@ export class PedipalpusApp extends ApplicationV2 {
         if(accepted.keepFocus)answer.snapshot=withFocus(answer.snapshot,characterFocus(previous));
       }
     }
+    const includeImages=wantImages&&canUploadPortrait();
     const preparedCompanionPictures={};
     if(includeImages&&includeCompanions)for(const row of answer.companionPictures??[]){
       if(companionKey(answer.snapshot,row.index)!==row.key)throw new Error('Die Bildzuordnung wurde inzwischen geändert.');
@@ -886,15 +911,16 @@ export class PedipalpusApp extends ApplicationV2 {
       const target=game.actors.get(plan.find(target=>target.key===row.key).targetId);
       preparedCompanionPictures[row.key]=await prepareTokenPortrait(await preparePortrait(row.file),answer.tokenFrame,savedPortraitFraming(target)??undefined);
     }
-    if(answer.portrait)answer.portrait=await prepareTokenPortrait(answer.portrait,answer.tokenFrame,previousFraming??undefined);
+    const portrait=includeImages&&answer.portrait?await prepareTokenPortrait(answer.portrait,answer.tokenFrame,previousFraming??undefined):null;
     if(includeCompanions)verifyCompanionImport(answer.snapshot,answer.actorId,plan);
     if(standalonePlan)verifyCompanionImport(answer.snapshot,null,standalonePlan);
-    const actor = standalonePlan?await saveStandaloneCompanion(answer.snapshot,answer.actorId,standalonePlan,answer.portrait,{ownerId:answer.ownerId,warn:message=>this.notify('warn',message)}):await saveCharacter(answer.snapshot, answer.actorId, answer.portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId,portraitExpected});
+    const actor = standalonePlan?await saveStandaloneCompanion(answer.snapshot,answer.actorId,standalonePlan,portrait,{ownerId:answer.ownerId,warn:message=>this.notify('warn',message)}):await saveCharacter(answer.snapshot, answer.actorId, portrait, message => this.notify('warn',message),JSON.stringify(previous),{ownerId:answer.ownerId,portraitExpected});
     if(includeCompanions&&!standalonePlan)await applyCompanionImport(actor,plan,{includeImages,portraits:preparedCompanionPictures,ownerId:answer.ownerId,tokenFrame:answer.tokenFrame,warn:message=>this.notify('warn',message)});
     this.selectActor(actor.id);
-    if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame,includeImages,includeCompanions});
+    if(answer.source)await rememberImportSource(actor.id,{...answer.source,tokenFrame:answer.tokenFrame,includeImages:wantImages,includeCompanions});
     try{await this.persist({...this.preferences,actorId:actor.id,category:'all'});}catch(error){console.warn(MODULE_ID,error);this.notify('warn','Der Charakter wurde importiert. Die persönliche Auswahl konnte nicht gespeichert werden.');}
     await this.render({ force: true });
+    if(wantImages&&!includeImages)this.notify('warn',IMAGE_UPLOAD_SKIPPED);
     this.notify('info', `${answer.snapshot.profile.name} wurde importiert.`);
     this.feedback('saved','Charakter importiert.');this.sound('import');
     return actor;
@@ -902,9 +928,10 @@ export class PedipalpusApp extends ApplicationV2 {
   async refreshCharacter() {
     const actor=this.actor;if(!actor?.isOwner)throw new Error('Zum Aktualisieren werden Besitzerrechte benötigt.');
     const source=await importSource(actor.id);if(!source?.fileHandle)return this.importCharacter();
-    let imported;try{imported=await readLiveSource(source,{includePortrait:source.includeImages??true});}catch(error){this.notify('warn',this.t(error.message||'Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.'));return this.importCharacter();}
+    const includeImages=source.includeImages??true;
+    let imported;try{imported=await readLiveSource(source,{includePortrait:includeImages&&canUploadPortrait()});}catch(error){this.notify('warn',this.t(error.message||'Die letzte Datei ist nicht zugänglich. Bitte die Quelle erneut auswählen.'));return this.importCharacter();}
     const snapshot=parseCharacter(imported.json);snapshot.sourceJSON=imported.json;
-    return this.acceptImport({snapshot,includeImages:source.includeImages??true,includeCompanions:source.includeCompanions??getCharacter(actor)?.retinueImportEnabled??true,portrait:imported.portrait?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:savedPortraitFraming(actor)?.style??source.tokenFrame??this.preferences.tokenFrame,source});
+    return this.acceptImport({snapshot,includeImages,includeCompanions:source.includeCompanions??getCharacter(actor)?.retinueImportEnabled??true,portrait:imported.portrait&&canUploadPortrait()?await preparePortrait(imported.portrait):null,actorId:actor.id,tokenFrame:savedPortraitFraming(actor)?.style??source.tokenFrame??this.preferences.tokenFrame,source});
   }
   async configureCompanionAbility(actor,check){
     const issue=companionRollIssue(actor);if(issue)throw new Error(issue);

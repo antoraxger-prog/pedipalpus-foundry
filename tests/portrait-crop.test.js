@@ -32,6 +32,6 @@ test('Companion fingerprints include crop settings even when unchanged token pix
 
 test('An import cannot overwrite a portrait crop changed while its comparison was open',async()=>{
  const snapshot=normalizeCharacter(fixture()),actor={img:'new.png',getFlag:(_ns,key)=>key==='character'?snapshot:key==='portraitFraming'?{x:0,y:1,zoom:1}:null,canUserModify:()=>true};
- globalThis.game={user:{id:'owner'},system:{id:'worldbuilding'},actors:{get:()=>actor}};
+ globalThis.game={user:{id:'owner',can:permission=>permission==='FILES_UPLOAD'},system:{id:'worldbuilding'},actors:{get:()=>actor}};
  await assert.rejects(saveCharacter(snapshot,'a',{file:null},()=>{},JSON.stringify(snapshot),{portraitExpected:JSON.stringify({img:'old.png',framing:null})}),/inzwischen/);
 });

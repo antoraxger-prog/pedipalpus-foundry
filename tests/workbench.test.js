@@ -156,7 +156,7 @@ test('Import comparison follows semantics through reordering, changes focus sepa
   assert.ok(diff.some(row => row.label === 'Schach' && row.type === 'removed'));
   assert.ok(diff.some(row => row.label === 'Schwert · Angriff' && row.type === 'added'));
   assert.equal(diff.some(row => row.label === 'Rapier · Angriff' && row.type !== 'changed'), false);
-  assert.ok(diff.some(row => row.label === 'Kampffokus (OFF / DEF)' && row.before === '-4 / 4' && row.after === '1 / -1'));
+  assert.ok(diff.some(row => row.label === 'Kampffokus (OFF / DEF)' && row.before === '-2 / 2' && row.after === '1 / -1'));
   assert.equal(JSON.stringify({ before, after }), original);
   assert.deepEqual(compareCharacters(before, structuredClone(before)), []);
 });

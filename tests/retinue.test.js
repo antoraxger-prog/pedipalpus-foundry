@@ -29,7 +29,7 @@ test('All three retinue collections use their own attributes, resistances and fi
 });
 
 test('Focus and armor penalties never change companion probes',()=>{
- const character=snapshot(retinueFixture()),next=withFocus(character,4);
+ const character=snapshot(retinueFixture()),next=withFocus(character,2);
  assert.deepEqual(next.checks.filter(isCompanionCheck),character.checks.filter(isCompanionCheck));
  assert.notEqual(find(next,'combat:MeleeWeapons:0:attack').value,find(character,'combat:MeleeWeapons:0:attack').value);
 });

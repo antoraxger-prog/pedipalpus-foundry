@@ -63,33 +63,54 @@ test('Combat and animal checks belong to the combat view; imports and semantic r
 
 test('Focus updates attack and parry in opposite directions without changing ranged, animal or talent values', () => {
   const data = normalizeCharacter(combatFixture());
-  assert.equal(characterFocus(data), -4);
-  const changed = withFocus(data, 3);
-  assert.equal(changed.combat.offDefOffset, 3);
-  assert.equal(changed.combat.offOffset, 3);
-  assert.equal(changed.combat.defOffset, -3);
+  assert.equal(characterFocus(data), -2);
+  const changed = withFocus(data, 2);
+  assert.equal(changed.combat.offDefOffset, 2);
+  assert.equal(changed.combat.offOffset, 2);
+  assert.equal(changed.combat.defOffset, -2);
   for (const before of data.checks) {
     const after = changed.checks.find(check => check.id === before.id);
     if (before.kind !== 'combat' || before.id.startsWith('animals:') || before.combat.type === 'ranged') assert.deepEqual(after, before);
     else {
-      assert.equal(after.value - before.value, before.combat.type === 'attack' ? 7 : -7);
+      assert.equal(after.value - before.value, before.combat.type === 'attack' ? 4 : -4);
       assert.equal(after.combat.skillValue, before.combat.skillValue);
       assert.doesNotThrow(() => buildCommand(after));
     }
   }
-  assert.equal(characterFocus(data), -4);
-  for (const invalid of [-5, 5, 0.5, NaN, '2']) assert.throws(() => withFocus(data, invalid), /zwischen/);
+  assert.equal(characterFocus(data), -2);
+  for (const invalid of [-5, -3, 3, 5, 0.5, NaN, '2']) assert.throws(() => withFocus(data, invalid), /zwischen/);
   assert.equal(characterFocus(withFocus(data, 0)), 0);
 });
 
 test('Existing combat imports infer focus; conflicting or missing saved offsets are not guessed', () => {
   const data = normalizeCharacter(combatFixture());
   delete data.combat.offDefOffset;
-  assert.equal(characterFocus(data), -4);
-  data.checks.find(check => check.combat?.type === 'parry').combat.focusValue = 2;
+  assert.equal(characterFocus(data), -2);
+  data.checks.find(check => check.combat?.type === 'parry').combat.focusValue = 1;
   assert.equal(characterFocus(data), null);
   assert.throws(() => withFocus(data, 0), /unvollständig/);
   assert.equal(characterFocus(normalizeCharacter(fixture())), null);
+});
+
+test('Reading older saved focus clamps both directions without writing actor data', () => {
+  const base = normalizeCharacter(combatFixture());
+  for (const oldFocus of [-4, 3]) {
+    const expected = withFocus(base, Math.sign(oldFocus) * 2);
+    const saved = structuredClone(expected);
+    saved.combat.offDefOffset = oldFocus;
+    saved.combat.offOffset = oldFocus;
+    saved.combat.defOffset = -oldFocus;
+    for (const check of saved.checks.filter(check => check.id.startsWith('combat:') && ['attack', 'parry'].includes(check.combat.type))) {
+      const oldValue = check.combat.type === 'attack' ? oldFocus : -oldFocus;
+      check.value += oldValue - check.combat.focusValue;
+      check.combat.focusValue = oldValue;
+    }
+    const before = JSON.stringify(saved);
+    const loaded = getCharacter({getFlag: () => saved, setFlag: () => assert.fail('Reading must not write actor data')});
+    assert.deepEqual(loaded.combat, expected.combat);
+    assert.deepEqual(loaded.checks, expected.checks);
+    assert.equal(JSON.stringify(saved), before);
+  }
 });
 
 test('Focus persists on the current actor snapshot and respects ownership and failed writes', async () => {
@@ -476,9 +497,9 @@ test('Updated saved data matches Pedipalpus best technique, BE tolerance and shi
   const raw = combatFixture();
   const checks = normalizeCharacter(raw).checks;
   const command = id => buildCommand(checks.find(check => check.id === id));
-  assert.equal(command('combat:MeleeWeapons:0:attack'), '/AT Rapier|Schwerter|6|5|-4|0|4');
-  assert.equal(command('combat:MeleeWeapons:0:parry'), '/PA Rapier|Schwerter|6|5|4|1|4');
-  assert.equal(command('combat:ParryWeapons:0:parry'), '/PA Schild|Schwerter|6|5|4|3|3');
+  assert.equal(command('combat:MeleeWeapons:0:attack'), '/AT Rapier|Schwerter|6|5|-2|0|4');
+  assert.equal(command('combat:MeleeWeapons:0:parry'), '/PA Rapier|Schwerter|6|5|2|1|4');
+  assert.equal(command('combat:ParryWeapons:0:parry'), '/PA Schild|Schwerter|6|5|2|3|3');
   assert.equal(command('combat:RangedWeapons:0:ranged'), '/FK Armbrust|Armbrüste|5|6|0|3');
   assert.equal(command('animals:0:0:attack'), '/AT Wolf – Biss|Biss|14|0|0|0|0');
   assert.equal(command('animals:0:0:parry'), '/PA Wolf – Biss|Biss|7|0|0|0|0');

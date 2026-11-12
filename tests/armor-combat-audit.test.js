@@ -28,7 +28,7 @@ test('An unchanged armor can be edited after energy and focus changes without re
 test('NSC weapons without a matching technique use the generator value zero with normal basis, focus and impairment',()=>{
  const raw=npcFixture();raw.Npc.Techniques=[];const original=JSON.stringify(raw),character=snapshot(raw),attack=character.checks.find(row=>row.id==='combat:MeleeWeapons:0:attack'),parry=character.checks.find(row=>row.id==='combat:MeleeWeapons:0:parry'),ranged=character.checks.find(row=>row.id==='combat:RangedWeapons:0:ranged');
  assert.equal(attack.reason,'');assert.equal(attack.combat.skillValue,0);assert.equal(attack.combat.skillName,'Ohne Kampftechnik');assert.equal(attack.value,6);assert.equal(parry.value,2);assert.equal(ranged.value,6);assert.equal(buildCommand(attack),'/AT Testaxt|Ohne Kampftechnik|0|6|2|0|2');
- const focus=withFocus(character,-3);assert.equal(focus.checks.find(row=>row.id===attack.id).value,1);assert.equal(focus.checks.find(row=>row.id===parry.id).value,7);assert.equal(focus.checks.find(row=>row.id===ranged.id).value,6);assert.equal(JSON.stringify(raw),original);
+ const focus=withFocus(character,-2);assert.equal(focus.checks.find(row=>row.id===attack.id).value,2);assert.equal(focus.checks.find(row=>row.id===parry.id).value,6);assert.equal(focus.checks.find(row=>row.id===ranged.id).value,6);assert.equal(JSON.stringify(raw),original);
 });
 
 test('A known zero-valued NSC technique retains its own name while missing character techniques remain blocked',()=>{

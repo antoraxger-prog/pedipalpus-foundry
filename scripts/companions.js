@@ -1,6 +1,6 @@
 import { MODULE_ID, FLAG, SCHEMA_VERSION, validSnapshot } from './data.js';
 import { getCharacter,ownerAssignment,assignOwner } from './storage.js';
-import { uploadPortrait,applyPortrait,framingFor,portraitState } from './portraits.js';
+import { canUploadPortrait,uploadImportPortrait,uploadPortrait,applyPortrait,framingFor,portraitState } from './portraits.js';
 import { tokenFromActor } from './tokens.js';
 import { readCompanions,memberAttributes,isCompanionCheck,retainCompanionChoices } from './retinue.js';
 
@@ -110,6 +110,20 @@ export function verifyCompanionImport(character,sourceActorId,plan=[]){
  const fresh=prepareCompanionImport(character,sourceActorId,plan);
  if(JSON.stringify(fresh)!==JSON.stringify(plan))throw new Error('Ein Begleiter oder seine Zuordnung wurde inzwischen geändert. Bitte den Import erneut öffnen.');
 }
+
+async function refreshCompanionTokenNames(actor,previousName,name,warn){
+ if(!previousName||previousName===name)return;
+ let skipped=0;
+ for(const scene of game.scenes?.contents??[])for(const token of scene.tokens?.contents??[]){
+  if(!token.actorLink||token.actorId!==actor.id||token.name!==previousName)continue;
+  if(typeof scene.tokens.get==='function'&&scene.tokens.get(token.id)!==token)continue;
+  if(game.actors.get(actor.id)!==actor||actor.name!==name||actor.prototypeToken?.name!==name||
+   !actor.canUserModify(game.user,'update')||!token.canUserModify(game.user,'update')){skipped++;continue;}
+  try{await token.update({name});}catch{skipped++;}
+ }
+ if(skipped)warn(`${name}: ${skipped} verknüpfte Token-Namen konnten nicht aktualisiert werden.`);
+}
+
 export async function applyCompanionImport(source,plan=[],{includeImages=true,ownerId='',tokenFrame='concrete',portraits={},warn=message=>ui.notifications.warn(message)}={}){
  ownerAssignment(ownerId);
  const character=getCharacter(source),sourceState=JSON.stringify(character);
@@ -125,29 +139,33 @@ export async function applyCompanionImport(source,plan=[],{includeImages=true,ow
   const snapshot=companionSnapshot(character,row.index),existing=game.actors.get(row.targetId),expectedPortrait=existing?portraitState(existing):null,old=row.active.map(item=>game.actors.get(item.id));
   let portrait=includeImages?portraits[row.key]??null:null;
   const imageSource=old.find(actor=>actor.img&&!actor.img.endsWith('mystery-man.svg'));
-  if(!portrait&&includeImages&&imageSource&&imageSource.id!==existing?.id)portrait=await tokenFromActor(imageSource,tokenFrame);
+  if(!portrait&&includeImages&&canUploadPortrait()&&imageSource&&imageSource.id!==existing?.id)portrait=await tokenFromActor(imageSource,tokenFrame);
   verify([row]);
-  const image=portrait?await uploadPortrait(portrait):null,token=portrait?await uploadPortrait(portrait.token??portrait):null;
+  const images=await uploadImportPortrait(portrait,warn);
   verify([row]);
-  const link={sourceActorId:source.id,key:row.key,active:true,tokenStyle:portrait?.tokenStyle??existing?.getFlag(MODULE_ID,'companion')?.tokenStyle??tokenFrame};
+  const link={sourceActorId:source.id,key:row.key,active:true,tokenStyle:(images?portrait.tokenStyle:null)??existing?.getFlag(MODULE_ID,'companion')?.tokenStyle??tokenFrame};
+  const previousName=existing?.prototypeToken?.name||existing?.name;
   let actor=existing;
   if(actor){
    await actor.setFlag(MODULE_ID,FLAG,retainCompanionChoices(getCharacter(actor),snapshot));await actor.setFlag(MODULE_ID,'companion',link);
    await actor.update({name:snapshot.profile.name,'prototypeToken.name':snapshot.profile.name});
-   if(image)await applyPortrait(actor,image,warn,token,framingFor(portrait),expectedPortrait);await assignOwner(actor,ownerId);
-  }else actor=await foundry.documents.Actor.create({name:snapshot.profile.name,type:'character',img:image||'icons/svg/mystery-man.svg',ownership:{...source.ownership,[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,...ownerAssignment(ownerId)},prototypeToken:{name:snapshot.profile.name,actorLink:true,...(token?{texture:{src:token}}:{})},flags:{[MODULE_ID]:{[FLAG]:snapshot,companion:link,...(framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{})}}});
+   if(images)await applyPortrait(actor,images.image,warn,images.token,framingFor(portrait),expectedPortrait);await assignOwner(actor,ownerId);
+  }else actor=await foundry.documents.Actor.create({name:snapshot.profile.name,type:'character',img:images?.image||'icons/svg/mystery-man.svg',ownership:{...source.ownership,[game.user.id]:CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,...ownerAssignment(ownerId)},prototypeToken:{name:snapshot.profile.name,actorLink:true,...(images?{texture:{src:images.token}}:{})},flags:{[MODULE_ID]:{[FLAG]:snapshot,companion:link,...(images&&framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{})}}});
   for(const previous of old)if(previous.id!==actor.id)await previous.setFlag(MODULE_ID,'companion',{...previous.getFlag(MODULE_ID,'companion'),active:false,replacedBy:actor.id});
+  if(existing)await refreshCompanionTokenNames(actor,previousName,snapshot.profile.name,warn);
  }
  const keys=companionEntries(character).flatMap((_member,index)=>{try{return [companionKey(character,index)];}catch{return [];}});
  await refreshCompanions(source,warn,{skipKeys:keys});
 }
 
-export async function saveStandaloneCompanion(snapshot,actorId,plan,portrait=null,{ownerId='',warn}={}){
+export async function saveStandaloneCompanion(snapshot,actorId,plan,portrait=null,{ownerId='',warn=message=>ui.notifications.warn(message)}={}){
  if(!validSnapshot(snapshot)||!snapshot.profile.retinueOnly||!snapshot.profile.companionGroup||companionEntries(snapshot).length!==1||plan?.length!==1||plan[0].index!==0||plan[0].targetId!==actorId)throw new Error('Bitte ein einzelnes Wesen und eine vorhandene Begleiterfigur auswählen.');
  const actor=game.actors.get(actorId),expectedPortrait=portraitState(actor),ownership=ownerAssignment(ownerId);
+ const previousName=actor?.prototypeToken?.name||actor?.name;
  const verify=()=>{if(game.actors.get(actorId)!==actor||!actor?.canUserModify(game.user,'update'))throw new Error('Die gewählte Begleiterfigur wurde entfernt oder ist nicht mehr bearbeitbar.');verifyCompanionImport(snapshot,null,plan);ownerAssignment(ownerId);};
- verify();const image=portrait?await uploadPortrait(portrait):null,token=portrait?await uploadPortrait(portrait.token??portrait):null;verify();
+ verify();const images=await uploadImportPortrait(portrait,warn);verify();
  await actor.update({name:snapshot.profile.name,'prototypeToken.name':snapshot.profile.name,[`flags.${MODULE_ID}.${FLAG}`]:snapshot,[`flags.${MODULE_ID}.companion`]:{...actor.getFlag(MODULE_ID,'companion'),sourceActorId:null,key:null,active:false,replacedBy:null},...Object.fromEntries(Object.entries(ownership).map(([id,level])=>[`ownership.${id}`,level]))});
- if(image)await applyPortrait(actor,image,warn,token,framingFor(portrait),expectedPortrait);
+ if(images)await applyPortrait(actor,images.image,warn,images.token,framingFor(portrait),expectedPortrait);
+ await refreshCompanionTokenNames(actor,previousName,snapshot.profile.name,warn);
  return actor;
 }

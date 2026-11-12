@@ -1,5 +1,7 @@
 import { orkTalentName, checkDisplayName } from './ork-talents.js';
 const words = {
+  'Attributsproben':'Körper und Kopf würfeln',
+  'Bilder übersprungen: Upload-Rechte fehlen. Vorhandene Porträts und Tokenbilder bleiben erhalten.':'Neue Bilder gehen nicht. Du darfst nicht hochladen. Alte Bilder bleiben.',
   'Suche leeren':'Suche weg',
   'Eigene Auswahl für das Kampfbrett. Alle Begleiter bleiben sichtbar. Entfernte oder mehrdeutige Waffen werden nicht geraten.':'Deine Waffen zusammen wählen. Freunde bleiben da. Fehlende oder doppelte Namen werden nicht geraten.',
   'Fehlend oder mehrfach vorhanden':'Waffe weg oder Name doppelt', 'Unvollständig':'Nicht ganz', 'Unbekannte Waffe':'Waffe ohne Namen',

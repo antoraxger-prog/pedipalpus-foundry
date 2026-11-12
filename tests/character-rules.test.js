@@ -57,7 +57,7 @@ test('Temporary attributes and check penalties match the distinct source stages 
  assert.equal(find(data,'demons:0:attribute:GE').value,16);
  const changed=withFocus(data,2);
  for(const check of changed.checks.filter(c=>!c.reason&&!c.needsAttributes))assert.doesNotThrow(()=>buildCommand(check),check.id);
- assert.equal(find(changed,'combat:MeleeWeapons:0:attack').value-find(data,'combat:MeleeWeapons:0:attack').value,6);
+ assert.equal(find(changed,'combat:MeleeWeapons:0:attack').value-find(data,'combat:MeleeWeapons:0:attack').value,4);
 });
 
 test('Suppression uses the stronger automatic or manual reduction, not their sum, and supports legacy numeric enums',()=>{
@@ -147,7 +147,7 @@ test('Person companions retain divine abilities, own evasion and perception; ass
  assert.match(buildCommand(find(data,'persons:0:dodge:parry')),/Ausweichen\|Ausweichen\|9\|0\|0\|0\|0$/);
  assert.equal(find(data,'persons:0:derived:WA').value,3);
  assert.equal(find(data,'persons:0:divine:0').value,8);
- assert.equal(find(withFocus(data,3),'persons:0:0:attack').value,13);
+ assert.equal(find(withFocus(data,2),'persons:0:0:attack').value,13);
  assert.equal(JSON.stringify(raw),before);
 });
 

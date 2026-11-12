@@ -1,8 +1,8 @@
 import { MODULE_ID, FLAG, validSnapshot,normalizeCharacter } from './data.js';
-import { uploadPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
+import { canUploadPortrait, uploadImportPortrait, applyPortrait, framingFor,portraitState } from './portraits.js';
 import { withArmorState } from './equipment.js';
 import { isCompanionCheck,COMPANION_GROUPS } from './retinue.js';
-import { withFocus } from './combat.js';
+import { normalizeCombatFocus, withFocus } from './combat.js';
 import {withPlayState,compactLocalState} from './play-state.js';
 
 export const getCharacter = actor => {
@@ -11,12 +11,12 @@ export const getCharacter = actor => {
   if(!value.retinueSchemaVersion && value.sourceJSON){
     try{
       const imported=normalizeCharacter(JSON.parse(value.sourceJSON.replace(/^\uFEFF/,'')),value.importedAt);
-      return {...value,retinue:imported.retinue,retinueSchemaVersion:1,
+      return normalizeCombatFocus({...value,retinue:imported.retinue,retinueSchemaVersion:1,
         checks:[...value.checks.filter(check=>!isCompanionCheck(check)),...imported.checks.filter(isCompanionCheck)],
-        equipment:[...value.equipment.filter(item=>!COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`))),...imported.equipment.filter(item=>COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`)))]};
+        equipment:[...value.equipment.filter(item=>!COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`))),...imported.equipment.filter(item=>COMPANION_GROUPS.some(([collection])=>item.id?.startsWith(`${collection}:`)))]});
     }catch{}
   }
-  return value;
+  return normalizeCombatFocus(value);
 };
 
 export async function saveFocus(actor, focus) {
@@ -80,31 +80,29 @@ export async function saveCharacter(snapshot, actorId = null, portrait = null, w
       if(current&&(current.sourceFormat??'character')!==(snapshot.sourceFormat??'character'))throw new Error('Charakter- und NSC-Import dürfen einander nicht überschreiben. Bitte einen passenden oder neuen Foundry-Eintrag wählen.');
       if(expectedState!==undefined&&(typeof expectedState==='string'?JSON.stringify(current)!==expectedState:!matchesWrittenSnapshot(current,expectedState)))throw new Error('Die Foundry-Daten wurden inzwischen geändert. Bitte den Import erneut vergleichen.');
     };
-    verify();
-    const image = portrait ? await uploadPortrait(portrait) : null;
-    const tokenImage=portrait?.token?await uploadPortrait(portrait.token):image;
+    verify(expected, Boolean(portrait && canUploadPortrait()));
+    const images = await uploadImportPortrait(portrait, warn);
     // Das Flag besitzt ein festes Schema; Arrays werden vollständig ersetzt.
     // Andere Flags, Foundry-Werte, Besitzerrechte und die Actor-ID bleiben erhalten.
-    verify();
+    verify(expected, Boolean(images));
     const savedSnapshot=JSON.parse(JSON.stringify(snapshot));
     await actor.setFlag(MODULE_ID, FLAG, snapshot);
-    verify(savedSnapshot);
-    if (image) await applyPortrait(actor,image,warn,tokenImage,framingFor(portrait),expectedPortrait);
+    verify(savedSnapshot, Boolean(images));
+    if (images) await applyPortrait(actor,images.image,warn,images.token,framingFor(portrait),expectedPortrait);
     verify(savedSnapshot,false);
     await assignOwner(actor,ownerId);
     verify(savedSnapshot,false);
     return actor;
   }
   if (!foundry.documents.Actor.canUserCreate(game.user)) throw new Error('Du darfst keine Charaktere anlegen. Dein Meister kann einen anlegen und dir Besitzerrechte geben.');
-  const image = portrait ? await uploadPortrait(portrait) : null;
-    const tokenImage=portrait?.token?await uploadPortrait(portrait.token):image;
+  const images = await uploadImportPortrait(portrait, warn);
   if (!foundry.documents.Actor.canUserCreate(game.user)) throw new Error('Du darfst keine Charaktere anlegen. Dein Meister kann einen anlegen und dir Besitzerrechte geben.');
   const ownership=ownerAssignment(ownerId);
   return foundry.documents.Actor.create({
-    name: snapshot.profile.name, type: 'character', img: image || 'icons/svg/mystery-man.svg',
+    name: snapshot.profile.name, type: 'character', img: images?.image || 'icons/svg/mystery-man.svg',
     ownership: { [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER,...ownership },
-    prototypeToken: { name: snapshot.profile.name, actorLink: true, ...(image ? {texture:{src:tokenImage}} : {}) },
-    flags: { [MODULE_ID]: { [FLAG]: snapshot,...(framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{}) } }
+    prototypeToken: { name: snapshot.profile.name, actorLink: true, ...(images ? {texture:{src:images.token}} : {}) },
+    flags: { [MODULE_ID]: { [FLAG]: snapshot,...(images && framingFor(portrait)?{portraitFraming:framingFor(portrait)}:{}) } }
   });
 }
 

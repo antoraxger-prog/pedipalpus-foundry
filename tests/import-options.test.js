@@ -23,7 +23,7 @@ test('Skipping companions preserves existing creatures and choices while keeping
  const previous=snapshot(retinueFixture()),raw=retinueFixture();raw.Name='Neu';raw.Animals=[];raw.Demons[0].MU=19;raw.Undead=[];
  const next=snapshot(raw),kept=withCompanionImport(previous,next,false);
  assert.equal(kept.profile.name,'Neu');assert.equal(kept.sourceJSON,next.sourceJSON);assert.deepEqual(readCompanions(kept),readCompanions(previous));assert.deepEqual(kept.checks.filter(isCompanionCheck),previous.checks.filter(isCompanionCheck));
- assert.deepEqual(readCompanions(withFocus(kept,3)),readCompanions(previous));
+ assert.deepEqual(readCompanions(withFocus(kept,2)),readCompanions(previous));
  const selected=withCompanionAttributes(kept,'demons:0:mundane:0',['MU','KL','IN']);assert.equal(JSON.parse(selected.sourceJSON).Demons[0].MundaneAbilities[0].FirstAttribute,undefined);
  assert.equal(withCompanionImport(null,next,false).checks.some(isCompanionCheck),false);assert.deepEqual(readCompanions(withCompanionImport(null,next,false)),[]);
  assert.deepEqual(readCompanions(withCompanionImport(kept,next,true)),readCompanions(next));

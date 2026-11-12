@@ -1,4 +1,6 @@
 export const MAX_PORTRAIT_SIZE = 10 * 1024 * 1024;
+export const IMAGE_UPLOAD_SKIPPED = 'Bilder übersprungen: Upload-Rechte fehlen. Vorhandene Porträts und Tokenbilder bleiben erhalten.';
+export const canUploadPortrait = () => Boolean(game.user.isGM || game.user.can?.('FILES_UPLOAD'));
 
 export async function preparePortrait(file) {
   if (!file || file.size <= 0 || file.size > MAX_PORTRAIT_SIZE) throw new Error('Bitte ein Bild bis 10 MB auswählen.');
@@ -23,7 +25,7 @@ export async function preparePortrait(file) {
 }
 
 export async function uploadPortrait(prepared) {
-  if (!game.user.isGM && !game.user.can?.('FILES_UPLOAD')) throw new Error('Zum Bildimport fehlen Upload-Rechte. Dein Meister kann das Bild importieren oder Uploads erlauben.');
+  if (!canUploadPortrait()) throw new Error('Zum Bildimport fehlen Upload-Rechte. Dein Meister kann das Bild importieren oder Uploads erlauben.');
   const worldId = game.world?.id;
   if (!/^[a-zA-Z0-9_-]+$/.test(worldId || '')) throw new Error('Die Foundry-Welt konnte für den Bildimport nicht bestimmt werden.');
   const picker = foundry.applications.apps.FilePicker.implementation;
@@ -42,6 +44,21 @@ export async function uploadPortrait(prepared) {
   const result = await picker.upload('data',folder,new File([prepared.file],name,{type:prepared.file.type}),{}, {notify:false});
   if (!result?.path || result.error) throw new Error('Das Bild konnte nicht auf den Foundry-Server hochgeladen werden.');
   return result.path;
+}
+
+export async function uploadImportPortrait(portrait, warn = message => ui.notifications.warn(message)) {
+  if (!portrait) return null;
+  if (canUploadPortrait()) {
+    try {
+      const image = await uploadPortrait(portrait);
+      const token = portrait.token ? await uploadPortrait(portrait.token) : image;
+      if (canUploadPortrait()) return {image, token};
+    } catch (error) {
+      if (canUploadPortrait()) throw error;
+    }
+  }
+  warn(IMAGE_UPLOAD_SKIPPED);
+  return null;
 }
 
 export const framingFor=portrait=>portrait?.tokenCrop?{x:portrait.tokenCrop.x,y:portrait.tokenCrop.y,zoom:portrait.tokenCrop.zoom,style:portrait.tokenStyle,...(portrait.tokenFrame?{frame:portrait.tokenFrame}:{})}:null;

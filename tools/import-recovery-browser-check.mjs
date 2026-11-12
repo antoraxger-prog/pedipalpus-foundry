@@ -64,4 +64,60 @@ try{
  await page.evaluate(async()=>{const actor=game.actors.get(importActorId),raw=JSON.parse(actor.getFlag('pedipalpus-foundry','character').sourceJSON),{normalizeCharacter}=await import('/scripts/data.js'),app=Array.from(foundry.applications.api.ApplicationV2.instances())[0];raw.HobbySkills[0].Value=4;window.noImageImport=app.acceptImport({snapshot:{...normalizeCharacter(raw),sourceJSON:JSON.stringify(raw)},actorId:actor.id,includeImages:false,includeCompanions:false});});
  await page.locator('.pp-import-diff').waitFor();await page.evaluate(()=>{game.actors.get(importActorId).prototypeToken.texture.src='kept-with-images-off.webp';});await page.locator('.mock-dialog [data-action="accept"]').click();await page.evaluate(()=>window.noImageImport);await idle();assert.equal(await page.evaluate(()=>game.actors.get(importActorId).prototypeToken.texture.src),'kept-with-images-off.webp');assert.equal(await page.evaluate(()=>game.actors.get(importActorId).getFlag('pedipalpus-foundry','character').checks.find(row=>row.name==='Schach').value),4);assert.equal(uploadedImages.size,uploadBefore);assert.deepEqual(errors,[]);
  console.log('PASS: Importing with images disabled still accepts changed character values and leaves an independently changed token untouched.');
+ await page.evaluate(async()=>{
+  const actor=game.actors.get(importActorId),raw=structuredClone(importRaw),app=Array.from(foundry.applications.api.ApplicationV2.instances())[0];
+  const {rememberImportSource}=await import('/scripts/import-source.js');
+  raw.HobbySkills[0].Value=5;raw.PortraitFileName='optional.png';
+  actor.img='kept-portrait.png';actor.prototypeToken.texture.src='kept-token.png';
+  window.sourceFile=new File([JSON.stringify(raw)],'character.json',{type:'application/json'});
+  game.user.isGM=false;game.user.can=()=>false;
+  await rememberImportSource(actor.id,{includeImages:true,includeCompanions:false,fileHandle:{getFile:async()=>window.sourceFile},directoryHandle:{queryPermission(){throw new Error('Optional portrait was queried');}}});
+  window.noUploadRefresh=app.refreshCharacter();
+ });
+ await page.locator('.pp-import-diff').waitFor();await page.locator('.mock-dialog [data-action="accept"]').click();await page.evaluate(()=>window.noUploadRefresh);
+ assert.deepEqual(await page.evaluate(async()=>{
+  const actor=game.actors.get(importActorId),{importSource}=await import('/scripts/import-source.js');
+  return [actor.img,actor.prototypeToken.texture.src,actor.getFlag('pedipalpus-foundry','character').checks.find(row=>row.name==='Schach').value,(await importSource(actor.id)).includeImages];
+ }),['kept-portrait.png','kept-token.png',5,true]);
+ assert.equal(uploadedImages.size,uploadBefore);
+ assert.ok(await page.evaluate(()=>notifications.some(row=>row.level==='warn'&&row.message.includes('Upload-Rechte fehlen'))));
+ console.log('PASS: Refresh without upload permission skips a remembered portrait request, saves changed values, and retains both images and the remembered preference.');
+ await page.evaluate(()=>{const app=Array.from(foundry.applications.api.ApplicationV2.instances())[0];window.noUploadDialog=app.importCharacter();});
+ const imageOption=page.locator('.mock-dialog [name="includeImages"]');
+ await imageOption.waitFor();assert.equal(await imageOption.isDisabled(),true);assert.equal(await imageOption.isChecked(),false);
+ assert.equal(await page.locator('.mock-dialog [data-image-options]').isVisible(),false);
+ assert.match(await page.locator('.mock-dialog').textContent(),/Upload-Rechte fehlen/);
+ await page.locator('.mock-dialog [data-action="cancel"]').click();await page.evaluate(()=>window.noUploadDialog);
+ assert.deepEqual(errors,[]);
+ console.log('PASS: The normal import dialog disables picture controls and explains the missing upload permission.');
+ await page.evaluate(async member=>{
+  const actor=game.actors.get(importActorId),app=Array.from(foundry.applications.api.ApplicationV2.instances())[0];
+  const {normalizeCharacter}=await import('/scripts/data.js');
+  const {companionKey,companionSnapshot}=await import('/scripts/companions.js');
+  const {rememberImportSource}=await import('/scripts/import-source.js');
+  const raw={...structuredClone(importRaw),Undead:[member]},previous={...normalizeCharacter(raw),sourceJSON:JSON.stringify(raw)};
+  await actor.setFlag('pedipalpus-foundry','character',previous);
+  const linked=await foundry.documents.Actor.create({name:member.Name,img:'companion-portrait.png',type:'character',
+   prototypeToken:{name:member.Name,actorLink:true,texture:{src:'companion-token.png'}},flags:{'pedipalpus-foundry':{
+    character:companionSnapshot(previous,0),companion:{sourceActorId:actor.id,key:companionKey(previous,0),active:true}
+   }}});
+  window.linkedRefreshId=linked.id;
+  const token=(name,actorLink=true,allowed=true)=>({name,actorId:linked.id,actorLink,canUserModify:()=>allowed,async update(data){Object.assign(this,data);}});
+  window.linkedRefreshTokens=[token(member.Name),token('Spitzname'),token(member.Name,false),token(member.Name,true,false)];
+  game.scenes={contents:[{tokens:{contents:window.linkedRefreshTokens}}]};
+  raw.Undead[0]={...member,Name:'Neue Wache',CurrentLe:13,Attacks:[{...member.Attacks[0],AttackValue:11}]};
+  window.sourceFile=new File([JSON.stringify(raw)],'character.json',{type:'application/json'});
+  await rememberImportSource(actor.id,{includeImages:true,includeCompanions:true,fileHandle:{getFile:async()=>window.sourceFile}});
+  window.companionRefresh=app.refreshCharacter();
+ },retinueFixture().Undead[0]);
+ await page.locator('.pp-import-diff').waitFor();
+ assert.match(await page.locator('.pp-import-diff').textContent(),/Neue Wache.*Gefolge/);
+ await page.locator('.mock-dialog [data-action="accept"]').click();await page.evaluate(()=>window.companionRefresh);
+ assert.deepEqual(await page.evaluate(()=>{
+  const actor=game.actors.get(linkedRefreshId),snapshot=actor.getFlag('pedipalpus-foundry','character');
+  return [actor.name,actor.prototypeToken.name,actor.img,actor.prototypeToken.texture.src,snapshot.resources[0].value,
+   snapshot.checks.find(check=>check.kind==='combat').value,game.actors.contents.length,linkedRefreshTokens.map(token=>token.name)];
+ }),['Neue Wache','Neue Wache','companion-portrait.png','companion-token.png',13,11,2,['Neue Wache','Spitzname','Wache','Wache']]);
+ assert.equal(uploadedImages.size,uploadBefore);assert.deepEqual(errors,[]);
+ console.log('PASS: Refresh without upload permission updates the same companion’s name, values and default linked token names, preserving its artwork and custom or protected token names.');
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

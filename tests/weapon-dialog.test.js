@@ -9,7 +9,7 @@ function runtime(){
  const raw=combatFixture(),snapshot=data=>({...normalizeCharacter(data),sourceJSON:JSON.stringify(data)});let data=snapshot(raw),saved=0,answer=()=>false;const actors=[];
  const actor={id:'hero',isOwner:true,getFlag:()=>data,canUserModify:()=>true};actors.push(actor);globalThis.game={user:{id:'owner'},actors:{contents:actors,get:id=>actors.find(row=>row.id===id)}};
  globalThis.foundry={utils:{randomID:()=> 'new-set'},applications:{api:{DialogV2:{wait:async config=>answer(config)}}}};
- const app={actor,actorId:actor.id,preferences:validateWorkbench({}),dialogClasses:[],async persist(value){saved++;this.preferences=validateWorkbench(value);},async render(){}};
+ const app={actor,actorId:actor.id,preferences:validateWorkbench({}),dialogClasses:[],t:text=>text,async persist(value){saved++;this.preferences=validateWorkbench(value);},async render(){}};
  return {raw,actor,actors,app,setData:value=>{data=snapshot(value);},answer:fn=>{answer=fn;},saved:()=>saved,key:weaponIdentity(data.checks.find(row=>row.id==='combat:MeleeWeapons:0:attack'))};
 }
 const draft=key=>({remove:[],name:'Duell',weapons:[key],offHand:'unchanged'});
@@ -29,7 +29,7 @@ test('A deleted or switched character cannot receive a set under another figure 
 test('Old weapon sets remain removable after the character loses all weapons',async()=>{
  const r=runtime();r.app.preferences=validateWorkbench({figures:{hero:{weaponSets:[{id:'old',name:'Alt',weapons:[r.key]}],activeSet:'old'}}});r.raw.MeleeWeapons=[];r.raw.ParryWeapons=[];r.raw.RangedWeapons=[];r.setData(r.raw);
  const html=renderView({actor:r.actor,character:r.actor.getFlag(),status:{ready:true},mode:'battle',preferences:r.app.preferences});assert.match(html,/data-action="weapons"/);
- r.answer(config=>{assert.match(config.content,/Alt entfernen/);return {remove:[0],name:'',weapons:[],offHand:'unchanged'};});await weaponSetDialog(r.app);assert.deepEqual(r.app.preferences.figures.hero.weaponSets,[]);assert.equal(r.app.preferences.figures.hero.activeSet,'');
+ r.answer(config=>{assert.match(config.content,/data-remove-set="0"> Alt/);return {remove:[0],name:'',weapons:[],offHand:'unchanged'};});await weaponSetDialog(r.app);assert.deepEqual(r.app.preferences.figures.hero.weaponSets,[]);assert.equal(r.app.preferences.figures.hero.activeSet,'');
 });
 
 test('A duplicated weapon appearing during a dialog is rejected rather than guessed',async()=>{

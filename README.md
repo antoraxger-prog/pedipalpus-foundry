@@ -1,8 +1,12 @@
-# Pedipalpus – Proben · 1.11.28
+# Pedipalpus – Proben · 1.11.31
 
 Pedipalpus-Charaktere importieren und ihre Proben direkt in Foundry würfeln.
 
-1.11.28 kann vorhandene Begleiterfiguren aus dem Figurenverzeichnis gezielt aktualisieren und zeigt ihre Ordnerpfade an. Vorhandene Charakter-, NSC- und Gefolgsimporte bleiben unterstützt.
+1.11.29 übernimmt bei fehlenden Upload-Rechten die Werte und erhält vorhandene Porträts und Tokenbilder. Beim Aktualisieren eines Begleiters wird auch sein Name übernommen. Verknüpfte Szenentokens folgen, solange sie den bisherigen Standardnamen tragen und bearbeitet werden dürfen.
+
+Ab 1.11.30 sind die Attributsproben im Kampfbrett je Begleiter eingeklappt. Findet die Suche eine passende Attributsprobe, öffnet sich der Abschnitt automatisch.
+
+Ab 1.11.31 gilt für den Kampffokus wie in Pedipalpus ein Bereich von −2 bis +2. Ältere Fokuswerte außerhalb dieses Bereichs werden beim Laden und Import auf die nächstliegende Grenze begrenzt. Angriff und Parade verwenden den begrenzten Wert.
 
 ## Pedipalpus als Grundlage
 

@@ -44,7 +44,7 @@ test('NPC combat uses its own ranged tolerance and shield training without hidde
  assert.equal(buildCommand(find(character,'combat:RangedWeapons:0:ranged')),'/FK Testbogen|Bögen|12|6|1|1');
  assert.equal(buildCommand(find(character,'combat:ParryWeapons:0:parry')),'/PA Testschild|Schwerter|12|6|-2|3|3');
  assert.equal(find(character,'combat:MeleeWeapons:0:attack').value,18);assert.equal(find(character,'combat:MeleeWeapons:0:parry').value,14);
- const next=withFocus(character,-3);assert.equal(find(next,'combat:MeleeWeapons:0:attack').value,13);assert.equal(find(next,'combat:MeleeWeapons:0:parry').value,19);
+ const next=withFocus(character,-2);assert.equal(find(next,'combat:MeleeWeapons:0:attack').value,14);assert.equal(find(next,'combat:MeleeWeapons:0:parry').value,18);
  assert.deepEqual(find(next,'combat:NpcDodge:0:parry'),find(character,'combat:NpcDodge:0:parry'));assert.deepEqual(find(next,'combat:RangedWeapons:0:ranged'),find(character,'combat:RangedWeapons:0:ranged'));
  const normal=combatFixture();normal._npc=true;assert.equal(find(normalizeCharacter(normal),'combat:RangedWeapons:0:ranged').combat.mobilityPenalty,3);
 });

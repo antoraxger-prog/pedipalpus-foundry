@@ -1,5 +1,5 @@
 import { retinueEntries,companionProbes,COMPANION_GROUPS,COMPANION_ATTRIBUTES,memberAttributes } from './retinue.js';
-import { combatChecks } from './combat.js';
+import { combatChecks, normalizeCombatFocus } from './combat.js';
 import { NPC_FORMAT,mapNpcFile } from './npc.js';
 import { currentCharacterRules,prepareCharacterRules,applyCharacterCheckRules,conditionState } from './character-rules.js';
 import {attachCheckDetails} from './check-details.js';
@@ -133,7 +133,7 @@ function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false)
   const details = Object.entries(detailGroups).map(([key, name]) => ({ name, entries: list(raw[key]).map(entry => ({
     name: text(entry.Name), level: number(entry.Level), description: text(entry.Description), cost: number(entry.Cost) ?? number(entry.GpCost)
   })) })).filter(group => group.entries.length);
-  return {
+  return normalizeCombatFocus({
     schemaVersion: SCHEMA_VERSION, combatSchemaVersion: 1, sourceVersion: raw.Version, importedAt,
     ...(currentRules?{characterRulesVersion:1}:{}),
     profile: { name: raw.Name.trim(), portraitFileName: text(raw.PortraitFileName), race: named(raw.Race), culture: named(raw.HomeCultureFamily), subCulture: text(raw.HomeSubCulture), socialClass: text(raw.SocialClass),
@@ -156,7 +156,7 @@ function normalizeBaseCharacter(raw,importedAt,npcRules=false,retinueOnly=false)
       return { name: short, value: number(raw[`Current${short}`]), max: number(stat?.TotalValue) };
     }).filter(stat => stat.max !== null && (stat.max > 0 || stat.name === 'LE')),
     derived: list(raw.DerivedValues).map(entry => ({ name: text(entry.LongName), short: text(entry.ShortName), base: number(entry.BaseValue), modifier: number(entry.ModValue), value: number(entry.TotalValue) })).filter(x => x.value !== null)
-  };
+  });
 }
 
 export function validSnapshot(value) {

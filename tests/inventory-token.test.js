@@ -28,7 +28,7 @@ test('Armor changes preserve focus, update protection/BE and attacks, clear equi
  const raw=armorFixture(),source=JSON.stringify(raw),snapshot={...normalizeCharacter(raw),sourceJSON:source};
  const original=structuredClone(snapshot),next=withArmorState(snapshot,'Armors:1','equipped',true),saved=JSON.parse(next.sourceJSON);
  assert.equal(saved.GRS,7);assert.equal(saved.Be,3);assert.equal(saved.Armors[1].OnPerson,true);assert.equal(saved.Armors[1].IsEquiped,true);
- assert.equal(next.combat.offDefOffset,-4);assert.deepEqual(snapshot,original);
+ assert.equal(next.combat.offDefOffset,-2);assert.deepEqual(snapshot,original);
  assert.equal(next.checks.find(c=>c.id==='combat:MeleeWeapons:0:attack').value,snapshot.checks.find(c=>c.id==='combat:MeleeWeapons:0:attack').value-1);
  const removed=withArmorState(next,'Armors:0','carried',false);assert.equal(armorItems(removed)[0].equipped,false);assert.equal(JSON.parse(removed.sourceJSON).GRS,2);
 });

@@ -180,16 +180,16 @@ try {
   const beforeFocusSamples=await page.evaluate(()=>previewSamples.length);
   const focus=page.locator('[name="focus"]');await focus.focus();await page.keyboard.press('End');
   await page.waitForFunction(before=>previewSamples.length>before,beforeFocusSamples);
-  await page.waitForFunction(()=>game.actors.get('actor-1').getFlag('pedipalpus-foundry','character').combat.offDefOffset===4);
-  assert.equal(await page.locator('[data-check-id="combat:MeleeWeapons:0:attack"] .pp-rating').textContent(),'11');
-  assert.equal(await page.locator('[data-check-id="combat:MeleeWeapons:0:parry"] .pp-rating').textContent(),'4');
+  await page.waitForFunction(()=>game.actors.get('actor-1').getFlag('pedipalpus-foundry','character').combat.offDefOffset===2);
+  assert.equal(await page.locator('[data-check-id="combat:MeleeWeapons:0:attack"] .pp-rating').textContent(),'9');
+  assert.equal(await page.locator('[data-check-id="combat:MeleeWeapons:0:parry"] .pp-rating').textContent(),'6');
   assert.equal(await page.locator('[data-check-id="combat:RangedWeapons:0:ranged"] .pp-rating').textContent(),'8');
   const next=combatFixture();next.Name='Neuer Import';next.AcademicSkills[0].Subskills[0].TotalValue=9;
   next.MeleeWeapons.unshift({...next.MeleeWeapons[0],Name:'Dolch'});
   await upload(next,{comparison:'cancel'});
   assert.equal(await page.evaluate(()=>game.actors.get('actor-1').getFlag('pedipalpus-foundry','character').profile.name),'Testcharakter');
   await upload(next,{keepFocus:true});
-  assert.equal(await page.evaluate(()=>game.actors.get('actor-1').getFlag('pedipalpus-foundry','character').combat.offDefOffset),4);
+  assert.equal(await page.evaluate(()=>game.actors.get('actor-1').getFlag('pedipalpus-foundry','character').combat.offDefOffset),2);
   await page.locator('[name="category"]').selectOption('favorites');
   assert.equal(await visible().count(),1);
   assert.equal(await visible().evaluateAll(rows=>rows.some(row=>row.dataset.checkId==='combat:MeleeWeapons:1:attack')),true);
@@ -268,9 +268,9 @@ try {
   await page.locator('[name="category"]').selectOption('combat');await focus.focus();await page.keyboard.press('ArrowLeft');
   await page.waitForFunction(()=>document.querySelector('.pp-root').dataset.ppAnimations==='off');
   assert.equal(await page.locator('.pp-root').getAttribute('data-theme'),'fantasy');
-  assert.equal(await page.locator('[data-focus="off"]').textContent(),'Hau +3');
-  assert.equal(await page.locator('[data-focus="def"]').textContent(),'Block -3');
-  assert.match(await page.locator('[data-check-id="combat:MeleeWeapons:1:attack"] .pp-single-probe').getAttribute('title'),/Kampf-Laune 3/);
+  assert.equal(await page.locator('[data-focus="off"]').textContent(),'Hau +1');
+  assert.equal(await page.locator('[data-focus="def"]').textContent(),'Block -1');
+  assert.match(await page.locator('[data-check-id="combat:MeleeWeapons:1:attack"] .pp-single-probe').getAttribute('title'),/Kampf-Laune 1/);
   assert.equal(await page.locator('.pp-feedback').evaluate(el=>getComputedStyle(el).animationName),'none');
   console.log('PASS: Language independent from appearance; sound off, enabled and zero-volume; feedback with animation disabled.');
 
@@ -320,12 +320,12 @@ try {
   await action('export');const download=await downloadPromise;const bundleBytes=await fs.readFile(await download.path());
   const bundle=await page.evaluate(async bytes=>{
     const{readCharacterFile}=await import('/scripts/bundle.js');const result=await readCharacterFile(new File([new Uint8Array(bytes)],'export.zip',{type:'application/zip'}));return JSON.parse(result.json);
-  },[...bundleBytes]);assert.equal(bundle.Name,'Neuer Import');assert.equal(bundle.OffDefOffset,3);assert.equal(bundle.OffOffset,3);assert.equal(bundle.DefOffset,-3);
+  },[...bundleBytes]);assert.equal(bundle.Name,'Neuer Import');assert.equal(bundle.OffDefOffset,1);assert.equal(bundle.OffOffset,1);assert.equal(bundle.DefOffset,-1);
   await action('import');await page.locator('[name="characterFile"]').setInputFiles({name:'export.zip',mimeType:'application/zip',buffer:bundleBytes});
   await page.waitForFunction(()=>document.querySelector('.mock-dialog [data-action="import"]')?.disabled===false);
   await page.locator('[name="destination"]').selectOption('');await page.locator('.mock-dialog [data-action="import"]').click();
   await page.waitForFunction(()=>game.actors.contents.length===3);
-  assert.equal(await page.evaluate(()=>game.actors.get('actor-3').getFlag('pedipalpus-foundry','character').combat.offDefOffset),3);
+  assert.equal(await page.evaluate(()=>game.actors.get('actor-3').getFlag('pedipalpus-foundry','character').combat.offDefOffset),1);
   console.log('PASS: Synthetic JSON import, UI ZIP export with current focus, package import into new character.');
   const portraitPackage=await page.evaluate(async raw=>{
     const {writeCharacterBundle}=await import('/scripts/bundle.js');
@@ -571,7 +571,12 @@ try {
   const idle=()=>page.waitForFunction(()=>Array.from(foundry.applications.api.ApplicationV2.instances()).every(app=>!app.busy&&!app.referenceBusy));
   for(const [category,id] of [['animals','animals:0:attribute:KL'],['demons','demons:0:0:attack'],['demons','demons:0:0:parry'],['demons','demons:0:1:ranged'],['undead','undead:0:0:ranged'],['undead','undead:0:resistance:MentalMagicResistance']]){
     await page.locator('[name="category"]').selectOption(category);await expandCompanions();const before=await page.evaluate(()=>testMessages.length);
-    await page.locator(`.pp-dice-button[data-check="${id}"][data-blind="false"]`).click();
+    const roll = page.locator(`.pp-dice-button[data-check="${id}"][data-blind="false"]`);
+    const attributes = roll.locator('xpath=ancestor::details[@data-companion-attributes]');
+    if (await attributes.count() && (await attributes.getAttribute('open')) === null) {
+      await attributes.locator('summary').click();
+    }
+    await roll.click();
     await page.waitForFunction(before=>testMessages.length===before+1,before);await idle();
   }
   await page.locator('[name="category"]').selectOption('demons');await expandCompanions();
@@ -669,7 +674,7 @@ try {
   await page.locator('[data-action="battle"]').click();await page.locator('[name="category"]').selectOption('combat');
   const dodge=page.locator('[data-check-id="combat:NpcDodge:0:parry"] .pp-rating'),oldDodge=await dodge.textContent();
   await page.locator('[name="focus"]').focus();await page.keyboard.press('End');await idle();
-  assert.equal(await dodge.textContent(),oldDodge);assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),4);
+  assert.equal(await dodge.textContent(),oldDodge);assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),2);
   const beforeDodge=await page.evaluate(()=>testMessages.length);await dodge.click();await page.waitForFunction(before=>testMessages.length===before+1,beforeDodge);await idle();
   await page.locator('[data-check-id="combat:RangedWeapons:0:ranged"] .pp-rating').click();await idle();
   assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='combat:RangedWeapons:0:ranged').combat.mobilityPenalty,npcId),1);
@@ -689,7 +694,7 @@ try {
   }
   npc.Npc.Abilities.unshift({Name:'Neue Fähigkeit',Grade:'Amateur'});npc.Npc.Abilities[1].Grade='Meister';npc.Npc.Retinue.find(member=>member.Kind==='Untoter').Attacks[0].AttackValue=9;npc.Npc.Retinue.reverse();
   const totalBeforeNpcUpdate=await page.evaluate(()=>game.actors.contents.length);await upload(npc,{destination:npcId,keepFocus:true});
-  assert.equal(await page.evaluate(()=>game.actors.contents.length),totalBeforeNpcUpdate);assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),4);
+  assert.equal(await page.evaluate(()=>game.actors.contents.length),totalBeforeNpcUpdate);assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').combat.offDefOffset,npcId),2);
   assert.deepEqual(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='NpcAbilities:1').npcChoice.keys,npcId),['MU','MU','KO']);
   if(npcChildId)assert.equal(await page.evaluate(id=>game.actors.get(id).getFlag('pedipalpus-foundry','character').checks.find(c=>c.id==='undead:0:0:attack').value,npcChildId),9);
   await page.locator('[data-action="full"]').first().click();await page.locator('[name="category"]').selectOption('NpcAbilities');
@@ -699,7 +704,7 @@ try {
   await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../pedipalpus-checks/foundry-ui/nsc-proben-1.5.0.png')});
   const npcZipDownload=page.waitForEvent('download');await action('export');const npcZip=await npcZipDownload;const zipBytes=await fs.readFile(await npcZip.path());
   const exportedNpc=await page.evaluate(async bytes=>{const {readCharacterFile}=await import('/scripts/bundle.js');const bundle=await readCharacterFile(new File([new Uint8Array(bytes)],'npc.zip'));return {file:JSON.parse(bundle.json),portrait:Boolean(bundle.portrait)};},Array.from(zipBytes));
-  assert.equal(exportedNpc.file.Format,'Pedipalpus.Npc');assert.equal(exportedNpc.file.Npc.Focus,4);assert.equal('OffOffset' in exportedNpc.file,false);assert.equal('PortraitFileName' in exportedNpc.file,false);assert.equal(exportedNpc.portrait,true);
+  assert.equal(exportedNpc.file.Format,'Pedipalpus.Npc');assert.equal(exportedNpc.file.Npc.Focus,2);assert.equal('OffOffset' in exportedNpc.file,false);assert.equal('PortraitFileName' in exportedNpc.file,false);assert.equal(exportedNpc.portrait,true);
   console.log('PASS: NPC reimport retains actor/token identity, attribute choices and favorites after reordering, refreshes linked undead and exports the original NPC format with current focus.');
 
   await page.evaluate(raw=>{window.liveNpc=raw;window.showOpenFilePicker=async()=>[{kind:'file',name:'live.nsc.json',queryPermission:async()=> 'granted',getFile:async()=>new File([JSON.stringify(window.liveNpc)],'live.nsc.json',{type:'application/json'})}];},npc);
@@ -809,6 +814,7 @@ try {
   await page.locator('.pedipalpus-app').screenshot({path:path.resolve(root,'../artifacts/begleiter-1.5.0.png')});
   console.log('PASS: GM assigns parent and selected companion; native companion sections start closed, expand independently, retain manual state after rolling and temporarily open for search.');
 
+  await page.evaluate(()=>game.actors.get('actor-1').update({img:'kept-parent.webp','prototypeToken.texture.src':'kept-parent-token.webp'}));
   const preserved=await page.evaluate(id=>({parentImg:game.actors.get('actor-1').img,token:game.actors.get('actor-1').prototypeToken.texture.src,child:JSON.stringify(game.actors.get(id)),companion:JSON.stringify(game.actors.get('actor-1').getFlag('pedipalpus-foundry','character').checks.filter(c=>c.id.startsWith('animals:')))}),importedChild);
   choiceRaw.HobbySkills[0].Value=4;choiceRaw.Animals=[];choiceRaw.Demons[0].MU=20;
   await beginChoices(choiceRaw);await page.locator('[name="destination"]').selectOption('actor-1');await page.locator('[name="portraitFile"]').setInputFiles({name:'bad.png',mimeType:'image/png',buffer:Buffer.from('not an image')});await page.waitForFunction(()=>document.querySelector('.pp-portrait-preview')?.textContent.includes('Bitte ein PNG'));
